@@ -6,10 +6,6 @@ import { CashDashboardTab } from './tabs/CashDashboardTab';
 export const CashPage = () => {
   const [registers, setRegisters] = useState([]);
 
-  useEffect(() => {
-    loadRegisters();
-  }, []);
-
   const loadRegisters = async () => {
     try {
       const data = await cashService.getRegisters();
@@ -19,6 +15,10 @@ export const CashPage = () => {
       toast.error(err?.message || 'Kasalar yüklenemedi.');
     }
   };
+
+  useEffect(() => {
+    loadRegisters();
+  }, []);
 
   return (
     <div className="flex flex-col h-full gap-4">

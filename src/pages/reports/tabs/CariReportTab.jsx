@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { Users, Building2, TrendingUp, TrendingDown, AlertCircle, UserCheck, UserX, Crown, PhoneCall } from 'lucide-react';
 import { StatCard } from '../../../components/ui/StatCard';
@@ -13,11 +13,7 @@ export const CariReportTab = () => {
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState('customer');
 
-  useEffect(() => {
-    loadData();
-  }, [mode]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const summary = await reportService.getCariReport(mode);
@@ -28,7 +24,11 @@ export const CariReportTab = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [mode]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleCsv = () => {
     if (!data || !data.balanceTable) return;

@@ -3,43 +3,35 @@ import { isWithinInterval } from 'date-fns';
 
 export const supplierService = {
   async getAll(filters = {}) {
-    try {
-      let suppliers = await db.suppliers.toArray();
-      if (filters.activeOnly !== false) {
-        suppliers = suppliers.filter(s => s.is_active !== false);
-      }
-
-      if (filters.search) {
-        const query = filters.search.toLowerCase();
-        suppliers = suppliers.filter(s => 
-          s.name.toLowerCase().includes(query) || 
-          (s.phone && s.phone.includes(query)) ||
-          (s.tax_number && s.tax_number.includes(query))
-        );
-      }
-
-      if (filters.balanceStatus) {
-        let customFilter = (s) => true;
-        if (filters.balanceStatus === 'debt') customFilter = s => s.balance > 0;
-        else if (filters.balanceStatus === 'credit') customFilter = s => s.balance < 0;
-        else if (filters.balanceStatus === 'zero') customFilter = s => s.balance === 0 || !s.balance;
-        suppliers = suppliers.filter(customFilter);
-      }
-
-      return suppliers;
-    } catch (error) {
-      throw new Error('Tedarikçiler getirilirken bir hata oluştu.');
+    let suppliers = await db.suppliers.toArray();
+    if (filters.activeOnly !== false) {
+      suppliers = suppliers.filter(s => s.is_active !== false);
     }
+
+    if (filters.search) {
+      const query = filters.search.toLowerCase();
+      suppliers = suppliers.filter(s =>
+        s.name.toLowerCase().includes(query) ||
+        (s.phone && s.phone.includes(query)) ||
+        (s.tax_number && s.tax_number.includes(query))
+      );
+    }
+
+    if (filters.balanceStatus) {
+      let customFilter = (s) => true;
+      if (filters.balanceStatus === 'debt') customFilter = s => s.balance > 0;
+      else if (filters.balanceStatus === 'credit') customFilter = s => s.balance < 0;
+      else if (filters.balanceStatus === 'zero') customFilter = s => s.balance === 0 || !s.balance;
+      suppliers = suppliers.filter(customFilter);
+    }
+
+    return suppliers;
   },
 
   async getById(id) {
-    try {
-      const supplier = await db.suppliers.get(id);
-      if (!supplier) throw new Error('Tedarikçi bulunamadı.');
-      return supplier;
-    } catch (error) {
-      throw error;
-    }
+    const supplier = await db.suppliers.get(id);
+    if (!supplier) throw new Error('Tedarikçi bulunamadı.');
+    return supplier;
   },
 
   async create(data) {
@@ -80,16 +72,12 @@ export const supplierService = {
   },
 
   async delete(id) {
-    try {
-      const s = await this.getById(id);
-      if (s.balance !== 0 && s.balance !== undefined) {
-        throw new Error('Bakiyesi olan bir tedarikçi silinemez. Önce hesabı sıfırlamalısınız.');
-      }
-      await db.suppliers.update(id, { is_active: false });
-      return true;
-    } catch (error) {
-      throw error;
+    const s = await this.getById(id);
+    if (s.balance !== 0 && s.balance !== undefined) {
+      throw new Error('Bakiyesi olan bir tedarikçi silinemez. Önce hesabı sıfırlamalısınız.');
     }
+    await db.suppliers.update(id, { is_active: false });
+    return true;
   },
 
   async addTransaction(supplierId, type, amount, notes = '', referenceId = null) {

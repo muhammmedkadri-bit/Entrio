@@ -1,7 +1,5 @@
 import { db } from '../db';
-import { format } from 'date-fns';
-import { tr } from 'date-fns/locale';
-import { isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { isWithinInterval } from 'date-fns';
 
 export const cashService = {
   async getRegisters() {
@@ -13,13 +11,9 @@ export const cashService = {
   },
 
   async getRegisterById(id) {
-    try {
-      const reg = await db.cash_registers.get(id);
-      if (!reg || reg.is_active === false) throw new Error('Kasa bulunamadı.');
-      return reg;
-    } catch (e) {
-      throw e;
-    }
+    const reg = await db.cash_registers.get(id);
+    if (!reg || reg.is_active === false) throw new Error('Kasa bulunamadı.');
+    return reg;
   },
 
   async createRegister(data) {
@@ -110,25 +104,17 @@ export const cashService = {
   },
 
   async deleteRegister(registerId) {
-    try {
-      const txCount = await db.cash_transactions.where('register_id').equals(registerId).count();
-      if (txCount > 0) {
-        throw new Error(`Bu kasada ${txCount} hareket bulunuyor. Silmek için önce hareketleri kaldırın ya da kasayı arşivleyin.`);
-      }
-      await db.cash_registers.delete(registerId);
-      return true;
-    } catch (e) {
-      throw e;
+    const txCount = await db.cash_transactions.where('register_id').equals(registerId).count();
+    if (txCount > 0) {
+      throw new Error(`Bu kasada ${txCount} hareket bulunuyor. Silmek için önce hareketleri kaldırın ya da kasayı arşivleyin.`);
     }
+    await db.cash_registers.delete(registerId);
+    return true;
   },
 
   async archiveRegister(registerId) {
-    try {
-      await db.cash_registers.update(registerId, { is_active: false });
-      return true;
-    } catch (e) {
-      throw new Error('Kasa arşivlenirken hata oluştu.');
-    }
+    await db.cash_registers.update(registerId, { is_active: false });
+    return true;
   },
 
   async setDefaultRegister(registerId) {
@@ -376,63 +362,59 @@ export const cashService = {
     }
   },
 
-  async getDailySummary(registerId, targetDate = new Date()) {
-    try {
-      const { dayCloseService } = await import('./dayCloseService');
+  async getDailySummary(registerId) {
+    const { dayCloseService } = await import('./dayCloseService');
+    const reg = await db.cash_registers.get(registerId);
+    if (!reg) throw new Error('Kasa bulunamadı');
+
+    // Use the new centralized dayCloseService for filtering logic
+    const effectiveTxs = await dayCloseService.getRegisterTransactionsForToday(reg);
+
+    const summary = {
+      openingAmount: 0,
+      totals: {
+        sale_in: 0,
+        customer_payment_in: 0,
+        deposit_in: 0,
+        return_in: 0,
+        expense_out: 0,
+        supplier_payment_out: 0,
+        withdrawal_out: 0,
+        purchase_out: 0
+      },
+      calculatedClosing: 0
+    };
+
+    // Find the LATEST opening of today or just take the first opening
+    const openingTx = effectiveTxs.slice().reverse().find(t => t.transaction_type === 'opening');
+    if (openingTx) {
+      summary.openingAmount = openingTx.amount;
+      summary.calculatedClosing = openingTx.amount;
+    } else {
+      // if no opening today, try to figure out from last balance
       const reg = await db.cash_registers.get(registerId);
-      if (!reg) throw new Error('Kasa bulunamadı');
-
-      // Use the new centralized dayCloseService for filtering logic
-      const effectiveTxs = await dayCloseService.getRegisterTransactionsForToday(reg);
-
-      const summary = {
-        openingAmount: 0,
-        totals: {
-          sale_in: 0,
-          customer_payment_in: 0,
-          deposit_in: 0,
-          return_in: 0,
-          expense_out: 0,
-          supplier_payment_out: 0,
-          withdrawal_out: 0,
-          purchase_out: 0
-        },
-        calculatedClosing: 0
-      };
-
-      // Find the LATEST opening of today or just take the first opening 
-      const openingTx = effectiveTxs.slice().reverse().find(t => t.transaction_type === 'opening');
-      if (openingTx) {
-        summary.openingAmount = openingTx.amount;
-        summary.calculatedClosing = openingTx.amount;
-      } else {
-        // if no opening today, try to figure out from last balance
-        const reg = await db.cash_registers.get(registerId);
-         // not 100% accurate historically, but works for live daily tracking
-        summary.calculatedClosing = reg ? reg.current_balance : 0;
-      }
-
-      const ins = ['sale_in', 'customer_payment_in', 'deposit_in', 'return_in'];
-      const outs = ['purchase_out', 'supplier_payment_out', 'expense_out', 'withdrawal_out'];
-
-      effectiveTxs.forEach(t => {
-        if (t.transaction_type !== 'opening' && t.transaction_type !== 'closing') {
-          if (summary.totals[t.transaction_type] !== undefined) {
-             summary.totals[t.transaction_type] += t.amount;
-          }
-          
-          // only affect calculated closing if we are basing it off opening amount logic
-          if (openingTx) {
-            if (ins.includes(t.transaction_type) || t.transaction_type === 'in') summary.calculatedClosing += t.amount;
-            else if (outs.includes(t.transaction_type) || t.transaction_type === 'out') summary.calculatedClosing -= t.amount;
-          }
-        }
-      });
-
-      return summary;
-    } catch (e) {
-      throw e;
+        // not 100% accurate historically, but works for live daily tracking
+      summary.calculatedClosing = reg ? reg.current_balance : 0;
     }
+
+    const ins = ['sale_in', 'customer_payment_in', 'deposit_in', 'return_in'];
+    const outs = ['purchase_out', 'supplier_payment_out', 'expense_out', 'withdrawal_out'];
+
+    effectiveTxs.forEach(t => {
+      if (t.transaction_type !== 'opening' && t.transaction_type !== 'closing') {
+        if (summary.totals[t.transaction_type] !== undefined) {
+            summary.totals[t.transaction_type] += t.amount;
+        }
+
+        // only affect calculated closing if we are basing it off opening amount logic
+        if (openingTx) {
+          if (ins.includes(t.transaction_type) || t.transaction_type === 'in') summary.calculatedClosing += t.amount;
+          else if (outs.includes(t.transaction_type) || t.transaction_type === 'out') summary.calculatedClosing -= t.amount;
+        }
+      }
+    });
+
+    return summary;
   },
 
   async deleteTransaction(id) {

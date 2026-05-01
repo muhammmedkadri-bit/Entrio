@@ -3,56 +3,44 @@ import { format } from 'date-fns';
 
 export const productService = {
   async getAll(filters = {}) {
-    try {
-      let products = await db.products.toArray();
-      
-      // Filter active (soft delete)
-      products = products.filter(p => p.is_active !== false);
+    let products = await db.products.toArray();
 
-      if (filters.category_id) {
-        products = products.filter(p => p.category_id === filters.category_id);
-      }
-      
-      if (filters.search) {
-        const query = filters.search.toLowerCase();
-        products = products.filter(p => 
-          (p.name && p.name.toLowerCase().includes(query)) || 
-          (p.barcode && p.barcode.includes(query))
-        );
-      }
+    // Filter active (soft delete)
+    products = products.filter(p => p.is_active !== false);
 
-      if (filters.stockStatus) {
-        if (filters.stockStatus === 'critical') {
-          products = products.filter(p => p.stock_quantity > 0 && p.stock_quantity <= p.min_stock_level);
-        } else if (filters.stockStatus === 'out') {
-          products = products.filter(p => p.stock_quantity <= 0);
-        } else if (filters.stockStatus === 'normal') {
-          products = products.filter(p => p.stock_quantity > p.min_stock_level);
-        }
-      }
-
-      return products;
-    } catch (error) {
-      throw new Error('Ürünler getirilirken bir hata oluştu.');
+    if (filters.category_id) {
+      products = products.filter(p => p.category_id === filters.category_id);
     }
+
+    if (filters.search) {
+      const query = filters.search.toLowerCase();
+      products = products.filter(p =>
+        (p.name && p.name.toLowerCase().includes(query)) ||
+        (p.barcode && p.barcode.includes(query))
+      );
+    }
+
+    if (filters.stockStatus) {
+      if (filters.stockStatus === 'critical') {
+        products = products.filter(p => p.stock_quantity > 0 && p.stock_quantity <= p.min_stock_level);
+      } else if (filters.stockStatus === 'out') {
+        products = products.filter(p => p.stock_quantity <= 0);
+      } else if (filters.stockStatus === 'normal') {
+        products = products.filter(p => p.stock_quantity > p.min_stock_level);
+      }
+    }
+
+    return products;
   },
 
   async getById(id) {
-    try {
-      const product = await db.products.get(id);
-      if (!product) throw new Error('Ürün bulunamadı.');
-      return product;
-    } catch (error) {
-      throw error.message === 'Ürün bulunamadı.' ? error : new Error('Ürün detayı getirilirken hata oluştu.');
-    }
+    const product = await db.products.get(id);
+    if (!product) throw new Error('Ürün bulunamadı.');
+    return product;
   },
 
   async getByBarcode(barcode) {
-    try {
-      return await db.products.where('barcode').equals(barcode).filter(p => p.is_active !== false).first();
-    } catch (error) {
-      throw new Error('Barkod ile arama yapılırken hata oluştu.');
-    }
+    return await db.products.where('barcode').equals(barcode).filter(p => p.is_active !== false).first();
   },
 
   async create(data) {
@@ -87,20 +75,16 @@ export const productService = {
   },
 
   async delete(id) {
-    try {
-      // Check if product was sold
-      const salesCount = await db.sale_items.where('product_id').equals(id).count();
-      if (salesCount > 0) {
-        // Soft delete
-        await db.products.update(id, { is_active: false });
-        return { type: 'soft', message: 'Ürün satış geçmişi olduğu için pasife alındı.' };
-      } else {
-        // Hard delete
-        await db.products.delete(id);
-        return { type: 'hard', message: 'Ürün tamamen silindi.' };
-      }
-    } catch (error) {
-      throw new Error('Ürün silinirken bir hata oluştu.');
+    // Check if product was sold
+    const salesCount = await db.sale_items.where('product_id').equals(id).count();
+    if (salesCount > 0) {
+      // Soft delete
+      await db.products.update(id, { is_active: false });
+      return { type: 'soft', message: 'Ürün satış geçmişi olduğu için pasife alındı.' };
+    } else {
+      // Hard delete
+      await db.products.delete(id);
+      return { type: 'hard', message: 'Ürün tamamen silindi.' };
     }
   },
 

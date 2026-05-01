@@ -3,50 +3,38 @@ import { isWithinInterval } from 'date-fns';
 
 export const customerService = {
   async getAll(filters = {}) {
-    try {
-      let customers = await db.customers.toArray();
-      customers = customers.filter(c => c.is_active !== false);
+    let customers = await db.customers.toArray();
+    customers = customers.filter(c => c.is_active !== false);
 
-      if (filters.search) {
-        const query = filters.search.toLowerCase();
-        customers = customers.filter(c => 
-          c.name.toLowerCase().includes(query) || 
-          (c.phone && c.phone.includes(query)) ||
-          (c.tax_number && c.tax_number.includes(query))
-        );
-      }
-
-      if (filters.customerType && filters.customerType !== 'all') {
-        customers = customers.filter(c => c.customer_type === filters.customerType);
-      }
-
-      if (filters.balanceStatus) {
-        if (filters.balanceStatus === 'debt') Object.filter = c => c.balance > 0;
-        else if (filters.balanceStatus === 'credit') Object.filter = c => c.balance < 0;
-        else if (filters.balanceStatus === 'zero') Object.filter = c => c.balance === 0 || !c.balance;
-        
-        let customFilter = (c) => true;
-        if (filters.balanceStatus === 'debt') customFilter = c => c.balance > 0;
-        else if (filters.balanceStatus === 'credit') customFilter = c => c.balance < 0;
-        else if (filters.balanceStatus === 'zero') customFilter = c => c.balance === 0 || !c.balance;
-
-        customers = customers.filter(customFilter);
-      }
-
-      return customers;
-    } catch (error) {
-      throw new Error('Müşteriler getirilirken hata oluştu.');
+    if (filters.search) {
+      const query = filters.search.toLowerCase();
+      customers = customers.filter(c =>
+        c.name.toLowerCase().includes(query) ||
+        (c.phone && c.phone.includes(query)) ||
+        (c.tax_number && c.tax_number.includes(query))
+      );
     }
+
+    if (filters.customerType && filters.customerType !== 'all') {
+      customers = customers.filter(c => c.customer_type === filters.customerType);
+    }
+
+    if (filters.balanceStatus) {
+      let customFilter = (c) => true;
+      if (filters.balanceStatus === 'debt') customFilter = c => c.balance > 0;
+      else if (filters.balanceStatus === 'credit') customFilter = c => c.balance < 0;
+      else if (filters.balanceStatus === 'zero') customFilter = c => c.balance === 0 || !c.balance;
+
+      customers = customers.filter(customFilter);
+    }
+
+    return customers;
   },
 
   async getById(id) {
-    try {
-      const customer = await db.customers.get(id);
-      if (!customer) throw new Error('Müşteri bulunamadı.');
-      return customer;
-    } catch (error) {
-      throw error;
-    }
+    const customer = await db.customers.get(id);
+    if (!customer) throw new Error('Müşteri bulunamadı.');
+    return customer;
   },
 
   async create(data) {
@@ -87,16 +75,12 @@ export const customerService = {
   },
 
   async delete(id) {
-    try {
-      const c = await this.getById(id);
-      if (c.balance !== 0 && c.balance !== undefined) {
-        throw new Error('Bakiyesi olan bir müşteri silinemez. Önce hesabı sıfırlamalısınız.');
-      }
-      await db.customers.update(id, { is_active: false });
-      return true;
-    } catch (error) {
-      throw error;
+    const c = await this.getById(id);
+    if (c.balance !== 0 && c.balance !== undefined) {
+      throw new Error('Bakiyesi olan bir müşteri silinemez. Önce hesabı sıfırlamalısınız.');
     }
+    await db.customers.update(id, { is_active: false });
+    return true;
   },
 
   async collectPayment(customerId, amount, method, registerId, description) {

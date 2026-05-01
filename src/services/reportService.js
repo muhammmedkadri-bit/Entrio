@@ -1,14 +1,13 @@
 import { db } from '../db';
-import { startOfDay, endOfDay, isWithinInterval, format, differenceInDays } from 'date-fns';
+import { startOfDay, endOfDay, format, differenceInDays } from 'date-fns';
 import { tr } from 'date-fns/locale';
 
 export const reportService = {
   
   // 1. SALES REPORT
   async getSalesSummary(startDate, endDate) {
-    try {
-      // Sadece 'completed' satışlar
-      const sales = await db.sales
+    // Sadece 'completed' satışlar
+    const sales = await db.sales
         .where('created_at').between(startDate.getTime(), endDate.getTime())
         .toArray();
       
@@ -117,17 +116,12 @@ export const reportService = {
         summary.topProducts = topP.sort((a, b) => b.quantity - a.quantity).slice(0, 10);
       }
 
-      return summary;
-    } catch(e) {
-      console.error(e);
-      throw new Error('Satış verisi hesaplanamadı.');
-    }
+    return summary;
   },
 
   // 2. STOCK REPORT
   async getStockReport() {
-    try {
-      const products = await db.products.filter(p => p.is_active !== false).toArray();
+    const products = await db.products.filter(p => p.is_active !== false).toArray();
       const categories = await db.categories.toArray();
 
       const summary = {
@@ -188,17 +182,12 @@ export const reportService = {
       // En yüksek değerli kategoriyi başa alalım
       summary.byCategory.sort((a,b) => b.sale_value - a.sale_value);
 
-      return summary;
-    } catch(e) {
-      console.error(e);
-      throw new Error('Stok verisi hesaplanamadı.');
-    }
+    return summary;
   },
 
   // 3. CARI REPORT
   async getCariReport(type = 'customer') {
-    try {
-      const table = type === 'customer' ? db.customers : db.suppliers;
+    const table = type === 'customer' ? db.customers : db.suppliers;
       const txTable = type === 'customer' ? db.customer_transactions : db.supplier_transactions;
       
       const entities = await table.filter(e => e.is_active !== false).toArray();
@@ -251,17 +240,12 @@ export const reportService = {
         ? (type === 'customer' ? summary.totalReceivable : summary.totalPayable) / summary.debtorCount
         : 0;
 
-      return summary;
-    } catch(e) {
-      console.error(e);
-      throw new Error('Cari veriler hesaplanamadı.');
-    }
+    return summary;
   },
 
   // 4. CASH REPORT & PROFIT LOSS (Ayrı ama birleşik yapılabilir)
   async getProfitLoss(startDate, endDate) {
-    try {
-      const sales = await db.sales.where('created_at').between(startDate.getTime(), endDate.getTime()).toArray();
+    const sales = await db.sales.where('created_at').between(startDate.getTime(), endDate.getTime()).toArray();
       const completedSales = sales.filter(s => s.status === 'completed');
 
       const cashTxs = await db.cash_transactions.where('created_at').between(startDate.getTime(), endDate.getTime()).toArray();
@@ -360,17 +344,11 @@ export const reportService = {
          profit: x.revenue - x.cogs
       }));
 
-      return summary;
-
-    } catch(e) {
-      console.error(e);
-      throw new Error('Kâr Zarar özeti çıkarılamadı.');
-    }
+    return summary;
   },
 
   async getDashboardStats() {
-    try {
-      const todayStart = startOfDay(new Date());
+    const todayStart = startOfDay(new Date());
       const end = endOfDay(new Date());
 
       // Global Day Close cutoff: Find the latest day_close transaction for today
@@ -406,28 +384,20 @@ export const reportService = {
       const customers = await db.customers.filter(c => c.is_active !== false).toArray();
       const totalReceivable = customers.reduce((acc, c) => acc + (c.balance > 0 ? c.balance : 0), 0);
       
-      return {
-         todayRevenue,           // Brüt satış
-         todayReturns,           // İade toplamı (kasa çıkışı)
-         netRevenue: Math.max(0, todayRevenue - todayReturns), // Net satış
-         todayCount: completed.length,
-         todayReturnCount,
-         totalCash,
-         criticalCount,
-         totalReceivable
-      };
-    } catch(e) {
-      return {
-         todayRevenue: 0, todayReturns: 0, netRevenue: 0,
-         todayCount: 0, todayReturnCount: 0,
-         totalCash: 0, criticalCount: 0, totalReceivable: 0
-      }
-    }
+    return {
+        todayRevenue,           // Brüt satış
+        todayReturns,           // İade toplamı (kasa çıkışı)
+        netRevenue: Math.max(0, todayRevenue - todayReturns), // Net satış
+        todayCount: completed.length,
+        todayReturnCount,
+        totalCash,
+        criticalCount,
+        totalReceivable
+    };
   },
 
   async getCashReport(startDate, endDate) {
-    try {
-      const txs = await db.cash_transactions.where('created_at').between(startDate.getTime(), endDate.getTime()).toArray();
+    const txs = await db.cash_transactions.where('created_at').between(startDate.getTime(), endDate.getTime()).toArray();
       const ins = ['sale_in', 'customer_payment_in', 'deposit_in', 'return_in'];
       // ℹ️ return_out ayrı kategori — gerçek giderlerle (alış, kira vs.) karıştırılmaz
       const outs = ['purchase_out', 'supplier_payment_out', 'expense_out', 'withdrawal_out'];
@@ -500,10 +470,7 @@ export const reportService = {
       // netFlow: gelir - gerçek gider - iade ödemeleri
       summary.netFlow = summary.totalIncome - summary.totalExpense - summary.totalReturns;
 
-      return summary;
-    } catch(e) {
-      throw new Error('Kasa raporu alınamadı');
-    }
+    return summary;
   }
 
 };
