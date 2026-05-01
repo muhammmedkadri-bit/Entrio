@@ -1,0 +1,66 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #f4fbf0;
+  --color-brand-100: #e0f7d6;
+  --color-brand-200: #c1efad;
+  --color-brand-300: #a0e482;
+  --color-brand-400: #7ed957;
+  --color-brand-500: #65c43d;
+  --color-brand-600: #4da82e;
+  --color-brand-700: #3a8024;
+  --color-brand-800: #295a1a;
+  --color-brand-900: #1b3a11;
+
+  --color-primary-50: var(--color-brand-50);
+  --color-primary-100: var(--color-brand-100);
+  --color-primary-200: var(--color-brand-200);
+  --color-primary-300: var(--color-brand-300);
+  --color-primary-400: var(--color-brand-400);
+  --color-primary-500: var(--color-brand-500);
+  --color-primary-600: var(--color-brand-600);
+  --color-primary-700: var(--color-brand-700);
+  --color-primary-800: var(--color-brand-800);
+  --color-primary-900: var(--color-brand-900);
+}
+
+@layer base {
+  :root {
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    @apply bg-gray-50 text-slate-900 antialiased;
+  }
+
+  /* Hide number input spinners globally */
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+}
+
+@keyframes wiggle {
+  0%   { transform: rotate(0deg); }
+  25%  { transform: rotate(-1.5deg); }
+  75%  { transform: rotate(1.5deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.animate-wiggle {
+  animation: wiggle 0.3s ease-in-out infinite;
+}
+
+/* Remove default browser focus outlines from Recharts SVG elements */
+.recharts-wrapper,
+.recharts-wrapper svg,
+.recharts-surface {
+  outline: none !important;
+}

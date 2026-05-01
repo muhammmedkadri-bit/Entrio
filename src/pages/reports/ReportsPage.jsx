@@ -1,0 +1,85 @@
+import React, { useState } from 'react';
+import { startOfMonth, endOfMonth } from 'date-fns';
+import { ShoppingCart, Package, Users, Landmark, BarChart2 } from 'lucide-react';
+import { DateRangePicker } from './components/DateRangePicker';
+
+import { SalesReportTab } from './tabs/SalesReportTab';
+import { StockReportTab } from './tabs/StockReportTab';
+import { CariReportTab } from './tabs/CariReportTab';
+import { CashReportTab } from './tabs/CashReportTab';
+
+
+export const ReportsPage = () => {
+  const [activeTab, setActiveTab] = useState('sales');
+
+  const [dateRange, setDateRange] = useState({
+    startDate: startOfMonth(new Date()),
+    endDate: endOfMonth(new Date())
+  });
+
+  const handleDateChange = (start, end) => {
+    setDateRange({ startDate: start, endDate: end });
+  };
+
+  const tabs = [
+    { id: 'sales',       label: 'Satış Raporları',      icon: ShoppingCart },
+    { id: 'stock',       label: 'Stok ve Depo',          icon: Package },
+    { id: 'cari',        label: 'Cari Hesaplar',         icon: Users },
+    { id: 'cash',        label: 'Kasa (Nakit Akışı)',    icon: Landmark },
+
+  ];
+
+  return (
+    <div className="flex flex-col h-full gap-3">
+
+      {/* ── Header row ─────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 hide-on-print shrink-0">
+        <div>
+          <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Raporlar &amp; Analizler</h1>
+          <p className="text-sm text-slate-500 mt-0.5">
+            Sistemdeki tüm verilerinizi gelişmiş grafiklerle izleyebilir, detaylı çıktı alabilirsiniz.
+          </p>
+        </div>
+
+        <div
+          className={`shrink-0 ${activeTab === 'stock' ? 'opacity-50 pointer-events-none' : ''}`}
+          title={activeTab === 'stock' ? 'Stok değerlemesi her zaman güncel tutarına tabidir' : ''}
+        >
+          <DateRangePicker onChange={handleDateChange} defaultRange="this_month" />
+        </div>
+      </div>
+
+      {/* ── Tab bar ────────────────────────────────────────── */}
+      <div className="flex space-x-1 bg-slate-200/50 p-1 rounded-xl overflow-x-auto hide-on-print custom-scrollbar shrink-0">
+        {tabs.map(tab => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 whitespace-nowrap px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+                isActive
+                  ? 'bg-white text-brand-700 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Content ────────────────────────────────────────── */}
+      <div className="flex-1 min-h-0 overflow-y-auto pb-6">
+        {activeTab === 'sales'       && <SalesReportTab    startDate={dateRange.startDate} endDate={dateRange.endDate} />}
+        {activeTab === 'stock'       && <StockReportTab />}
+        {activeTab === 'cari'        && <CariReportTab />}
+        {activeTab === 'cash'        && <CashReportTab     startDate={dateRange.startDate} endDate={dateRange.endDate} />}
+
+      </div>
+
+    </div>
+  );
+};
