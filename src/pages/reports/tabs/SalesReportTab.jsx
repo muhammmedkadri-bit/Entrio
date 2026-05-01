@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { TrendingUp, Hash, ShoppingBag, Tag, Percent, Wallet, Package } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
@@ -29,13 +29,7 @@ export const SalesReportTab = ({ startDate, endDate }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (startDate && endDate) {
-      loadData();
-    }
-  }, [startDate, endDate]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const summary = await reportService.getSalesSummary(startDate, endDate);
@@ -46,7 +40,13 @@ export const SalesReportTab = ({ startDate, endDate }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [startDate, endDate]);
+
+  useEffect(() => {
+    if (startDate && endDate) {
+      loadData();
+    }
+  }, [startDate, endDate, loadData]);
 
   const handleCsv = () => {
     if (!data || !data.rawSales) return;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { ArrowDownLeft, ArrowUpRight, TrendingUp, Landmark } from 'lucide-react';
 import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
@@ -79,13 +79,7 @@ export const CashReportTab = ({ startDate, endDate }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (startDate && endDate) {
-      loadData();
-    }
-  }, [startDate, endDate]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const summary = await reportService.getCashReport(startDate, endDate);
@@ -96,7 +90,13 @@ export const CashReportTab = ({ startDate, endDate }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [startDate, endDate]);
+
+  useEffect(() => {
+    if (startDate && endDate) {
+      loadData();
+    }
+  }, [startDate, endDate, loadData]);
 
   const handleCsv = () => {
     if (!data || !data.dailySeries) return;

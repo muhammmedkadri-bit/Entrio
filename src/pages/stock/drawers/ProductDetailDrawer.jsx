@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { X, Package, ArrowLeftRight } from 'lucide-react';
 import { format } from 'date-fns';
+import toast from 'react-hot-toast';
 import { stockService } from '../../../services/stockService';
 import { Badge } from '../../../components/ui/Badge';
 import { PremiumLoader } from '../../../components/ui/PremiumLoader';
@@ -9,13 +10,8 @@ export const ProductDetailDrawer = ({ isOpen, onClose, product, onEditClick, onM
   const [movements, setMovements] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (isOpen && product) {
-      fetchMovements();
-    }
-  }, [isOpen, product]);
-
-  const fetchMovements = async () => {
+  const fetchMovements = useCallback(async () => {
+    if (!product) return;
     setLoading(true);
     try {
       const resp = await stockService.getMovements({ product_id: product.id });
@@ -26,7 +22,13 @@ export const ProductDetailDrawer = ({ isOpen, onClose, product, onEditClick, onM
     } finally {
       setLoading(false);
     }
-  };
+  }, [product]);
+
+  useEffect(() => {
+    if (isOpen && product) {
+      fetchMovements();
+    }
+  }, [isOpen, product, fetchMovements]);
 
   const getMovementTypeProps = (type) => {
     switch(type) {

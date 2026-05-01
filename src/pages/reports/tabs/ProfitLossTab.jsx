@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { TrendingUp, Package, Wallet, Receipt, Star, Tag } from 'lucide-react';
 import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -13,13 +13,7 @@ export const ProfitLossTab = ({ startDate, endDate }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (startDate && endDate) {
-      loadData();
-    }
-  }, [startDate, endDate]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const summary = await reportService.getProfitLoss(startDate, endDate);
@@ -30,7 +24,13 @@ export const ProfitLossTab = ({ startDate, endDate }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [startDate, endDate]);
+
+  useEffect(() => {
+    if (startDate && endDate) {
+      loadData();
+    }
+  }, [startDate, endDate, loadData]);
 
   const handleCsv = () => {
     if (!data || !data.productProfitability) return;

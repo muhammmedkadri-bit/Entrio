@@ -330,31 +330,27 @@ export const purchaseService = {
 
   // ─── Get By ID (full with items) ─────────────────────────────────────────
   async getById(id) {
-    try {
-      const p = await db.purchases.get(id);
-      if (!p) throw new Error('Fatura bulunamadı.');
-      const items = await db.purchase_items.where('purchase_id').equals(id).toArray();
+    const p = await db.purchases.get(id);
+    if (!p) throw new Error('Fatura bulunamadı.');
+    const items = await db.purchase_items.where('purchase_id').equals(id).toArray();
 
-      const supplier = p.supplier_id ? await db.suppliers.get(p.supplier_id) : null;
-      const total    = p.total_amount || 0;
-      const paid     = p.paid_amount  || 0;
-      const remaining = Math.round((total - paid) * 100) / 100;
-      let payment_status = 'unpaid';
-      if (remaining <= 0) payment_status = 'paid';
-      else if (paid > 0)  payment_status = 'partial';
+    const supplier = p.supplier_id ? await db.suppliers.get(p.supplier_id) : null;
+    const total    = p.total_amount || 0;
+    const paid     = p.paid_amount  || 0;
+    const remaining = Math.round((total - paid) * 100) / 100;
+    let payment_status = 'unpaid';
+    if (remaining <= 0) payment_status = 'paid';
+    else if (paid > 0)  payment_status = 'partial';
 
-      return {
-        ...p,
-        supplier,
-        supplier_name:  supplier?.name || p.supplier_name || null,
-        items,
-        remaining,
-        payment_status,
-        subtotal: p.subtotal || p.total_amount || 0,
-      };
-    } catch (e) {
-      throw e;
-    }
+    return {
+      ...p,
+      supplier,
+      supplier_name:  supplier?.name || p.supplier_name || null,
+      items,
+      remaining,
+      payment_status,
+      subtotal: p.subtotal || p.total_amount || 0,
+    };
   },
 
   // ─── Month Summary (for cards) ────────────────────────────────────────────

@@ -202,6 +202,10 @@ const DueDateDropdown = ({ methods, DUE_OPTIONS }) => {
   
   const [pickerOpen, setPickerOpen] = useState(false);
 
+  useEffect(() => {
+    // Synchronize pickerOpen with something if needed, but not inside renderTrigger
+  }, []);
+
   const displayLabel = useMemo(() => {
     if (mode === 'custom') {
       if (pickerOpen) return 'Özel Tarih Seçin';
@@ -228,12 +232,20 @@ const DueDateDropdown = ({ methods, DUE_OPTIONS }) => {
             }}
             
             renderTrigger={({ isOpen, setIsOpen }) => {
-              useEffect(() => { setPickerOpen(isOpen); }, [isOpen]);
+              // Using an event handler instead of syncing state during render
+              const handleToggle = () => {
+                const next = !isOpen;
+                setIsOpen(next);
+                setPickerOpen(next);
+              };
 
               return (
                 <DropdownMenu className="w-full">
                   <DropdownMenuTrigger asChild>
-                    <button type="button" className={`${inputCls} flex items-center justify-between w-full h-[40px] px-3 bg-white hover:bg-gray-50 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-100 transition-colors`}>
+                    <button
+                      type="button"
+                      onClick={handleToggle}
+                      className={`${inputCls} flex items-center justify-between w-full h-[40px] px-3 bg-white hover:bg-gray-50 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-100 transition-colors`}>
                       <div className="flex items-center gap-1.5 overflow-hidden">
                         <Calendar className="w-4 h-4 text-emerald-600/70 shrink-0" />
                         <span className="text-[13px] font-medium text-gray-700 truncate">{displayLabel}</span>

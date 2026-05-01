@@ -9,12 +9,6 @@ export const ReceiptModal = ({ isOpen, onClose, saleDetails }) => {
   const [companyInfo, setCompanyInfo] = useState({});
   const [template, setTemplate] = useState('template_1');
 
-  useEffect(() => {
-    if (isOpen) {
-      loadSettings();
-    }
-  }, [isOpen]);
-
   const loadSettings = async () => {
     try {
       const cInfo = await db.settings.get('company_info');
@@ -25,6 +19,12 @@ export const ReceiptModal = ({ isOpen, onClose, saleDetails }) => {
       console.error('Ayarlar yuklenemedi', error);
     }
   };
+
+  useEffect(() => {
+    if (isOpen) {
+      loadSettings();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     const handleKeydown = (e) => {

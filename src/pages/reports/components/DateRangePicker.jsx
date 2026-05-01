@@ -17,12 +17,6 @@ export const DateRangePicker = ({ onChange, defaultRange = 'this_month' }) => {
     { label: 'Özel', value: 'custom' },
   ];
 
-  useEffect(() => {
-    if (activeRange !== 'custom') {
-      applyPreset(activeRange);
-    }
-  }, [activeRange]);
-
   const applyPreset = (preset) => {
     const now = new Date();
     let start, end;
@@ -59,6 +53,12 @@ export const DateRangePicker = ({ onChange, defaultRange = 'this_month' }) => {
     
     onChange(start, end);
   };
+
+  useEffect(() => {
+    if (activeRange !== 'custom') {
+      applyPreset(activeRange);
+    }
+  }, [activeRange]);
 
   const handleCustomApply = () => {
     if (customStart && customEnd) {
