@@ -378,7 +378,7 @@ export const Dashboard = () => {
 
 
       {/* Main Content Area - Starts at exactly the same vertical line as sidebar menu items */}
-      <div className="space-y-4 flex-1">
+      <div className="flex flex-col gap-4 flex-1">
         
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
           <div className="xl:col-span-2 flex flex-col h-full">
