@@ -3,7 +3,7 @@ import { Printer, CheckCircle, RotateCcw } from 'lucide-react';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { format } from 'date-fns';
-import { db } from '../../db';
+import { settingsService } from '../../services/settingsService';
 
 export const ReceiptModal = ({ isOpen, onClose, saleDetails }) => {
   const [companyInfo, setCompanyInfo] = useState({});
@@ -17,8 +17,8 @@ export const ReceiptModal = ({ isOpen, onClose, saleDetails }) => {
 
   const loadSettings = async () => {
     try {
-      const cInfo = await db.settings.get('company_info');
-      const tInfo = await db.settings.get('receipt_template');
+      const cInfo = await settingsService.get('company_info');
+      const tInfo = await settingsService.get('receipt_template');
       if (cInfo && cInfo.value) setCompanyInfo(cInfo.value);
       if (tInfo && tInfo.value) setTemplate(tInfo.value);
     } catch (error) {

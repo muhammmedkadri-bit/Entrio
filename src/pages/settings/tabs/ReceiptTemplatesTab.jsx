@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../../../db';
+import { settingsService } from '../../../services/settingsService';
 import toast from '../../../components/ui/CustomToast';
 import { Save, CheckCircle2 } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
@@ -23,7 +23,7 @@ export const ReceiptTemplatesTab = () => {
 
   const loadTemplate = async () => {
     try {
-      const tpl = await db.settings.get('receipt_template');
+      const tpl = await settingsService.get('receipt_template');
       if (tpl && tpl.value) {
         setSelected(tpl.value);
       }
@@ -38,7 +38,7 @@ export const ReceiptTemplatesTab = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await db.settings.put({ key: 'receipt_template', value: selected });
+      await settingsService.put('receipt_template', selected);
       toast.success('Varsayılan fiş şablonu güncellendi.');
     } catch (e) {
       console.error('[ReceiptTemplates] Kaydetme Hatası:', e);

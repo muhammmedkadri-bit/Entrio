@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../../../db';
+import { settingsService } from '../../../services/settingsService';
 import toast from '../../../components/ui/CustomToast';
 import { Save, Building2, ImagePlus } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
@@ -22,7 +22,7 @@ export const CompanyInfoTab = () => {
 
   const loadCompanyInfo = async () => {
     try {
-      const info = await db.settings.get('company_info');
+      const info = await settingsService.get('company_info');
       if (info && info.value) {
         setForm(info.value);
       }
@@ -37,7 +37,7 @@ export const CompanyInfoTab = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await db.settings.put({ key: 'company_info', value: form });
+      await settingsService.put('company_info', form);
       toast.success('Şirket bilgileri başarıyla kaydedildi.');
     } catch (e) {
       console.error('[CompanyInfo] Kaydetme Hatası:', e);
