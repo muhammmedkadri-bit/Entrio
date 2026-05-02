@@ -32,43 +32,51 @@ export const ReportsPage = () => {
   return (
     <div className="flex flex-col h-full gap-3">
 
-      {/* ── Header row ─────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 hide-on-print shrink-0">
-        <div>
-          <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Raporlar &amp; Analizler</h1>
-          <p className="text-sm text-slate-500 mt-0.5">
-            Sistemdeki tüm verilerinizi gelişmiş grafiklerle izleyebilir, detaylı çıktı alabilirsiniz.
-          </p>
+      {/* ── Single Hero Header ─────────────────────────────────────── */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 hide-on-print shrink-0 flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-[#82e05a]/20 flex items-center justify-center">
+                <BarChart2 className="w-5 h-5 text-[#5da83f]" />
+              </div>
+              Raporlar & Analizler
+            </h1>
+            <p className="text-sm text-slate-500 mt-1">
+              Sistemdeki tüm verilerinizi gelişmiş grafiklerle izleyebilir, detaylı çıktı alabilirsiniz.
+            </p>
+          </div>
         </div>
 
-        <div
-          className={`shrink-0 ${activeTab === 'stock' ? 'opacity-50 pointer-events-none' : ''}`}
-          title={activeTab === 'stock' ? 'Stok değerlemesi her zaman güncel tutarına tabidir' : ''}
-        >
-          <DateRangePicker onChange={handleDateChange} defaultRange="this_month" />
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex space-x-1 bg-slate-100/80 p-1 rounded-xl overflow-x-auto custom-scrollbar shrink-0">
+            {tabs.map(tab => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 whitespace-nowrap px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+                    isActive
+                      ? 'bg-white text-brand-700 shadow-sm border border-slate-200/50'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+          
+          <div
+            className={`shrink-0 ${activeTab === 'stock' ? 'opacity-50 pointer-events-none' : ''}`}
+            title={activeTab === 'stock' ? 'Stok değerlemesi her zaman güncel tutarına tabidir' : ''}
+          >
+            <DateRangePicker onChange={handleDateChange} defaultRange="this_month" variant="compact" />
+          </div>
         </div>
-      </div>
-
-      {/* ── Tab bar ────────────────────────────────────────── */}
-      <div className="flex space-x-1 bg-slate-200/50 p-1 rounded-xl overflow-x-auto hide-on-print custom-scrollbar shrink-0">
-        {tabs.map(tab => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 whitespace-nowrap px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
-                isActive
-                  ? 'bg-white text-brand-700 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
       </div>
 
       {/* ── Content ────────────────────────────────────────── */}

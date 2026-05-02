@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { TrendingUp, Hash, ShoppingBag, Tag, Percent, Wallet, Package } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { StatCard } from '../../../components/ui/StatCard';
 import { EmptyReport } from '../components/EmptyReport';
 import { ReportExportBar } from '../components/ReportExportBar';
@@ -107,19 +107,19 @@ export const SalesReportTab = ({ startDate, endDate }) => {
           <h3 className="font-bold text-slate-700 mb-4">Günlük Satış Trendi</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data.dailySeries}>
+              <BarChart data={data.dailySeries} barSize={24}>
                 <defs>
-                  <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#65c43d" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#65c43d" stopOpacity={0}/>
+                  <linearGradient id="colorTotalBar" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#82e05a" stopOpacity={0.95}/>
+                    <stop offset="95%" stopColor="#5da83f" stopOpacity={1}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} tickFormatter={(val) => `₺${val}`} />
-                <RechartsTooltip content={<CustomTooltip />} cursor={{ stroke: '#94a3b8', strokeWidth: 1, strokeDasharray: '4 4' }} />
-                <Area type="monotone" dataKey="total" name="Günlük Ciro" stroke="#65c43d" strokeWidth={3} fillOpacity={1} fill="url(#colorTotal)" />
-              </AreaChart>
+                <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
+                <Bar dataKey="total" name="Günlük Ciro" fill="url(#colorTotalBar)" radius={[4, 4, 0, 0]} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>

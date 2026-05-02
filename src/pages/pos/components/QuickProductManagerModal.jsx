@@ -113,7 +113,11 @@ export const QuickProductManagerModal = ({
         display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
         paddingTop: '48px', paddingBottom: '24px',
       }}
-      onClick={onClose}
+      onClick={() => {
+        if (!showQuickCreate) {
+          onClose();
+        }
+      }}
     >
       <div
         className="h-[85vh] max-h-[85vh] flex flex-col overflow-hidden"

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays, subMonths, subYears, startOfYear, endOfYear } from 'date-fns';
 import { Calendar } from 'lucide-react';
 
-export const DateRangePicker = ({ onChange, defaultRange = 'this_month' }) => {
+export const DateRangePicker = ({ onChange, defaultRange = 'this_month', variant = 'default' }) => {
   const [activeRange, setActiveRange] = useState(defaultRange);
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
@@ -66,8 +66,12 @@ export const DateRangePicker = ({ onChange, defaultRange = 'this_month' }) => {
     }
   };
 
+  const containerCls = variant === 'compact' 
+    ? "flex flex-col md:flex-row items-center justify-end gap-2"
+    : "bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-200 hide-on-print flex flex-col md:flex-row items-center justify-between gap-4";
+
   return (
-    <div className="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-200 hide-on-print flex flex-col md:flex-row items-center justify-between gap-4">
+    <div className={containerCls}>
       <div className="flex flex-wrap gap-2 justify-center md:justify-start flex-1 w-full">
         {ranges.map(r => (
            <button 

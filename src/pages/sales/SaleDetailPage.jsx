@@ -289,7 +289,7 @@ export const SaleDetailPage = () => {
                         {['ÜRÜN / HİZMET', 'MİKTAR', 'BİRİM', 'BİRİM FİYAT', 'İSKONTO', 'KDV', 'TOPLAM'].map(h => (
                           <th key={h} className={`pb-2 pt-2 text-[10px] font-bold text-gray-400 tracking-wide px-3 first:pl-0 last:pr-0 ${
                             h === 'TOPLAM' ? 'text-right' :
-                            h === 'MİKTAR' ? 'text-center' : 'text-left'
+                            (h === 'MİKTAR' || h === 'İSKONTO' || h === 'KDV') ? 'text-center' : 'text-left'
                           }`}>{h}</th>
                         ))}
                       </tr>
