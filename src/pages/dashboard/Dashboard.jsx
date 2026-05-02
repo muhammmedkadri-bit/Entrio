@@ -461,11 +461,11 @@ export const Dashboard = () => {
 
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-4">
           <div className="xl:col-span-3">
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden h-[320px] flex flex-col">
             <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
               <h3 className="font-bold text-slate-800 flex items-center gap-2"><ListChecks className="w-4 h-4 text-[#7ed957]"/> Son 5 İşlem</h3>
             </div>
-            <div className="overflow-x-auto">
+            <div className="overflow-auto flex-1">
               <table className="w-full text-left text-sm whitespace-nowrap">
                 <tbody className="divide-y divide-slate-100">
                   {recentTransactions.map(tx => {
@@ -526,16 +526,16 @@ export const Dashboard = () => {
 
                     return (
                       <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors cursor-pointer" onClick={handleRowClick}>
-                        <td className="px-4 py-5 md:py-6">
+                        <td className="px-4 py-4 md:py-5">
                           <div className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${pillClass}`}>
                             <IconComponent className="w-3 h-3 flex-shrink-0" />
                             <span>{typeLabel}</span>
                           </div>
                         </td>
-                        <td className="px-4 py-5 md:py-6">
+                        <td className="px-4 py-4 md:py-5">
                           <div className="font-bold text-slate-700 max-w-[200px] truncate">{desc}</div>
                         </td>
-                        <td className="px-4 py-5 md:py-6 text-xs">
+                        <td className="px-4 py-4 md:py-5 text-xs">
                           {tx.entityName ? (
                             <div className="flex items-center gap-2">
                               <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">{tx.entityName}</span>
@@ -549,10 +549,10 @@ export const Dashboard = () => {
                             <span className="text-slate-300">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-5 md:py-6 text-xs font-medium text-slate-500">
+                        <td className="px-4 py-4 md:py-5 text-xs font-medium text-slate-500">
                            {safeFormat(tx.created_at, 'HH:mm')}
                         </td>
-                        <td className={`px-4 py-5 md:py-6 text-right font-bold tabular-nums ${isOut || tx.amount < 0 ? 'text-rose-600' : 'text-[#5da83f]'}`}>
+                        <td className={`px-4 py-4 md:py-5 text-right font-bold tabular-nums ${isOut || tx.amount < 0 ? 'text-rose-600' : 'text-[#5da83f]'}`}>
                           {isOut || tx.amount < 0 ? '-' : '+'}{formatCurrency(tx.displayAmount)}
                         </td>
                       </tr>
@@ -568,8 +568,8 @@ export const Dashboard = () => {
 
         </div>
         
-        <div className="xl:col-span-2 flex flex-col min-h-[250px] h-full">
-            <div className="bg-[#fef9c3] rounded-2xl shadow-sm border border-[#fef08a] overflow-hidden flex flex-col flex-1 h-full">
+        <div className="xl:col-span-2 flex flex-col h-full">
+            <div className="bg-[#fef9c3] rounded-2xl shadow-sm border border-[#fef08a] overflow-hidden flex flex-col h-[320px]">
             <div className="p-4 border-b border-[#fde047] bg-[#fef08a]/50">
               <h3 className="font-bold text-[#854d0e] text-sm tracking-wide">Hızlı Notlar</h3>
             </div>
