@@ -459,9 +459,9 @@ export const Dashboard = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-4">
-          <div className="xl:col-span-3">
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden h-[320px] flex flex-col">
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 flex-1">
+          <div className="xl:col-span-3 flex flex-col">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden h-full min-h-[380px] flex flex-col">
             <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
               <h3 className="font-bold text-slate-800 flex items-center gap-2"><ListChecks className="w-4 h-4 text-[#7ed957]"/> Son 5 İşlem</h3>
             </div>
@@ -569,7 +569,7 @@ export const Dashboard = () => {
         </div>
         
         <div className="xl:col-span-2 flex flex-col h-full">
-            <div className="bg-[#fef9c3] rounded-2xl shadow-sm border border-[#fef08a] overflow-hidden flex flex-col h-[320px]">
+            <div className="bg-[#fef9c3] rounded-2xl shadow-sm border border-[#fef08a] overflow-hidden flex flex-col h-full min-h-[380px]">
             <div className="p-4 border-b border-[#fde047] bg-[#fef08a]/50">
               <h3 className="font-bold text-[#854d0e] text-sm tracking-wide">Hızlı Notlar</h3>
             </div>
