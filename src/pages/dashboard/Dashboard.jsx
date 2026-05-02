@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import toast from '../../components/ui/CustomToast';
-import { Banknote, ShoppingCart, AlertTriangle, TrendingUp, Users, ChevronRight, ArrowDownLeft, ArrowUpRight, ArrowRightLeft, Settings2, Moon, Plus, Trash2, ListChecks, Calendar, Clock, Calculator, Building2, TrendingDown, PieChart as PieChartIcon, Activity, ScanBarcode } from 'lucide-react';
+import { Banknote, ShoppingCart, AlertTriangle, TrendingUp, Users, ChevronRight, ArrowDownLeft, ArrowUpRight, ArrowRightLeft, Settings2, Moon, Plus, Trash2, ListChecks, Calendar, Clock, Calculator, Building2, TrendingDown, PieChart as PieChartIcon, Activity, ScanBarcode, Edit2 } from 'lucide-react';
 import { CurrencyWidget } from '../../components/ui/CurrencyWidget';
 import {
   AreaChart, Area, LineChart, Line, BarChart, Bar,
@@ -631,12 +631,12 @@ export const Dashboard = () => {
                 {[...quickNotes, ...Array(Math.max(0, 5 - quickNotes.length)).fill({ isEmpty: true })].map((n, idx) => {
                   if (n.isEmpty) {
                     return (
-                      <li key={`empty_${idx}`} className="flex-1 bg-white/20 p-3 rounded-lg border border-transparent min-h-[46px]"></li>
+                      <li key={`empty_${idx}`} className="flex-1 bg-transparent p-3 rounded-lg border border-transparent min-h-[46px]"></li>
                     );
                   }
                   
                   return (
-                    <li key={n.id} className="flex-1 bg-white/40 p-3 rounded-lg flex items-start gap-2 group border border-transparent hover:border-[#fde047] transition-colors min-h-[46px]">
+                    <li key={n.id} className="flex-1 bg-white/60 p-3 rounded-lg flex items-start gap-2 group border border-[#fde047] hover:border-[#eab308] transition-colors min-h-[46px]">
                       {editingNoteId === n.id ? (
                         <div className="flex-1 flex gap-2">
                           <input 
@@ -658,9 +658,22 @@ export const Dashboard = () => {
                           {n.text}
                         </p>
                       )}
-                      <button onClick={() => removeNote(n.id)} className="text-[#ca8a04]/50 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => { setEditingNoteId(n.id); setEditingNoteText(n.text); }} 
+                          className="text-slate-500 hover:text-slate-700"
+                          title="Düzenle"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => removeNote(n.id)} 
+                          className="text-[#ca8a04]/60 hover:text-red-500"
+                          title="Sil"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </li>
                   );
                 })}
