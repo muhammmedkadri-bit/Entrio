@@ -304,7 +304,7 @@ export const Dashboard = () => {
   }
 
   return (
-    <div className="-mt-3 pb-14 flex flex-col min-h-full">
+    <div className="-mt-3 pb-[46px] flex flex-col h-full">
       
       {/* Dashboard Header - H-16 aligns exactly with Sidebar top border */}
       <div className="h-auto md:h-16 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-50">
@@ -465,8 +465,8 @@ export const Dashboard = () => {
             <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
               <h3 className="font-bold text-slate-800 flex items-center gap-2"><ListChecks className="w-4 h-4 text-[#7ed957]"/> Son 5 İşlem</h3>
             </div>
-            <div className="overflow-auto flex-1">
-              <table className="w-full h-full text-left text-sm whitespace-nowrap">
+            <div className="overflow-auto flex-1 relative">
+              <table className="w-full h-full absolute inset-0 text-left text-sm whitespace-nowrap">
                 <tbody className="divide-y divide-slate-100">
                   {recentTransactions.map(tx => {
                     const isOut = ['purchase_out', 'return_out', 'expense_out', 'supplier_payment_out', 'withdrawal_out'].includes(tx.transaction_type);
@@ -526,16 +526,16 @@ export const Dashboard = () => {
 
                     return (
                       <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors cursor-pointer" onClick={handleRowClick}>
-                        <td className="px-4 py-4 md:py-5">
+                        <td className="px-4 py-2">
                           <div className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${pillClass}`}>
                             <IconComponent className="w-3 h-3 flex-shrink-0" />
                             <span>{typeLabel}</span>
                           </div>
                         </td>
-                        <td className="px-4 py-4 md:py-5">
+                        <td className="px-4 py-2">
                           <div className="font-bold text-slate-700 max-w-[200px] truncate">{desc}</div>
                         </td>
-                        <td className="px-4 py-4 md:py-5 text-xs">
+                        <td className="px-4 py-2 text-xs">
                           {tx.entityName ? (
                             <div className="flex items-center gap-2">
                               <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">{tx.entityName}</span>
@@ -549,10 +549,10 @@ export const Dashboard = () => {
                             <span className="text-slate-300">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-4 md:py-5 text-xs font-medium text-slate-500">
+                        <td className="px-4 py-2 text-xs font-medium text-slate-500">
                            {safeFormat(tx.created_at, 'HH:mm')}
                         </td>
-                        <td className={`px-4 py-4 md:py-5 text-right font-bold tabular-nums ${isOut || tx.amount < 0 ? 'text-rose-600' : 'text-[#5da83f]'}`}>
+                        <td className={`px-4 py-2 text-right font-bold tabular-nums ${isOut || tx.amount < 0 ? 'text-rose-600' : 'text-[#5da83f]'}`}>
                           {isOut || tx.amount < 0 ? '-' : '+'}{formatCurrency(tx.displayAmount)}
                         </td>
                       </tr>
