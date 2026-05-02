@@ -129,9 +129,9 @@ export const ProductDetailPage = () => {
 
   const stockColor =
     !product ? '' :
-    product.stock_quantity > (product.min_stock_level || 0) ? 'text-emerald-600 bg-emerald-50 border-emerald-200' :
-    product.stock_quantity > 0 ? 'text-orange-500 bg-orange-50 border-orange-200' :
-    'text-red-600 bg-red-50 border-red-200';
+    product.stock_quantity > (product.min_stock_level || 0) ? 'text-[#5da83f] bg-white border-[#82e05a]/30 shadow-sm' :
+    product.stock_quantity > 0 ? 'text-orange-500 bg-white border-orange-200 shadow-sm' :
+    'text-red-500 bg-white border-red-200 shadow-sm';
 
   const handleCategorySelect = async (cat) => {
     if (cat.id === product.category_id) { setShowCatPopup(false); return; }
@@ -352,7 +352,7 @@ export const ProductDetailPage = () => {
                   <span className="text-xs font-bold ml-0.5 italic text-slate-400">Stok takibi yapılmıyor</span>
                 </div>
               ) : (
-                <StatCard label="Mevcut Stok" value={`${product.stock_quantity} ${product.unit}`} icon={Layers} colorClass={`${stockColor} border`} iconColorClass="text-blue-500" />
+                <StatCard label="Mevcut Stok" value={`${product.stock_quantity} ${product.unit}`} icon={Layers} colorClass={`${stockColor} border`} iconColorClass="text-[#5da83f]" />
               )}
               <StatCard label="Satış" value={fmt(product.sale_price)} icon={TrendingUp} colorClass="text-gray-600 bg-gray-50 border-gray-200" iconColorClass="text-[#82e05a]" />
               <StatCard label="Alış" value={fmt(product.purchase_price)} icon={TrendingDown} colorClass="text-gray-600 bg-gray-50 border-gray-200" iconColorClass="text-rose-500" />

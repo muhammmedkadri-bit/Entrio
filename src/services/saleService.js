@@ -55,6 +55,7 @@ export const saleService = {
                 movement_type: 'sale',
                 quantity:      item.quantity,
                 unit_price:    item.unit_price,
+                item_discount: item.discount || 0,
                 reference:     saleNumber,
                 created_at:    now,
               });

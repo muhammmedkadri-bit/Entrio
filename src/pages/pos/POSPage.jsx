@@ -327,6 +327,28 @@ export const POSPage = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [items, customerModalOpen, quickProductModalOpen, receiptModalOpen, qpmOpen, supplierModalOpen, paymentMethod, cashAmount, cardAmount, transferAmount, total, selectedCustomer, showDropdown, swapMode, selectedProductId]);
 
+  // ── Global Barcode Capture: redirect stray keypresses to search input ──────
+  useEffect(() => {
+    const handleGlobalKey = (e) => {
+      // Skip if any modal open or a special key
+      if (customerModalOpen || quickProductModalOpen || receiptModalOpen || qpmOpen || supplierModalOpen) return;
+      // Skip if focus is already inside an input / textarea / select / button
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'button') return;
+      // Skip modifier combos, function keys, and non-printable
+      if (e.ctrlKey || e.altKey || e.metaKey) return;
+      if (e.key.length !== 1) return;
+      // Redirect the character into the barcode input
+      const input = barcodeWrapperRef.current?.querySelector('input') || searchInputRef.current;
+      if (input) {
+        input.focus();
+        // Let the character flow naturally into the focused input
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKey);
+    return () => window.removeEventListener('keydown', handleGlobalKey);
+  }, [customerModalOpen, quickProductModalOpen, receiptModalOpen, qpmOpen, supplierModalOpen]);
+
   const focusSearch = () => {
     const input = barcodeWrapperRef.current?.querySelector('input') || searchInputRef.current;
     if (input) input.focus();
@@ -353,9 +375,9 @@ export const POSPage = () => {
         setSearchQuery('');
         setShowDropdown(false);
       } else {
-        toast.error('Ürün bulunamadı! Barkod: ' + code);
+        // Open the Quick Product Manager in create mode with the scanned barcode pre-filled
         setScannedNotFound(code);
-        setQuickProductModalOpen(true);
+        setQpmOpen(true);
       }
     } catch (e) {
       console.error('[POS] Barkod Tarama Hatası:', e);
@@ -1149,10 +1171,12 @@ export const POSPage = () => {
 
       <QuickProductManagerModal
         isOpen={qpmOpen}
-        onClose={() => setQpmOpen(false)}
+        onClose={() => { setQpmOpen(false); setScannedNotFound(''); }}
         displayedProducts={displayedProducts}
         onAddProduct={handleQPMAdd}
         onStartSwap={handleStartSwap}
+        initialBarcode={scannedNotFound}
+        openOnCreate={!!scannedNotFound}
       />
 
       <SwapConfirmModal

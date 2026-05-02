@@ -10,6 +10,8 @@ const fmt = (v) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency:
 export const QuickProductManagerModal = ({
   isOpen, onClose,
   displayedProducts, onAddProduct, onStartSwap,
+  initialBarcode = '',
+  openOnCreate = false,
 }) => {
   const [all, setAll] = useState([]);
   const [query, setQuery] = useState('');
@@ -28,9 +30,14 @@ export const QuickProductManagerModal = ({
       fetchProducts();
       setQuery('');
       setCurrentPage(1);
-      setShowQuickCreate(false);
+      // If triggered by a scanned barcode that was not found, go directly to create form
+      if (openOnCreate || initialBarcode) {
+        setShowQuickCreate(true);
+      } else {
+        setShowQuickCreate(false);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, openOnCreate, initialBarcode]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -173,6 +180,7 @@ export const QuickProductManagerModal = ({
         {showQuickCreate ? (
           <QuickCreateProductForm 
             searchQuery={query}
+            initialBarcode={initialBarcode}
             hasEmptySlot={displayedProducts.length < 12}
             onClose={() => { setShowQuickCreate(false); fetchProducts(); }}
             onAddProduct={(prod) => { handleAdd(prod); setShowQuickCreate(false); fetchProducts(); }}

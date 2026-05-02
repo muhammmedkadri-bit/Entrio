@@ -320,11 +320,13 @@ export const SaleDetailPage = () => {
                             <td className="py-3 px-2 text-gray-500">{item.productUnit}</td>
                             <td className="py-3 px-2 font-medium text-gray-800">₺{fmt(item.unit_price)}</td>
                             <td className="py-3 px-2 text-center">
-                              {itemDiscount > 0.01 ? (
-                                <span className="text-xs font-semibold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">-₺{fmt(itemDiscount)}</span>
-                              ) : (
-                                <span className="text-gray-300">—</span>
-                              )}
+                              <div className="flex justify-center">
+                                {itemDiscount > 0.01 ? (
+                                  <span className="text-xs font-semibold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">-₺{fmt(itemDiscount)}</span>
+                                ) : (
+                                  <span className="text-gray-300">—</span>
+                                )}
+                              </div>
                             </td>
                             <td className="py-3 px-2 text-center">
                               {item.kdv_rate > 0

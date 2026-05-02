@@ -133,8 +133,16 @@ export const StockMovementsTab = ({ movements = [], product }) => {
                       {input ? '+' : '-'}{m.quantity} {product?.unit}
                     </span>
                   </td>
-                  {/* Birim Fiyat */}
-                  <td className="px-4 py-[11.5px] text-gray-500 tabular-nums">{m.unit_price ? fmt(m.unit_price) : '—'}</td>
+                  {/* Birim Fiyat — net (iskonto düşülmüş) */}
+                  <td className="px-4 py-[11.5px] text-gray-500 tabular-nums">
+                    {m.unit_price ? (() => {
+                      // Eğer harekette item_discount varsa göster, yoksa brüt fiyatı göster
+                      const netPrice = m.item_discount > 0
+                        ? m.unit_price - (m.item_discount / (m.quantity || 1))
+                        : m.unit_price;
+                      return fmt(netPrice);
+                    })() : '—'}
+                  </td>
                   {/* Tarih / Saat */}
                   <td className="px-4 py-[11.5px] whitespace-nowrap text-xs font-medium text-gray-500">{fmtDate(m.created_at)}</td>
                 </tr>

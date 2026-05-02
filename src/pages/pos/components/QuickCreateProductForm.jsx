@@ -166,7 +166,7 @@ const InlineSelect = ({ value, onChange, options, placeholder, addLabel, onAdd }
 };
 
 // ── Main component ─────────────────────────────────────────────────────────────
-export const QuickCreateProductForm = ({ searchQuery, onClose, onAddProduct, hasEmptySlot }) => {
+export const QuickCreateProductForm = ({ searchQuery, onClose, onAddProduct, hasEmptySlot, initialBarcode = '' }) => {
   const [categories, setCategories] = useState([]);
   const [units, setUnits]           = useState(loadUnits);
   const [loading, setLoading]       = useState(false);
@@ -191,6 +191,13 @@ export const QuickCreateProductForm = ({ searchQuery, onClose, onAddProduct, has
     categoryService.getAll().then(setCategories).catch(() => toast.error('Kategoriler yüklenemedi'));
 
   useEffect(() => { loadCategories(); }, []);
+
+  // Pre-fill barcode when triggered from a scanner scan
+  useEffect(() => {
+    if (initialBarcode) {
+      setValue('barcode', initialBarcode);
+    }
+  }, [initialBarcode, setValue]);
 
   const handleAddCategory = async (name) => {
     const id = await categoryService.create({ name, parent_id: null });
