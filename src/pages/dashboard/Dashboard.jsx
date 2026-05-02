@@ -172,7 +172,13 @@ export const Dashboard = () => {
           color:  PIE_COLORS[k] || '#94a3b8',
         }));
 
-      setCharts({ dailyIncomeExpense: cashReport.dailySeries, todayPie: pieData });
+      setCharts({ 
+        dailyIncomeExpense: cashReport.dailySeries.map(d => ({
+          ...d,
+          income: Math.max(0, d.income - d.returns)
+        })), 
+        todayPie: pieData 
+      });
 
       // ── 2. Son İşlemler — ID bazlı hedefli sorgular ─────────
       const allowedTypes = ['sale_in','purchase_out','return_in','return_out','expense_out','supplier_payment_out','withdrawal_out','customer_payment_in','deposit_in'];
