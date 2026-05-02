@@ -1207,7 +1207,7 @@ export const POSPage = () => {
 
       <QuickProductManagerModal
         isOpen={qpmOpen}
-        onClose={() => { setQpmOpen(false); setScannedNotFound(''); setSearchQuery(''); }}
+        onClose={() => { setQpmOpen(false); setScannedNotFound(''); setSearchQuery(''); lastScanRef.current = { code: '', time: 0 }; }}
         displayedProducts={displayedProducts}
         onAddProduct={handleQPMAdd}
         onStartSwap={handleStartSwap}

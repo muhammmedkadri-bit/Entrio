@@ -35,6 +35,7 @@ export const Sidebar = () => {
   const { user, logout } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
+  const [hoveredItem, setHoveredItem] = React.useState(null);
 
   const collapsed = sidebarCollapsed;
 
@@ -71,13 +72,10 @@ export const Sidebar = () => {
         {/* ── Logo Area ── */}
         <div className="flex items-center h-16 bg-slate-50 border-b border-slate-200 relative overflow-hidden flex-shrink-0">
           
-          {/* Expanded logo — fades/slides out when collapsing */}
+          {/* Expanded logo */}
           <div
             className="absolute inset-0 flex items-center px-4 transition-opacity duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
-            style={{
-              opacity: collapsed ? 0 : 1,
-              pointerEvents: collapsed ? 'none' : 'auto',
-            }}
+            style={{ opacity: collapsed ? 0 : 1, pointerEvents: collapsed ? 'none' : 'auto' }}
           >
             <div
               className="w-[140px] h-[48px] mix-blend-darken -ml-1 flex-shrink-0"
@@ -90,13 +88,10 @@ export const Sidebar = () => {
             />
           </div>
 
-          {/* Collapsed icon — fades/scales in when collapsing */}
+          {/* Collapsed icon */}
           <div
             className="absolute inset-0 flex items-center justify-center transition-opacity duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
-            style={{
-              opacity: collapsed ? 1 : 0,
-              pointerEvents: collapsed ? 'auto' : 'none',
-            }}
+            style={{ opacity: collapsed ? 1 : 0, pointerEvents: collapsed ? 'auto' : 'none' }}
           >
             <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"
               className="drop-shadow-[0_0_6px_rgba(130,224,90,0.2)]">
@@ -107,10 +102,7 @@ export const Sidebar = () => {
 
           {/* Mobile close button */}
           {!collapsed && (
-            <button
-              onClick={toggleSidebar}
-              className="lg:hidden absolute right-3 text-slate-400 hover:text-slate-700 transition-colors"
-            >
+            <button onClick={toggleSidebar} className="lg:hidden absolute right-3 text-slate-400 hover:text-slate-700 transition-colors">
               <X className="w-5 h-5" />
             </button>
           )}
@@ -121,65 +113,87 @@ export const Sidebar = () => {
           {navItems.map((item) => {
             const extraActive = item.alsoActiveFor?.some(re => re.test(location.pathname)) ?? false;
             return (
-              <NavLink
+              <div
                 key={item.to}
-                to={item.to}
-                onClick={(e) => handleNavClick(e, item.to)}
-                className={({ isActive }) => {
-                  const active = isActive || extraActive;
-                  return [
-                    'flex items-center py-2.5 text-sm font-medium rounded-xl transition-colors duration-100 group relative overflow-hidden',
-                    collapsed ? 'justify-center px-0' : 'px-3 gap-3',
-                    active
-                      ? 'bg-brand-50 text-brand-600 border border-brand-100'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-transparent',
-                  ].join(' ');
-                }}
+                className="relative"
+                onMouseEnter={() => collapsed && setHoveredItem(item.to)}
+                onMouseLeave={() => setHoveredItem(null)}
               >
-                {({ isActive }) => {
-                  const active = isActive || extraActive;
-                  return (
-                    <>
-                      {active && !collapsed && (
-                        <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-brand-500 rounded-r-full" />
-                      )}
-                      <item.icon
-                        className={`w-5 h-5 flex-shrink-0 transition-transform duration-100 ${
-                          active ? 'scale-110 text-brand-600' : 'text-slate-500 group-hover:scale-110 group-hover:text-brand-600'
-                        }`}
-                      />
-                      {/* Nav label — fades with sidebar width */}
-                      <span
-                        className="relative z-10 truncate whitespace-nowrap transition-[opacity,max-width] duration-150 ease-in-out"
-                        style={{
-                          maxWidth: collapsed ? 0 : 160,
-                          opacity: collapsed ? 0 : 1,
-                          overflow: 'hidden',
-                        }}
-                      >
-                        {item.name}
-                      </span>
-
-                      {/* Collapsed tooltip (Paraşüt Style) */}
-                      {collapsed && (
-                        <div
-                          className="pointer-events-none absolute left-full ml-2 z-[200] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-150"
-                          style={{
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                          }}
+                <NavLink
+                  to={item.to}
+                  onClick={(e) => handleNavClick(e, item.to)}
+                  className={({ isActive }) => {
+                    const active = isActive || extraActive;
+                    return [
+                      'flex items-center py-2.5 text-sm font-medium rounded-xl transition-colors duration-100 relative',
+                      collapsed ? 'justify-center px-0' : 'px-3 gap-3',
+                      active
+                        ? 'bg-brand-50 text-brand-600 border border-brand-100'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-transparent',
+                    ].join(' ');
+                  }}
+                >
+                  {({ isActive }) => {
+                    const active = isActive || extraActive;
+                    return (
+                      <>
+                        {active && !collapsed && (
+                          <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-brand-500 rounded-r-full" />
+                        )}
+                        <item.icon
+                          className={`w-5 h-5 flex-shrink-0 transition-transform duration-100 ${
+                            active ? 'scale-110 text-brand-600' : 'text-slate-500'
+                          }`}
+                        />
+                        <span
+                          className="relative z-10 truncate whitespace-nowrap transition-[opacity,max-width] duration-150 ease-in-out"
+                          style={{ maxWidth: collapsed ? 0 : 160, opacity: collapsed ? 0 : 1, overflow: 'hidden' }}
                         >
-                          <div className="relative bg-[#1f1f1f] text-white px-2.5 py-1.5 rounded-sm text-[11px] font-bold tracking-wide uppercase whitespace-nowrap shadow-md">
-                            {/* Left Arrow */}
-                            <div className="absolute top-1/2 -left-[4px] -mt-[4px] w-0 h-0 border-t-[4px] border-t-transparent border-b-[4px] border-b-transparent border-r-[5px] border-r-[#1f1f1f]" />
-                            {item.name}
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  );
-                }}
-              </NavLink>
+                          {item.name}
+                        </span>
+                      </>
+                    );
+                  }}
+                </NavLink>
+
+                {/* Tooltip — React state controlled */}
+                {collapsed && hoveredItem === item.to && (
+                  <div
+                    className="pointer-events-none absolute left-full top-1/2 ml-2 z-[9999]"
+                    style={{ transform: 'translateY(-50%)' }}
+                  >
+                    <div
+                      className="relative px-3 py-1.5 rounded-lg text-[12px] font-bold whitespace-nowrap shadow-lg"
+                      style={{
+                        background: 'white',
+                        color: '#5da83f',
+                        border: '1.5px solid #7ed957',
+                        boxShadow: '0 4px 16px rgba(126,217,87,0.25)',
+                      }}
+                    >
+                      {/* Arrow border */}
+                      <div style={{
+                        position: 'absolute', top: '50%', left: -6,
+                        transform: 'translateY(-50%)',
+                        width: 0, height: 0,
+                        borderTop: '5px solid transparent',
+                        borderBottom: '5px solid transparent',
+                        borderRight: '6px solid #7ed957',
+                      }} />
+                      {/* Arrow fill */}
+                      <div style={{
+                        position: 'absolute', top: '50%', left: -4,
+                        transform: 'translateY(-50%)',
+                        width: 0, height: 0,
+                        borderTop: '4px solid transparent',
+                        borderBottom: '4px solid transparent',
+                        borderRight: '5px solid white',
+                      }} />
+                      {item.name}
+                    </div>
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>
