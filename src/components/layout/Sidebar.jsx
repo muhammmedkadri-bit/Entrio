@@ -80,10 +80,14 @@ export const Sidebar = () => {
               pointerEvents: collapsed ? 'none' : 'auto',
             }}
           >
-            <img
-              src={entrioLogo}
-              alt="ENTRIO Logo"
-              className="w-[140px] h-[48px] object-cover object-center mix-blend-darken -ml-1 flex-shrink-0"
+            <div
+              className="w-[140px] h-[48px] mix-blend-darken -ml-1 flex-shrink-0"
+              style={{
+                backgroundImage: `url(${entrioLogo})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat'
+              }}
             />
           </div>
 
