@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import entrioLogo from '../../assets/Entriologop.png';
 
 export const PremiumLoader = ({ isOpen }) => {
+  const [imgLoaded, setImgLoaded] = React.useState(false);
+
   return (
     <AnimatePresence initial={false}>
       {isOpen && (
@@ -13,7 +15,19 @@ export const PremiumLoader = ({ isOpen }) => {
           transition={{ duration: 0.15, ease: 'easeOut' }}
           className="absolute inset-0 z-[9999] bg-white flex flex-col items-center justify-center rounded-none"
         >
-          <div className="flex flex-col items-center justify-center gap-8 relative">
+          {/* We render an invisible image first to trigger the load, 
+              then show the whole UI only when it finishes loading. */}
+          <img
+            src={entrioLogo}
+            alt="preload"
+            className="hidden"
+            onLoad={() => setImgLoaded(true)}
+          />
+
+          <div 
+            className="flex flex-col items-center justify-center gap-8 relative transition-opacity duration-300" 
+            style={{ opacity: imgLoaded ? 1 : 0 }}
+          >
             {/* Logo Container with Glow */}
             <div className="relative flex items-center justify-center">
               {/* Logo Glow Layer */}

@@ -555,6 +555,20 @@ export const POSPage = () => {
         toast.success('Satış başarıyla tamamlandı!');
       }
 
+      // Refresh displayed products to update stock pills instantly
+      const refreshDisplayedProducts = async () => {
+        try {
+          const updated = await Promise.all(
+            displayedProducts.map(p => productService.getById(p.id))
+          );
+          setDisplayedProducts(updated.filter(Boolean));
+        } catch (e) {
+          console.error('[POS] Hızlı ürünler yenilenemedi', e);
+        }
+      };
+
+      refreshDisplayedProducts();
+
       clearCart(true); setCashAmount(''); setCardAmount(''); setTransferAmount('');
       if (posMode !== 'sale') {
         useCartStore.getState().setPosMode('sale');
@@ -597,6 +611,20 @@ export const POSPage = () => {
         items: saleItemsData, total_amount: total, discount_amount: discountAmount, payment_method: 'card',
       });
       setReceiptModalOpen(true);
+      
+      // Refresh displayed products to update stock pills instantly
+      const refreshDisplayedProducts = async () => {
+        try {
+          const updated = await Promise.all(
+            displayedProducts.map(p => productService.getById(p.id))
+          );
+          setDisplayedProducts(updated.filter(Boolean));
+        } catch (e) {
+          console.error('[POS] Hızlı ürünler yenilenemedi', e);
+        }
+      };
+      refreshDisplayedProducts();
+
       clearCart(true); setCashAmount(''); setCardAmount(''); setTransferAmount('');
       toast.success('Tedarikçi ödemeli satış tamamlandı!');
     } catch (error) {

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { X, Save, Building2, Hash, Phone, CircleDollarSign } from 'lucide-react';
+import { X, Save, Building2, Hash, Phone, CircleDollarSign, MapPin, FileText } from 'lucide-react';
 import { supplierService } from '../../../services/supplierService';
 
 export const SupplierFormModal = ({ isOpen, onClose, supplierToEdit, onSaved }) => {
@@ -114,6 +114,30 @@ export const SupplierFormModal = ({ isOpen, onClose, supplierToEdit, onSaved }) 
                 className={inputCls}
                 placeholder="Örn: 0555 555 5555"
               />
+            </div>
+
+            {/* Vergi No */}
+            <div>
+              <label className={labelCls}><FileText className="w-4 h-4 text-slate-400" /> Vergi Numarası / TC Kimlik</label>
+              <input type="text" {...register('tax_number')} className={inputCls} placeholder="Örn: 1234567890" />
+            </div>
+
+            {/* İl / İlçe */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}><MapPin className="w-4 h-4 text-slate-400" /> İl</label>
+                <input type="text" {...register('city')} className={inputCls} placeholder="Örn: İstanbul" />
+              </div>
+              <div>
+                <label className={labelCls}><MapPin className="w-4 h-4 text-slate-400" /> İlçe</label>
+                <input type="text" {...register('district')} className={inputCls} placeholder="Örn: Kadıköy" />
+              </div>
+            </div>
+
+            {/* Adres */}
+            <div>
+              <label className={labelCls}><MapPin className="w-4 h-4 text-slate-400" /> Açık Adres</label>
+              <textarea {...register('address')} rows="2" className={`${inputCls} resize-none`} placeholder="Tam adres bilgisi" />
             </div>
 
             {/* Açılış Bakiyesi */}

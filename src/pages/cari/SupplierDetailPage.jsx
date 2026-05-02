@@ -131,6 +131,18 @@ export const SupplierDetailPage = () => {
                   <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                     {supplier.name}
                   </h1>
+                  
+                  {/* Address Section */}
+                  <div className="text-sm text-slate-600 flex items-center gap-1.5">
+                    {supplier.address || '-'}
+                    {(supplier.city || supplier.district) && (
+                      <span className="text-slate-500 font-medium ml-1">
+                        ({supplier.district ? `${supplier.district}, ` : ''}{supplier.city})
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Pills Section */}
                   <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-gray-500">
                     {supplier.phone && (
                       <span className="flex items-center gap-1 font-mono bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full border border-gray-200">
@@ -142,17 +154,12 @@ export const SupplierDetailPage = () => {
                         <Mail className="w-3.5 h-3.5 text-gray-400" /> {supplier.email}
                       </span>
                     )}
-                    {supplier.address && (
-                      <span className="flex items-center gap-1 font-medium bg-white/60 px-2.5 py-1 rounded-full border border-gray-100 shadow-sm">
-                        <MapPin className="w-3.5 h-3.5 text-gray-400" /> {supplier.address}
+                    {supplier.tax_number && (
+                      <span className="flex items-center gap-1 font-mono bg-white/60 px-2.5 py-1 rounded-full border border-gray-100 shadow-sm text-slate-500">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase mr-0.5">VKN/TC:</span> {supplier.tax_number}
                       </span>
                     )}
                   </div>
-                  {supplier.tax_number && (
-                    <div className="font-mono text-xs text-slate-400 flex items-center gap-1 mt-1">
-                      Vergi/TC: {supplier.tax_number}
-                    </div>
-                  )}
                 </div>
               </div>
 

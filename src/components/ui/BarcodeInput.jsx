@@ -39,12 +39,60 @@ export const BarcodeInput = ({
     };
   }, [useCamera, onScan]);
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && currentVal) {
-      onScan(currentVal);
-      if (!isControlled) setInternalInput('');
-    }
-  };
+  const currentValRef = useRef(currentVal);
+  useEffect(() => { currentValRef.current = currentVal; }, [currentVal]);
+
+  useEffect(() => {
+    const input = inputRef?.current;
+    if (!input) return;
+
+    let buffer = '';
+    let scanTimeout = null;
+
+    const handleKeydown = (e) => {
+      if (e.key === 'Enter') {
+        if (buffer.length > 3) {
+          e.preventDefault();
+          e.stopPropagation();
+          onScan(buffer);
+          buffer = '';
+          return;
+        } else if (currentValRef.current) {
+          e.preventDefault();
+          onScan(currentValRef.current);
+          if (!isControlled) setInternalInput('');
+          if (onChange) onChange({ target: { value: '' } });
+          return;
+        }
+      }
+
+      if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        buffer += e.key;
+
+        clearTimeout(scanTimeout);
+        scanTimeout = setTimeout(() => {
+          // Human typing fallback
+          if (buffer) {
+            const newVal = (currentValRef.current || '') + buffer;
+            if (!isControlled) setInternalInput(newVal);
+            if (onChange) onChange({ target: { value: newVal } });
+            buffer = '';
+          }
+        }, 40);
+      }
+    };
+
+    input.addEventListener('keydown', handleKeydown, true);
+    return () => {
+      input.removeEventListener('keydown', handleKeydown, true);
+      clearTimeout(scanTimeout);
+    };
+  }, [isControlled, onChange, onScan, inputRef]);
+
+  // handleKeyDown is now handled natively by the effect above
+  const handleKeyDown = () => {};
 
   const glassButtonStyle = {
     background: 'rgba(126,217,87,0.1)',
