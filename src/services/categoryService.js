@@ -1,8 +1,15 @@
 import { db } from '../db';
+import { isSupabase } from '../config/database';
+import { supabase } from '../lib/supabaseClient';
 
 export const categoryService = {
   async getAll() {
     try {
+      if (isSupabase()) {
+        const { data, error } = await supabase.from('categories').select('*').order('name');
+        if (error) throw error;
+        return data;
+      }
       return await db.categories.toArray();
     } catch (error) {
       throw new Error('Kategoriler getirilirken hata oluştu.');
@@ -11,7 +18,12 @@ export const categoryService = {
 
   async getById(id) {
     try {
-      return await db.categories.get(id);
+      if (isSupabase()) {
+        const { data, error } = await supabase.from('categories').select('*').eq('id', id).single();
+        if (error && error.code !== 'PGRST116') throw error;
+        return data;
+      }
+      return await db.categories.get(Number(id));
     } catch (error) {
       throw new Error('Kategori getirilirken hata oluştu.');
     }
@@ -19,6 +31,11 @@ export const categoryService = {
 
   async create(data) {
     try {
+      if (isSupabase()) {
+        const { data: created, error } = await supabase.from('categories').insert([data]).select().single();
+        if (error) throw error;
+        return created;
+      }
       const id = await db.categories.add(data);
       return { id, ...data };
     } catch (error) {
@@ -28,7 +45,12 @@ export const categoryService = {
 
   async update(id, data) {
     try {
-      await db.categories.update(id, data);
+      if (isSupabase()) {
+        const { data: updated, error } = await supabase.from('categories').update(data).eq('id', id).select().single();
+        if (error) throw error;
+        return updated;
+      }
+      await db.categories.update(Number(id), data);
       return await this.getById(id);
     } catch (error) {
       throw new Error('Kategori güncellenirken hata oluştu.');
@@ -37,12 +59,23 @@ export const categoryService = {
 
   async delete(id) {
     try {
-      const products = await db.products.where('category_id').equals(id).toArray();
+      if (isSupabase()) {
+        const { data: products, error: pErr } = await supabase.from('products').select('id').eq('category_id', id).eq('is_active', true);
+        if (pErr) throw pErr;
+        if (products && products.length > 0) {
+          throw new Error(`Bu kategoriye ait ${products.length} adet aktif ürün bulunmaktadır. Önce ürünleri başka kategoriye taşıyın.`);
+        }
+        const { error } = await supabase.from('categories').delete().eq('id', id);
+        if (error) throw error;
+        return true;
+      }
+
+      const products = await db.products.where('category_id').equals(Number(id)).toArray();
       const activeProducts = products.filter(p => p.is_active !== false);
       if (activeProducts.length > 0) {
         throw new Error(`Bu kategoriye ait ${activeProducts.length} adet aktif ürün bulunmaktadır. Önce ürünleri başka kategoriye taşıyın.`);
       }
-      await db.categories.delete(id);
+      await db.categories.delete(Number(id));
       return true;
     } catch (error) {
       throw error;

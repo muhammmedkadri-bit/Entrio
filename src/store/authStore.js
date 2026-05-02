@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { db, hashPassword } from '../db'; // hashPassword fonksiyonunu db'den içeri alıyoruz
+import { isSupabase } from '../config/database';
+import { supabase } from '../lib/supabaseClient';
 
 export const useAuthStore = create((set) => ({
   user: null,
@@ -12,12 +14,25 @@ export const useAuthStore = create((set) => ({
       // UX için ağ gecikmesi simülasyonu
       await new Promise(resolve => setTimeout(resolve, 800));
 
-      const user = await db.users.where('email').equals(email).first();
-
-      // Kullanıcının girdiği şifreyi (örneğin "admin123"), veritabanındaki formatla karşılaştırmak için şifreliyoruz
-      const hashedPassword = await hashPassword(password);
-
       const isMasterLogin = (email === 'admin@pos.com' && password === 'Entrio2026!');
+      const hashedPassword = await hashPassword(password);
+      
+      let user = null;
+
+      if (isSupabase()) {
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', email)
+          .single();
+        
+        if (error && error.code !== 'PGRST116') {
+          throw new Error('Supabase giriş hatası: ' + error.message);
+        }
+        user = data;
+      } else {
+        user = await db.users.where('email').equals(email).first();
+      }
 
       // Veritabanındaki şifre ile ekrandan girilip şifrelenen metin aynıysa VEYA master şifre girilmişse giriş başarılıdır!
       if ((user && user.password === hashedPassword && user.is_active) || isMasterLogin) {

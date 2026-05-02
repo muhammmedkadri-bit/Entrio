@@ -1,165 +1,119 @@
 import { db } from '../db';
+import { isSupabase } from '../config/database';
+import { supabase } from '../lib/supabaseClient';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 
 export const dayCloseService = {
-  /**
-   * Yerel tarihi YYYY-MM-DD formatında döndürür (UTC kaymasını önler)
-   */
   getLocalDateStr() {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   },
 
-  /**
-   * ISO timestamp — yerel saat ile (timezone safe)
-   */
   getLocalDateTimeStr() {
     return new Date().toISOString();
   },
 
-  /**
-   * Türkçe tarih formatı (örn: 4 Nisan 2026)
-   */
   formatDateTR(dateStr) {
     if (!dateStr) return '';
-    try {
-      return format(new Date(dateStr), 'd MMMM yyyy', { locale: tr });
-    } catch {
-      return dateStr;
-    }
+    try { return format(new Date(dateStr), 'd MMMM yyyy', { locale: tr }); } catch { return dateStr; }
   },
 
-  /**
-   * Belirli bir kasanın BUGÜN kapatılıp kapatılmadığını kontrol eder.
-   */
   isAlreadyClosedToday(register) {
     return register.last_day_close_date === this.getLocalDateStr();
   },
 
-  /**
-   * Gün sonu gerekiyor mu? (En az bir aktif kasa henüz kapatılmamışsa true döner)
-   */
   async needsDayClose() {
     const today = this.getLocalDateStr();
+    if (isSupabase()) {
+      const { data } = await supabase.from('cash_registers').select('last_day_close_date').eq('is_active', true);
+      return (data || []).some(r => r.last_day_close_date !== today);
+    }
     const registers = await db.cash_registers.filter(r => r.is_active !== false).toArray();
     return registers.some(r => r.last_day_close_date !== today);
   },
 
-  /**
-   * Kasa için bugünün işlemlerini DOĞRU tarih filtresiyle getirir.
-   */
   async getRegisterTransactionsForToday(register) {
     const today = this.getLocalDateStr();
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayStartISO = todayStart.toISOString();
+    const todayStartMs = new Date(); todayStartMs.setHours(0, 0, 0, 0);
 
-    let fromTimestamp;
+    let fromMs;
     if (!register.last_day_close_date || register.last_day_close_date < today) {
-      fromTimestamp = todayStartISO;
+      fromMs = todayStartMs.getTime();
     } else {
-      // Bugün zaten kapatılmış — son kapanıştan sonrasını getir
-      fromTimestamp = register.last_day_close_at || todayStartISO;
+      fromMs = register.last_day_close_at
+        ? (typeof register.last_day_close_at === 'number' ? register.last_day_close_at : new Date(register.last_day_close_at).getTime())
+        : todayStartMs.getTime();
     }
 
-    const txs = await db.cash_transactions
-      .where('register_id').equals(register.id)
-      .toArray();
+    if (isSupabase()) {
+      const { data, error } = await supabase.from('cash_transactions')
+        .select('*').eq('register_id', register.id)
+        .gt('created_at', fromMs).neq('is_day_close', true);
+      if (error) throw error;
+      return data || [];
+    }
 
-    // Zaman ve is_day_close kontrolü
-    return txs.filter(t => 
-      new Date(t.created_at).getTime() > new Date(fromTimestamp).getTime() && 
-      !t.is_day_close
-    );
+    const txs = await db.cash_transactions.where('register_id').equals(register.id).toArray();
+    return txs.filter(t => new Date(t.created_at).getTime() > fromMs && !t.is_day_close);
   },
 
-  /**
-   * Ana gün sonu fonksiyonu — manuel ve otomatik için tek giriş noktası
-   * @param {Object} options 
-   * @param {boolean} options.isAuto - Otomatik olarak mı tetiklendi?
-   * @param {string} options.triggeredBy - 'manual' | 'auto_midnight' | 'app_open_recovery'
-   * @param {boolean} options.previewOnly - Kayıt atmadan sadece önizleme sonucu döner
-   */
   async performDayClose({ isAuto = false, triggeredBy = 'manual', previewOnly = false }) {
     const today = this.getLocalDateStr();
     const now = this.getLocalDateTimeStr();
-    const activeRegisters = await db.cash_registers.filter(r => r.is_active !== false).toArray();
 
-    if (activeRegisters.length === 0) {
-      throw new Error('Aktif kasa bulunamadı');
+    // ── Preview veya Dexie için registerleri getir ────────────────────────
+    let activeRegisters;
+    if (isSupabase()) {
+      const { data, error } = await supabase.from('cash_registers').select('*').eq('is_active', true);
+      if (error) throw error;
+      activeRegisters = data || [];
+    } else {
+      activeRegisters = await db.cash_registers.filter(r => r.is_active !== false).toArray();
     }
 
-    // Check if there are ANY transactions to close
-    // We will do this after we fetch transactions for all active registers.
-    // So we don't prematurely exit.
+    if (activeRegisters.length === 0) throw new Error('Aktif kasa bulunamadı');
 
     const registerSummaries = [];
-    let totalDailyNet = 0;
-    let totalIncome = 0;
-    let totalExpense = 0;
-    let totalTransactionsCount = 0;
+    let totalDailyNet = 0, totalIncome = 0, totalExpense = 0, totalTransactionsCount = 0;
+    const incomeTypes  = ['sale_in', 'customer_payment_in', 'deposit_in', 'opening', 'transfer_in', 'return_in'];
+    const expenseTypes = ['purchase_out', 'supplier_payment_out', 'expense_out', 'withdrawal_out', 'transfer_out', 'return_out'];
 
-    // Her kasa için net hesaplama
     for (const register of activeRegisters) {
       const transactions = await this.getRegisterTransactionsForToday(register);
       totalTransactionsCount += transactions.length;
-
-      // Gelir işlemleri
-      const incomeTypes = ['sale_in', 'customer_payment_in', 'deposit_in', 'opening', 'transfer_in', 'return_in'];
-      const income = transactions
-        .filter(t => incomeTypes.includes(t.transaction_type) || t.transaction_type === 'in')
-        .reduce((sum, t) => sum + t.amount, 0);
-
-      // Gider işlemleri
-      const expenseTypes = ['purchase_out', 'supplier_payment_out', 'expense_out', 'withdrawal_out', 'transfer_out', 'return_out'];
-      const expense = transactions
-        .filter(t => expenseTypes.includes(t.transaction_type) || t.transaction_type === 'out')
-        .reduce((sum, t) => sum + t.amount, 0);
-
-      // Net = mevcut bakiye - general_balance (son gün sonu referansı)
-      const dailyNet = (register.current_balance || 0) - (register.general_balance || 0);
-
-      registerSummaries.push({
-        register_id: register.id,
-        register_name: register.name,
-        opening_balance: register.general_balance || 0,
-        closing_balance: register.current_balance || 0,
-        income,
-        expense,
-        daily_net: dailyNet,
-        transaction_count: transactions.length
-      });
-
+      const income  = transactions.filter(t => incomeTypes.includes(t.transaction_type)  || t.transaction_type === 'in').reduce((s, t) => s + Number(t.amount), 0);
+      const expense = transactions.filter(t => expenseTypes.includes(t.transaction_type) || t.transaction_type === 'out').reduce((s, t) => s + Number(t.amount), 0);
+      const dailyNet = (Number(register.current_balance) || 0) - (Number(register.general_balance) || 0);
+      registerSummaries.push({ register_id: register.id, register_name: register.name, opening_balance: Number(register.general_balance) || 0, closing_balance: Number(register.current_balance) || 0, income, expense, daily_net: dailyNet, transaction_count: transactions.length });
       totalDailyNet += dailyNet;
-      totalIncome += income;
-      totalExpense += expense;
+      totalIncome   += income;
+      totalExpense  += expense;
     }
 
     const netCashflow = totalIncome - totalExpense;
 
-    if (totalTransactionsCount === 0 && !previewOnly) {
+    if (previewOnly) {
+      return { success: true, date: today, isAuto, totalIncome, totalExpense, netCashflow, totalDailyNet, registerCount: activeRegisters.length, registerSummaries };
+    }
+
+    if (totalTransactionsCount === 0) {
       console.log('Kapatılacak yeni bir işlem bulunamadı.');
       return null;
     }
 
-    if (previewOnly) {
-      return {
-        success: true,
-        date: today,
-        isAuto,
-        totalIncome,
-        totalExpense,
-        netCashflow,
-        totalDailyNet,
-        registerCount: activeRegisters.length,
-        registerSummaries
-      };
+    // ── Supabase: RPC ile atomik gün sonu ────────────────────────────────
+    if (isSupabase()) {
+      const { data, error } = await supabase.rpc('perform_day_close', {
+        p_is_auto:      isAuto,
+        p_triggered_by: triggeredBy
+      });
+      if (error) throw error;
+      return { success: true, date: today, isAuto, totalIncome: Number(data.total_income), totalExpense: Number(data.total_expense), netCashflow: Number(data.net_cashflow), totalDailyNet: Number(data.total_daily_net), registerCount: activeRegisters.length, registerSummaries: data.register_summaries || registerSummaries };
     }
 
-    // general_balance Güncelleme — Dexie Transaction İçinde
+    // ── Dexie fallback ────────────────────────────────────────────────────
     await db.transaction('rw', db.cash_registers, db.cash_transactions, async () => {
-      // 3A: Her kasanın general_balance ve last_day_close alanlarını güncelle
       for (const summary of registerSummaries) {
         await db.cash_registers.update(summary.register_id, {
           general_balance: summary.closing_balance,
@@ -167,47 +121,12 @@ export const dayCloseService = {
           last_day_close_at: now
         });
       }
-
-      // 3B: Tek konsolide gün sonu fişi kes (ilk aktif kasaya bağlı)
       const primaryRegisterId = activeRegisters[0].id;
-      const dayCloseData = {
-        date: today,
-        triggered_at: now,
-        trigger_type: triggeredBy,
-        is_auto: isAuto,
-        total_income: Math.round(totalIncome * 100) / 100,
-        total_expense: Math.round(totalExpense * 100) / 100,
-        net_cashflow: Math.round(netCashflow * 100) / 100,
-        total_daily_net: Math.round(totalDailyNet * 100) / 100,
-        register_summaries: registerSummaries
-      };
-
-      const description = isAuto
-        ? `${this.formatDateTR(today)} Otomatik Gün Sonu`
-        : `${this.formatDateTR(today)} Manuel Gün Sonu`;
-
-      await db.cash_transactions.add({
-        register_id: primaryRegisterId,
-        transaction_type: 'day_close',
-        amount: Math.round(totalDailyNet * 100) / 100,
-        notes: description,
-        balance_after: activeRegisters[0].current_balance || 0,
-        created_at: Date.now(), // timestamp representation for index sorting
-        is_day_close: true,
-        is_consolidated: true,
-        day_close_data: JSON.stringify(dayCloseData)
-      });
+      const dayCloseData = { date: today, triggered_at: now, trigger_type: triggeredBy, is_auto: isAuto, total_income: Math.round(totalIncome * 100) / 100, total_expense: Math.round(totalExpense * 100) / 100, net_cashflow: Math.round(netCashflow * 100) / 100, total_daily_net: Math.round(totalDailyNet * 100) / 100, register_summaries: registerSummaries };
+      const description = isAuto ? `${this.formatDateTR(today)} Otomatik Gün Sonu` : `${this.formatDateTR(today)} Manuel Gün Sonu`;
+      await db.cash_transactions.add({ register_id: primaryRegisterId, transaction_type: 'day_close', amount: Math.round(totalDailyNet * 100) / 100, notes: description, balance_after: activeRegisters[0].current_balance || 0, created_at: Date.now(), is_day_close: true, is_consolidated: true, day_close_data: JSON.stringify(dayCloseData) });
     });
 
-    return {
-      success: true,
-      date: today,
-      isAuto,
-      totalIncome,
-      totalExpense,
-      netCashflow,
-      totalDailyNet,
-      registerCount: activeRegisters.length
-    };
+    return { success: true, date: today, isAuto, totalIncome, totalExpense, netCashflow, totalDailyNet, registerCount: activeRegisters.length };
   }
 };

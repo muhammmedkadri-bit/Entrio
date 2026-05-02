@@ -1,18 +1,36 @@
 import { db } from '../db';
+import { isSupabase } from '../config/database';
+import { supabase } from '../lib/supabaseClient';
 import { startOfDay, endOfDay, isWithinInterval, format, differenceInDays } from 'date-fns';
 import { tr } from 'date-fns/locale';
+
+// ── Yardımcı: Supabase veya Dexie'den toplu veri çek ──────────────────────
+async function fetchAll(table, dexieQuery) {
+  if (isSupabase()) {
+    const { data, error } = await supabase.from(table).select('*');
+    if (error) throw error;
+    return data || [];
+  }
+  return await dexieQuery();
+}
+
+async function fetchFiltered(table, field, startMs, endMs, dexieQuery) {
+  if (isSupabase()) {
+    const { data, error } = await supabase.from(table).select('*').gte(field, startMs).lte(field, endMs);
+    if (error) throw error;
+    return data || [];
+  }
+  return await dexieQuery();
+}
 
 export const reportService = {
   
   // 1. SALES REPORT
   async getSalesSummary(startDate, endDate) {
     try {
-      // Sadece 'completed' satışlar
-      const sales = await db.sales
-        .where('created_at').between(startDate.getTime(), endDate.getTime())
-        .toArray();
-      
-      const completedSales = sales.filter(s => s.status === 'completed');
+      const allSales = await fetchFiltered('sales', 'created_at', startDate.getTime(), endDate.getTime(),
+        () => db.sales.where('created_at').between(startDate.getTime(), endDate.getTime()).toArray());
+      const completedSales = allSales.filter(s => s.status === 'completed');
 
       const summary = {
         totalRevenue: 0,
@@ -70,7 +88,9 @@ export const reportService = {
           if (!sale) continue;
 
           if (!productMap.has(item.product_id)) {
-            const productInfo = await db.products.get(item.product_id);
+            const productInfo = isSupabase()
+              ? (await supabase.from('products').select('name,purchase_price').eq('id', item.product_id).single()).data
+              : await db.products.get(item.product_id);
             productMap.set(item.product_id, {
               id: item.product_id,
               name: productInfo?.name || item.product_name || 'Bilinmeyen Ürün',
@@ -97,8 +117,10 @@ export const reportService = {
           pStat.revenue += netItemRevenue;
 
           // Maliyet hesabı: O anki product_price üzerinden
-          const productInfo = await db.products.get(item.product_id);
-          pStat.cost += (productInfo?.purchase_price || 0) * (item.quantity || 0);
+          const productInfoCost = isSupabase()
+            ? (await supabase.from('products').select('purchase_price').eq('id', item.product_id).single()).data
+            : await db.products.get(item.product_id);
+          pStat.cost += (productInfoCost?.purchase_price || 0) * (item.quantity || 0);
         }
 
         const topP = Array.from(productMap.values()).map(p => {
@@ -127,8 +149,11 @@ export const reportService = {
   // 2. STOCK REPORT
   async getStockReport() {
     try {
-      const products = await db.products.filter(p => p.is_active !== false).toArray();
-      const categories = await db.categories.toArray();
+      const [products, categories] = await Promise.all([
+        fetchAll('products', () => db.products.filter(p => p.is_active !== false).toArray()),
+        fetchAll('categories', () => db.categories.toArray())
+      ]);
+      const activeProducts = products.filter(p => p.is_active !== false);
 
       const summary = {
         totalProducts: products.length,
@@ -144,7 +169,7 @@ export const reportService = {
 
       const catMap = new Map();
 
-      for (const p of products) {
+      for (const p of activeProducts) {
         const stock = p.stock_quantity || 0;
         const pValue = stock * (p.purchase_price || 0);
         const sValue = stock * (p.sale_price || 0);
@@ -198,34 +223,38 @@ export const reportService = {
   // 3. CARI REPORT
   async getCariReport(type = 'customer') {
     try {
-      const table = type === 'customer' ? db.customers : db.suppliers;
-      const txTable = type === 'customer' ? db.customer_transactions : db.supplier_transactions;
-      
-      const entities = await table.filter(e => e.is_active !== false).toArray();
+      const sbTable   = type === 'customer' ? 'customers' : 'suppliers';
+      const sbTxTable = type === 'customer' ? 'customer_transactions' : 'supplier_transactions';
+      const idField   = type === 'customer' ? 'customer_id' : 'supplier_id';
+      const dexieTable   = type === 'customer' ? db.customers : db.suppliers;
+      const dexieTxTable = type === 'customer' ? db.customer_transactions : db.supplier_transactions;
+
+      const entities = await fetchAll(sbTable, () => dexieTable.filter(e => e.is_active !== false).toArray());
+      const activeFilt = entities.filter(e => e.is_active !== false);
 
       const summary = {
         totalReceivable: 0,
         totalPayable: 0,
-        debtorCount: 0,         // Borcu olan müşteri sayısı
-        highestDebtor: null,    // En yüksek borçlu müşteri {name, balance}
-        avgDebt: 0,             // Ortalama veresiye borcu (borçlu başına)
-        activeCount: 0,         // Hiç işlem yapmış aktif müşteri/tedarikçi sayısı
+        debtorCount: 0,
+        highestDebtor: null,
+        avgDebt: 0,
+        activeCount: 0,
         cleanCount: 0,          // Borcu olmayan (temiz hesap) sayısı
         top5Debtors: [],        // En yüksek 5 borçlu
         balanceTable: []
       };
 
       let debtors = [];
+      // tx sayısı toplu sorgu ile
+      const txAll = isSupabase()
+        ? (await supabase.from(sbTxTable).select(idField)).data || []
+        : await dexieTxTable.toArray();
+      const txCountMap = {};
+      txAll.forEach(t => { txCountMap[t[idField]] = (txCountMap[t[idField]] || 0) + 1; });
 
-      for (const e of entities) {
-        const bal = e.balance || 0;
-
-        // Check if entity has any transactions to count as 'active'
-        const txCount = await txTable
-          .where(type === 'customer' ? 'customer_id' : 'supplier_id')
-          .equals(e.id)
-          .count();
-        if (txCount > 0) summary.activeCount++;
+      for (const e of activeFilt) {
+        const bal = Number(e.balance) || 0;
+        if (txCountMap[e.id] > 0) summary.activeCount++;
 
         if (bal > 0) {
           if (type === 'customer') summary.totalReceivable += bal;
@@ -261,10 +290,11 @@ export const reportService = {
   // 4. CASH REPORT & PROFIT LOSS (Ayrı ama birleşik yapılabilir)
   async getProfitLoss(startDate, endDate) {
     try {
-      const sales = await db.sales.where('created_at').between(startDate.getTime(), endDate.getTime()).toArray();
-      const completedSales = sales.filter(s => s.status === 'completed');
-
-      const cashTxs = await db.cash_transactions.where('created_at').between(startDate.getTime(), endDate.getTime()).toArray();
+      const allSales = await fetchFiltered('sales', 'created_at', startDate.getTime(), endDate.getTime(),
+        () => db.sales.where('created_at').between(startDate.getTime(), endDate.getTime()).toArray());
+      const completedSales = allSales.filter(s => s.status === 'completed');
+      const cashTxs = await fetchFiltered('cash_transactions', 'created_at', startDate.getTime(), endDate.getTime(),
+        () => db.cash_transactions.where('created_at').between(startDate.getTime(), endDate.getTime()).toArray());
       // Giderler
       const expenses = cashTxs.filter(t => t.transaction_type === 'expense_out').reduce((sum, t) => sum + t.amount, 0);
 
@@ -302,7 +332,9 @@ export const reportService = {
       // COGS Calculation
       for (const item of items) {
         if (!itemsMap.has(item.product_id)) {
-          const productInfo = await db.products.get(item.product_id);
+          const productInfo = isSupabase()
+            ? (await supabase.from('products').select('name,purchase_price').eq('id', item.product_id).single()).data
+            : await db.products.get(item.product_id);
           itemsMap.set(item.product_id, {
              id: item.product_id,
              name: productInfo?.name || 'Bilinmeyen',
@@ -373,38 +405,31 @@ export const reportService = {
       const todayStart = startOfDay(new Date());
       const end = endOfDay(new Date());
 
-      // Global Day Close cutoff: Find the latest day_close transaction for today
-      const todayDayCloseTxs = await db.cash_transactions
-        .where('created_at').between(todayStart.getTime(), end.getTime())
-        .filter(t => t.is_day_close || t.transaction_type === 'day_close')
-        .toArray();
-      
-      const latestDayClose = todayDayCloseTxs.sort((a, b) => b.created_at - a.created_at)[0];
-      const startTimestamp = latestDayClose ? latestDayClose.created_at : todayStart.getTime();
+      const allDayCloseTxs = await fetchFiltered('cash_transactions', 'created_at', todayStart.getTime(), end.getTime(),
+        () => db.cash_transactions.where('created_at').between(todayStart.getTime(), end.getTime())
+          .filter(t => t.is_day_close || t.transaction_type === 'day_close').toArray());
+      const todayDayCloseTxs = allDayCloseTxs.filter(t => t.is_day_close || t.transaction_type === 'day_close');
+      const latestDayClose = todayDayCloseTxs.sort((a, b) => Number(b.created_at) - Number(a.created_at))[0];
+      const startTimestamp = latestDayClose ? Number(latestDayClose.created_at) : todayStart.getTime();
 
-      // 1. Sales today (cutoff sonrası)
-      const todaySales = await db.sales.where('created_at').between(startTimestamp, end.getTime()).toArray();
-      const completed = todaySales.filter(s => s.status === 'completed');
-      const todayRevenue = completed.reduce((acc, s) => acc + s.total_amount, 0);
+      const allSalesToday = await fetchFiltered('sales', 'created_at', startTimestamp, end.getTime(),
+        () => db.sales.where('created_at').between(startTimestamp, end.getTime()).toArray());
+      const completed = allSalesToday.filter(s => s.status === 'completed');
+      const todayRevenue = completed.reduce((acc, s) => acc + Number(s.total_amount), 0);
 
-      // 1b. Returns today — kasadan çıkan iade ödemeleri (cutoff sonrası)
-      const todayTxs = await db.cash_transactions.where('created_at').between(startTimestamp, end.getTime()).toArray();
-      const todayReturns = todayTxs
-        .filter(t => t.transaction_type === 'return_out')
-        .reduce((acc, t) => acc + t.amount, 0);
-      const todayReturnCount = todaySales.filter(s => s.status === 'returned').length;
+      const todayTxs = await fetchFiltered('cash_transactions', 'created_at', startTimestamp, end.getTime(),
+        () => db.cash_transactions.where('created_at').between(startTimestamp, end.getTime()).toArray());
+      const todayReturns = todayTxs.filter(t => t.transaction_type === 'return_out').reduce((acc, t) => acc + Number(t.amount), 0);
+      const todayReturnCount = allSalesToday.filter(s => s.status === 'returned').length;
 
-      // 2. Cash balance
-      const registers = await db.cash_registers.filter(r => r.is_active !== false).toArray();
-      const totalCash = registers.reduce((acc, r) => acc + r.current_balance, 0);
+      const registers = await fetchAll('cash_registers', () => db.cash_registers.filter(r => r.is_active !== false).toArray());
+      const totalCash = registers.filter(r => r.is_active !== false).reduce((acc, r) => acc + Number(r.current_balance), 0);
 
-      // 3. Critical stock
-      const products = await db.products.filter(p => p.is_active !== false).toArray();
-      const criticalCount = products.filter(p => p.min_stock_level > 0 && p.stock_quantity <= p.min_stock_level).length;
+      const products = await fetchAll('products', () => db.products.filter(p => p.is_active !== false).toArray());
+      const criticalCount = products.filter(p => p.is_active !== false && Number(p.min_stock_level) > 0 && Number(p.stock_quantity) <= Number(p.min_stock_level)).length;
 
-      // 4. Receivables
-      const customers = await db.customers.filter(c => c.is_active !== false).toArray();
-      const totalReceivable = customers.reduce((acc, c) => acc + (c.balance > 0 ? c.balance : 0), 0);
+      const customers = await fetchAll('customers', () => db.customers.filter(c => c.is_active !== false).toArray());
+      const totalReceivable = customers.filter(c => c.is_active !== false).reduce((acc, c) => acc + (Number(c.balance) > 0 ? Number(c.balance) : 0), 0);
       
       return {
          todayRevenue,           // Brüt satış
@@ -427,7 +452,8 @@ export const reportService = {
 
   async getCashReport(startDate, endDate) {
     try {
-      const txs = await db.cash_transactions.where('created_at').between(startDate.getTime(), endDate.getTime()).toArray();
+      const txs = await fetchFiltered('cash_transactions', 'created_at', startDate.getTime(), endDate.getTime(),
+        () => db.cash_transactions.where('created_at').between(startDate.getTime(), endDate.getTime()).toArray());
       const ins = ['sale_in', 'customer_payment_in', 'deposit_in', 'return_in'];
       // ℹ️ return_out ayrı kategori — gerçek giderlerle (alış, kira vs.) karıştırılmaz
       const outs = ['purchase_out', 'supplier_payment_out', 'expense_out', 'withdrawal_out'];
@@ -455,7 +481,6 @@ export const reportService = {
        }
 
        txs.forEach(t => {
-         // Yalnızca açılış/kapanış ve günsonu hariç gerçek paralar
          if (t.transaction_type === 'opening' || t.transaction_type === 'closing' || t.transaction_type === 'day_close') return;
 
          if (ins.includes(t.transaction_type) || t.transaction_type === 'in') {
@@ -471,7 +496,7 @@ export const reportService = {
              if (t.transaction_type === 'supplier_payment_out') pieTedarikci += t.amount;
           }
 
-         const dKey = format(t.created_at, 'dd MMMM', { locale: tr });
+         const dKey = format(new Date(Number(t.created_at)), 'dd MMMM', { locale: tr });
          if (!dailyMap.has(dKey)) dailyMap.set(dKey, { date: dKey, income: 0, expense: 0, returns: 0 });
          const dStat = dailyMap.get(dKey);
 

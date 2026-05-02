@@ -13,7 +13,13 @@ import { QuickBarcodesModal } from './modals/QuickBarcodesModal';
 
 import { TransactionDetailModal } from '../cash/modals/TransactionDetailModal';
 import { reportService } from '../../services/reportService';
+import { quickNotesService } from '../../services/quickNotesService';
+import { stockService } from '../../services/stockService';
+import { settingsService } from '../../services/settingsService';
+import { cashService } from '../../services/cashService';
+import { isSupabase } from '../../config/database';
 import { db } from '../../db';
+import { supabase } from '../../lib/supabaseClient';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -116,37 +122,55 @@ export const Dashboard = () => {
   });
 
 
-  const [quickNotes, setQuickNotes] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('entrio_quick_notes')) || []; } catch { return []; }
-  });
+  const [quickNotes, setQuickNotes] = useState([]);
   const [newNote, setNewNote] = useState('');
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [editingNoteText, setEditingNoteText] = useState('');
 
-  const addNote = (e) => {
+  // Notları sayfa yüklenirken al
+  useEffect(() => {
+    quickNotesService.getAll().then(setQuickNotes);
+  }, []);
+
+  const addNote = async (e) => {
     e.preventDefault();
     if(!newNote.trim()) return;
-    const notes = [{id: Date.now(), text: newNote}, ...quickNotes].slice(0, 5);
-    setQuickNotes(notes);
-    localStorage.setItem('entrio_quick_notes', JSON.stringify(notes));
-    setNewNote('');
+    try {
+      const added = await quickNotesService.add(newNote);
+      const notes = [added, ...quickNotes].slice(0, 5);
+      setQuickNotes(notes);
+      if (!isSupabase()) quickNotesService.saveLocal(notes);
+      setNewNote('');
+    } catch (err) {
+      console.error('Not eklenemedi:', err);
+    }
   };
 
-  const removeNote = (id) => {
-    const notes = quickNotes.filter(n => n.id !== id);
-    setQuickNotes(notes);
-    localStorage.setItem('entrio_quick_notes', JSON.stringify(notes));
+  const removeNote = async (id) => {
+    try {
+      await quickNotesService.delete(id);
+      const notes = quickNotes.filter(n => n.id !== id);
+      setQuickNotes(notes);
+      if (!isSupabase()) quickNotesService.saveLocal(notes);
+    } catch (err) {
+      console.error('Not silinemedi:', err);
+    }
   };
 
-  const saveEditedNote = (id) => {
+  const saveEditedNote = async (id) => {
     if (!editingNoteText.trim()) {
       setEditingNoteId(null);
       return;
     }
-    const notes = quickNotes.map(n => n.id === id ? { ...n, text: editingNoteText } : n);
-    setQuickNotes(notes);
-    localStorage.setItem('entrio_quick_notes', JSON.stringify(notes));
-    setEditingNoteId(null);
+    try {
+      await quickNotesService.update(id, editingNoteText);
+      const notes = quickNotes.map(n => n.id === id ? { ...n, text: editingNoteText } : n);
+      setQuickNotes(notes);
+      if (!isSupabase()) quickNotesService.saveLocal(notes);
+      setEditingNoteId(null);
+    } catch (err) {
+      console.error('Not güncellenemedi:', err);
+    }
   };
   const [urgentStock, setUrgentStock] = useState([]);
 
@@ -162,9 +186,9 @@ export const Dashboard = () => {
     setLoading(true);
     try {
       // ── Şirket Bilgisi ──────────────────────────────────────
-      const cInfo = await db.settings.get('company_info');
-      if (cInfo?.value?.name) setCompanyName(cInfo.value.name);
-      if (cInfo?.value?.logo) setCompanyLogo(cInfo.value.logo);
+      const cInfo = await settingsService.getSettings();
+      if (cInfo?.company_info?.name) setCompanyName(cInfo.company_info.name);
+      if (cInfo?.company_info?.logo) setCompanyLogo(cInfo.company_info.logo);
 
       // ── 1. Core Stats + Grafikler (paralel) ─────────────────
       const now = new Date();
@@ -172,11 +196,11 @@ export const Dashboard = () => {
         reportService.getDashboardStats(),
         reportService.getCashReport(startOfDay(subDays(now, 6)), endOfDay(now)),
         reportService.getSalesSummary(startOfDay(now), endOfDay(now)),
-        db.cash_registers.filter(r => r.is_active !== false).toArray(),
+        cashService.getRegisters(),
       ]);
 
       setStats(st);
-      setAllRegisters(registers);
+      setAllRegisters(registers.filter(r => r.is_active !== false));
 
       const pieData = Object.keys(textDaySummary.byPaymentMethod)
         .filter(k => (textDaySummary.byPaymentMethod[k].count || 0) > 0)
@@ -197,7 +221,18 @@ export const Dashboard = () => {
 
       // ── 2. Son İşlemler — ID bazlı hedefli sorgular ─────────
       const allowedTypes = ['sale_in','purchase_out','return_in','return_out','expense_out','supplier_payment_out','withdrawal_out','customer_payment_in','deposit_in'];
-      const allTxs = await db.cash_transactions.orderBy('created_at').reverse().limit(50).toArray();
+      
+      let allTxs = [];
+      if (isSupabase()) {
+        const { data } = await supabase.from('cash_transactions')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(50);
+        allTxs = data || [];
+      } else {
+        allTxs = await db.cash_transactions.orderBy('created_at').reverse().limit(50).toArray();
+      }
+      
       const rawFiltered = allTxs.filter(t => allowedTypes.includes(t.transaction_type));
 
       // Sadece kullanılacak ID'leri topla
@@ -218,11 +253,20 @@ export const Dashboard = () => {
       }
 
       // Tüm tabloyu çekmek yerine sadece ihtiyaç duyulan kayıtları getir
+      const fetchBulk = async (table, ids) => {
+        if (ids.length === 0) return [];
+        if (isSupabase()) {
+          const { data } = await supabase.from(table).select('*').in('id', ids);
+          return data || [];
+        }
+        return await db[table].bulkGet(ids);
+      };
+
       const [salesArr, purchasesArr, customersArr, suppliersArr] = await Promise.all([
-        saleIds.size     > 0 ? db.sales.bulkGet([...saleIds])     : Promise.resolve([]),
-        purchaseIds.size > 0 ? db.purchases.bulkGet([...purchaseIds]) : Promise.resolve([]),
-        customerIds.size > 0 ? db.customers.bulkGet([...customerIds]) : Promise.resolve([]),
-        supplierIds.size > 0 ? db.suppliers.bulkGet([...supplierIds]) : Promise.resolve([]),
+        fetchBulk('sales', [...saleIds]),
+        fetchBulk('purchases', [...purchaseIds]),
+        fetchBulk('customers', [...customerIds]),
+        fetchBulk('suppliers', [...supplierIds]),
       ]);
 
       // null dönen bulkGet sonuçlarını temizle
@@ -304,10 +348,8 @@ export const Dashboard = () => {
       setRecentTransactions(uniqueTxs);
 
       // ── 3. Kritik Stok ──────────────────────────────────────
-      const critical = await db.products
-        .filter(p => p.min_stock_level > 0 && p.stock_quantity <= p.min_stock_level)
-        .limit(5).toArray();
-      setUrgentStock(critical);
+      const allCritical = await stockService.getLowStockProducts();
+      setUrgentStock(allCritical.slice(0, 5));
 
     } catch (e) {
       console.error('[Dashboard] Yükleme hatası:', e);

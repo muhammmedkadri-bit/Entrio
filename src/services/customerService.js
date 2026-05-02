@@ -1,38 +1,51 @@
 import { db } from '../db';
+import { isSupabase } from '../config/database';
+import { supabase } from '../lib/supabaseClient';
 import { isWithinInterval } from 'date-fns';
 
 export const customerService = {
   async getAll(filters = {}) {
     try {
+      if (isSupabase()) {
+        let query = supabase.from('customers').select('*').eq('is_active', true);
+        if (filters.search) {
+          query = query.or(`name.ilike.%${filters.search}%,phone.ilike.%${filters.search}%`);
+        }
+        if (filters.customerType && filters.customerType !== 'all') {
+          query = query.eq('customer_type', filters.customerType);
+        }
+        const { data, error } = await query.order('name');
+        if (error) throw error;
+        let customers = data;
+        if (filters.balanceStatus) {
+          if (filters.balanceStatus === 'debt') customers = customers.filter(c => Number(c.balance) > 0);
+          else if (filters.balanceStatus === 'credit') customers = customers.filter(c => Number(c.balance) < 0);
+          else if (filters.balanceStatus === 'zero') customers = customers.filter(c => !c.balance || Number(c.balance) === 0);
+        }
+        return customers;
+      }
+
+      // ── Dexie fallback ──
       let customers = await db.customers.toArray();
       customers = customers.filter(c => c.is_active !== false);
-
       if (filters.search) {
         const query = filters.search.toLowerCase();
-        customers = customers.filter(c => 
-          c.name.toLowerCase().includes(query) || 
+        customers = customers.filter(c =>
+          c.name.toLowerCase().includes(query) ||
           (c.phone && c.phone.includes(query)) ||
           (c.tax_number && c.tax_number.includes(query))
         );
       }
-
       if (filters.customerType && filters.customerType !== 'all') {
         customers = customers.filter(c => c.customer_type === filters.customerType);
       }
-
       if (filters.balanceStatus) {
-        if (filters.balanceStatus === 'debt') Object.filter = c => c.balance > 0;
-        else if (filters.balanceStatus === 'credit') Object.filter = c => c.balance < 0;
-        else if (filters.balanceStatus === 'zero') Object.filter = c => c.balance === 0 || !c.balance;
-        
-        let customFilter = (c) => true;
+        let customFilter = () => true;
         if (filters.balanceStatus === 'debt') customFilter = c => c.balance > 0;
         else if (filters.balanceStatus === 'credit') customFilter = c => c.balance < 0;
         else if (filters.balanceStatus === 'zero') customFilter = c => c.balance === 0 || !c.balance;
-
         customers = customers.filter(customFilter);
       }
-
       return customers;
     } catch (error) {
       throw new Error('Müşteriler getirilirken hata oluştu.');
@@ -41,7 +54,13 @@ export const customerService = {
 
   async getById(id) {
     try {
-      const customer = await db.customers.get(id);
+      if (isSupabase()) {
+        const { data, error } = await supabase.from('customers').select('*').eq('id', id).single();
+        if (error && error.code !== 'PGRST116') throw error;
+        if (!data) throw new Error('Müşteri bulunamadı.');
+        return data;
+      }
+      const customer = await db.customers.get(Number(id));
       if (!customer) throw new Error('Müşteri bulunamadı.');
       return customer;
     } catch (error) {
@@ -51,21 +70,33 @@ export const customerService = {
 
   async create(data) {
     try {
-      return await db.transaction('rw', db.customers, db.customer_transactions, async () => {
-        const openingBalance = parseFloat(data.opening_balance) || 0;
-        const dataToSave = { ...data, balance: openingBalance, is_active: true };
-        delete dataToSave.opening_balance; 
-        
-        const id = await db.customers.add(dataToSave);
+      const openingBalance = parseFloat(data.opening_balance) || 0;
+      const dataToSave = { ...data, balance: openingBalance, is_active: true };
+      delete dataToSave.opening_balance;
 
+      if (isSupabase()) {
+        const { data: created, error } = await supabase.from('customers').insert([dataToSave]).select().single();
+        if (error) throw error;
         if (openingBalance !== 0) {
-          await db.customer_transactions.add({
-            customer_id: id,
+          await supabase.from('customer_transactions').insert([{
+            customer_id: created.id,
             transaction_type: 'adjustment',
             amount: Math.abs(openingBalance),
             balance_after: openingBalance,
             notes: 'Açılış Bakiyesi',
             created_at: Date.now()
+          }]);
+        }
+        return created;
+      }
+
+      return await db.transaction('rw', db.customers, db.customer_transactions, async () => {
+        const id = await db.customers.add(dataToSave);
+        if (openingBalance !== 0) {
+          await db.customer_transactions.add({
+            customer_id: id, transaction_type: 'adjustment',
+            amount: Math.abs(openingBalance), balance_after: openingBalance,
+            notes: 'Açılış Bakiyesi', created_at: Date.now()
           });
         }
         return { id, ...dataToSave };
@@ -78,8 +109,13 @@ export const customerService = {
   async update(id, data) {
     try {
       const dataToSave = { ...data };
-      delete dataToSave.opening_balance; 
-      await db.customers.update(id, dataToSave);
+      delete dataToSave.opening_balance;
+      if (isSupabase()) {
+        const { data: updated, error } = await supabase.from('customers').update(dataToSave).eq('id', id).select().single();
+        if (error) throw error;
+        return updated;
+      }
+      await db.customers.update(Number(id), dataToSave);
       return await this.getById(id);
     } catch (error) {
       throw new Error('Müşteri güncellenirken hata oluştu.');
@@ -92,7 +128,12 @@ export const customerService = {
       if (c.balance !== 0 && c.balance !== undefined) {
         throw new Error('Bakiyesi olan bir müşteri silinemez. Önce hesabı sıfırlamalısınız.');
       }
-      await db.customers.update(id, { is_active: false });
+      if (isSupabase()) {
+        const { error } = await supabase.from('customers').update({ is_active: false }).eq('id', id);
+        if (error) throw error;
+        return true;
+      }
+      await db.customers.update(Number(id), { is_active: false });
       return true;
     } catch (error) {
       throw error;
@@ -101,79 +142,119 @@ export const customerService = {
 
   async collectPayment(customerId, amount, method, registerId, description) {
     try {
-      return await db.transaction('rw', db.customers, db.customer_transactions, db.cash_registers, db.cash_transactions, db.sales, async () => {
-        const customer = await db.customers.get(customerId);
-        if (!customer) throw new Error('Müşteri bulunamadı.');
+      if (isSupabase()) {
+        const customer = await this.getById(customerId);
+        const newBalance = Math.round((Number(customer.balance) - amount) * 100) / 100;
 
-        const newBalance = Math.round((customer.balance - amount) * 100) / 100;
-        await db.customers.update(customerId, { balance: newBalance });
+        // 1. Müşteri bakiyesini güncelle
+        const { error: custErr } = await supabase.from('customers').update({ balance: newBalance }).eq('id', customerId);
+        if (custErr) throw custErr;
 
-        await db.customer_transactions.add({
-          customer_id: customerId,
-          transaction_type: 'payment',
-          amount,
-          balance_after: newBalance,
+        // 2. Müşteri hareket kaydı
+        await supabase.from('customer_transactions').insert([{
+          customer_id: customerId, transaction_type: 'payment',
+          amount, balance_after: newBalance,
           notes: description || `Tahsilat (${method})`,
           created_at: Date.now()
-        });
+        }]);
 
-        // ── FIFO Mantığı ile Açık Faturalara Dağıtım ──
+        // 3. FIFO: Açık satışlara dağıtım
+        const { data: unpaidSales } = await supabase
+          .from('sales')
+          .select('*')
+          .eq('customer_id', customerId)
+          .or('status.eq.pending,paid_amount.lt.total_amount')
+          .order('created_at', { ascending: true });
+
+        let remaining = amount;
+        for (const sale of (unpaidSales || [])) {
+          if (remaining <= 0) break;
+          const debt = Math.max(0, Number(sale.total_amount) - Number(sale.paid_amount || 0));
+          if (debt <= 0) continue;
+          const applyAmt = Math.min(debt, remaining);
+          const newPaidAmount = Math.round((Number(sale.paid_amount || 0) + applyAmt) * 100) / 100;
+          await supabase.from('sales').update({
+            paid_amount: newPaidAmount,
+            status: newPaidAmount >= Number(sale.total_amount) ? 'completed' : 'pending'
+          }).eq('id', sale.id);
+          if (registerId) {
+            await supabase.from('cash_transactions').insert([{
+              reference_id: sale.id, register_id: registerId,
+              transaction_type: 'customer_payment_in', amount: applyAmt,
+              notes: description || `Tahsilat (${method}) - Toplu Dağılım`,
+              created_at: Date.now()
+            }]);
+          }
+          remaining -= applyAmt;
+        }
+
+        // 4. Fazla avans kasa kaydı
+        if (remaining > 0 && registerId) {
+          await supabase.from('cash_transactions').insert([{
+            register_id: registerId, transaction_type: 'customer_payment_in',
+            amount: remaining, notes: description || `Tahsilat: ${customer.name} (Fazla/Avans Ödeme)`,
+            created_at: Date.now()
+          }]);
+        }
+
+        // 5. Kasa bakiyesi güncelle
+        if (registerId) {
+          const { data: reg } = await supabase.from('cash_registers').select('current_balance').eq('id', registerId).single();
+          if (reg) {
+            await supabase.from('cash_registers').update({
+              current_balance: Math.round((Number(reg.current_balance) + amount) * 100) / 100
+            }).eq('id', registerId);
+          }
+        }
+        return newBalance;
+      }
+
+      // ── Dexie fallback ──
+      return await db.transaction('rw', db.customers, db.customer_transactions, db.cash_registers, db.cash_transactions, db.sales, async () => {
+        const customer = await db.customers.get(Number(customerId));
+        if (!customer) throw new Error('Müşteri bulunamadı.');
+        const newBalance = Math.round((customer.balance - amount) * 100) / 100;
+        await db.customers.update(Number(customerId), { balance: newBalance });
+        await db.customer_transactions.add({
+          customer_id: Number(customerId), transaction_type: 'payment',
+          amount, balance_after: newBalance,
+          notes: description || `Tahsilat (${method})`, created_at: Date.now()
+        });
         let remainingToDistribute = amount;
-        
-        // Müşterinin tüm satışlarını çekip sadece açık olanları tarihe göre (eskiden yeniye) sıralıyoruz
-        const allSales = await db.sales.where('customer_id').equals(customerId).toArray();
+        const allSales = await db.sales.where('customer_id').equals(Number(customerId)).toArray();
         const unpaidSales = allSales
           .filter(s => s.status === 'pending' || (s.total_amount > (s.paid_amount || 0)))
           .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-
         for (const sale of unpaidSales) {
           if (remainingToDistribute <= 0) break;
-          
           const debt = Math.max(0, sale.total_amount - (sale.paid_amount || 0));
           if (debt <= 0) continue;
-
           const applyAmt = Math.min(debt, remainingToDistribute);
           const newPaidAmount = Math.round(((sale.paid_amount || 0) + applyAmt) * 100) / 100;
-          
           await db.sales.update(sale.id, {
             paid_amount: newPaidAmount,
             status: newPaidAmount >= sale.total_amount ? 'completed' : 'pending'
           });
-
-          // İlgili faturaya kasa/ödeme hareketini bağla (Eğer kasa seçildiyse)
           if (registerId) {
             await db.cash_transactions.add({
-              reference_id: sale.id, // Bu id sayesinde Satış Hareketlerinde listelenecek
-              register_id: registerId,
-              transaction_type: 'customer_payment_in',
-              amount: applyAmt,
-              notes: description || `Tahsilat (${method}) - Toplu Dağılım`,
-              created_at: Date.now()
+              reference_id: sale.id, register_id: registerId,
+              transaction_type: 'customer_payment_in', amount: applyAmt,
+              notes: description || `Tahsilat (${method}) - Toplu Dağılım`, created_at: Date.now()
             });
           }
-
           remainingToDistribute -= applyAmt;
         }
-
-        // Eğer hala dağıtılamayan tutar kaldıysa (örneğin avans ödemesi), onu da kasaya genel gelir olarak kaydet
         if (remainingToDistribute > 0 && registerId) {
           await db.cash_transactions.add({
-            register_id: registerId,
-            transaction_type: 'customer_payment_in',
-            amount: remainingToDistribute,
-            notes: description || `Tahsilat: ${customer.name} (Fazla/Avans Ödeme)`,
+            register_id: registerId, transaction_type: 'customer_payment_in',
+            amount: remainingToDistribute, notes: description || `Tahsilat: ${customer.name} (Fazla/Avans Ödeme)`,
             created_at: Date.now()
           });
         }
-
-        // Kasa bakiyesini güncelle
         if (registerId) {
-          const reg = await db.cash_registers.get(registerId);
-          if (reg) {
-            await db.cash_registers.update(registerId, { current_balance: Math.round((reg.current_balance + amount) * 100) / 100 });
-          }
+          const reg = await db.cash_registers.get(Number(registerId));
+          if (reg) await db.cash_registers.update(Number(registerId), { current_balance: Math.round((reg.current_balance + amount) * 100) / 100 });
         }
-
         return newBalance;
       });
     } catch (error) {
@@ -181,61 +262,60 @@ export const customerService = {
     }
   },
 
-  /**
-   * Müşteriye nakit iade veya mahsuplaşma (balance < 0 — biz müşteriye borçluyuz).
-   * type = 'cash_refund' -> kasa hareketli çıkış (out)
-   * type = 'offset'      -> sadece cari balance güncellenir
-   */
   async refundCustomer(customerId, amount, type, method, registerId, date, description) {
     try {
-      const tables = [db.customers, db.customer_transactions];
-      if (type === 'cash_refund') {
-        tables.push(db.cash_transactions, db.cash_registers);
-      }
+      const customer = await this.getById(customerId);
+      const currentBalance = parseFloat(customer.balance) || 0;
+      if (currentBalance >= 0) throw new Error('Müşterinin iade edilecek alacağı bulunmuyor.');
+      const maxRefundable = Math.abs(currentBalance);
+      if (amount > maxRefundable + 0.001) throw new Error(`İade tutarı, müşteri alacağını (${maxRefundable.toFixed(2)}₺) aşamaz.`);
+      const newBalance = Math.round((currentBalance + amount) * 100) / 100;
 
-      return await db.transaction('rw', tables, async () => {
-        const customer = await db.customers.get(customerId);
-        if (!customer) throw new Error('Müşteri bulunamadı.');
-
-        const currentBalance = parseFloat(customer.balance) || 0;
-        if (currentBalance >= 0) throw new Error('Müşterinin iade edilecek alacağı bulunmuyor.');
-
-        const maxRefundable = Math.abs(currentBalance);
-        if (amount > maxRefundable + 0.001) throw new Error(`İade tutarı, müşteri alacağını (${maxRefundable.toFixed(2)}₺) aşamaz.`);
-
-        // balance < 0 (müşteri alacaklı). adding amount pushes it towards 0.
-        const newBalance = Math.round((currentBalance + amount) * 100) / 100;
-        await db.customers.update(customerId, { balance: newBalance });
-
-        await db.customer_transactions.add({
+      if (isSupabase()) {
+        await supabase.from('customers').update({ balance: newBalance }).eq('id', customerId);
+        await supabase.from('customer_transactions').insert([{
           customer_id: customerId,
           transaction_type: type === 'offset' ? 'offset' : 'refund',
-          amount,
-          balance_after: newBalance,
+          amount, balance_after: newBalance,
+          payment_method: type === 'cash_refund' ? method : 'offset',
+          transaction_date: date || new Date().toISOString().split('T')[0],
+          notes: description || (type === 'offset' ? 'Mahsuplaşma' : `İade (${method})`),
+          created_at: Date.now()
+        }]);
+        if (type === 'cash_refund' && registerId) {
+          await supabase.from('cash_transactions').insert([{
+            register_id: parseInt(registerId), transaction_type: 'expense_out',
+            amount, notes: `Müşteriye İade: ${customer.name}`, created_at: Date.now()
+          }]);
+          const { data: reg } = await supabase.from('cash_registers').select('current_balance').eq('id', registerId).single();
+          if (reg) await supabase.from('cash_registers').update({ current_balance: Math.round((Number(reg.current_balance) - amount) * 100) / 100 }).eq('id', registerId);
+        }
+        return newBalance;
+      }
+
+      // ── Dexie fallback ──
+      const tables = [db.customers, db.customer_transactions];
+      if (type === 'cash_refund') tables.push(db.cash_transactions, db.cash_registers);
+      return await db.transaction('rw', tables, async () => {
+        await db.customers.update(Number(customerId), { balance: newBalance });
+        await db.customer_transactions.add({
+          customer_id: Number(customerId),
+          transaction_type: type === 'offset' ? 'offset' : 'refund',
+          amount, balance_after: newBalance,
           payment_method: type === 'cash_refund' ? method : 'offset',
           transaction_date: date || new Date().toISOString().split('T')[0],
           notes: description || (type === 'offset' ? 'Mahsuplaşma' : `İade (${method})`),
           created_at: Date.now()
         });
-
         if (type === 'cash_refund' && registerId) {
           const regId = parseInt(registerId);
           await db.cash_transactions.add({
-            register_id: regId,
-            transaction_type: 'expense_out',
-            amount,
-            notes: `Müşteriye İade: ${customer.name}`,
-            created_at: Date.now()
+            register_id: regId, transaction_type: 'expense_out',
+            amount, notes: `Müşteriye İade: ${customer.name}`, created_at: Date.now()
           });
-
           const reg = await db.cash_registers.get(regId);
-          if (reg) {
-            await db.cash_registers.update(regId, {
-              current_balance: Math.round((reg.current_balance - amount) * 100) / 100
-            });
-          }
+          if (reg) await db.cash_registers.update(regId, { current_balance: Math.round((reg.current_balance - amount) * 100) / 100 });
         }
-
         return newBalance;
       });
     } catch (error) {
@@ -245,20 +325,27 @@ export const customerService = {
 
   async getTransactions(customerId, filters = {}) {
     try {
-      let txs = await db.customer_transactions.where('customer_id').equals(customerId).toArray();
+      if (isSupabase()) {
+        let query = supabase.from('customer_transactions').select('*').eq('customer_id', customerId).order('created_at', { ascending: false });
+        const { data, error } = await query;
+        if (error) throw error;
+        let txs = data;
+        if (filters.startDate && filters.endDate) {
+          txs = txs.filter(t => isWithinInterval(Number(t.created_at), { start: filters.startDate, end: filters.endDate }));
+        }
+        if (filters.type && filters.type !== 'all') txs = txs.filter(t => t.transaction_type === filters.type);
+        return txs;
+      }
+
+      let txs = await db.customer_transactions.where('customer_id').equals(Number(customerId)).toArray();
       txs.sort((a, b) => {
         const dayA = new Date(a.created_at).setHours(0, 0, 0, 0);
         const dayB = new Date(b.created_at).setHours(0, 0, 0, 0);
         if (dayA === dayB) return b.id - a.id;
         return b.created_at - a.created_at;
       });
-
-      if (filters.startDate && filters.endDate) {
-        txs = txs.filter(t => isWithinInterval(t.created_at, { start: filters.startDate, end: filters.endDate }));
-      }
-      if (filters.type && filters.type !== 'all') {
-        txs = txs.filter(t => t.transaction_type === filters.type);
-      }
+      if (filters.startDate && filters.endDate) txs = txs.filter(t => isWithinInterval(t.created_at, { start: filters.startDate, end: filters.endDate }));
+      if (filters.type && filters.type !== 'all') txs = txs.filter(t => t.transaction_type === filters.type);
       return txs;
     } catch (error) {
       throw new Error('İşlem geçmişi getirilirken hata oluştu.');
@@ -268,22 +355,14 @@ export const customerService = {
   async getSummary() {
     try {
       const customers = await this.getAll();
-      const totalCount = customers.length;
-      let totalReceivable = 0; 
-      let totalDebt = 0;       
-
+      let totalReceivable = 0;
+      let totalDebt = 0;
       customers.forEach(c => {
         const bal = parseFloat(c.balance) || 0;
         if (bal > 0) totalReceivable += bal;
         else if (bal < 0) totalDebt += Math.abs(bal);
       });
-
-      return {
-        totalCount,
-        totalReceivable,
-        totalDebt,
-        netBalance: totalReceivable - totalDebt
-      };
+      return { totalCount: customers.length, totalReceivable, totalDebt, netBalance: totalReceivable - totalDebt };
     } catch (error) {
       return { totalCount: 0, totalReceivable: 0, totalDebt: 0, netBalance: 0 };
     }
