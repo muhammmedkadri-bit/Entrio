@@ -10,7 +10,6 @@ import {
 import { CalculatorWidget } from '../../components/ui/CalculatorModal';
 import { DatePicker } from '../../components/ui/DatePicker';
 import { QuickBarcodesModal } from './modals/QuickBarcodesModal';
-
 import { TransactionDetailModal } from '../cash/modals/TransactionDetailModal';
 import { reportService } from '../../services/reportService';
 import { quickNotesService } from '../../services/quickNotesService';
@@ -20,6 +19,7 @@ import { cashService } from '../../services/cashService';
 import { isSupabase } from '../../config/database';
 import { db } from '../../db';
 import { supabase } from '../../lib/supabaseClient';
+import { PremiumLoader } from '../../components/ui/PremiumLoader';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -366,8 +366,8 @@ export const Dashboard = () => {
 
   if (loading) {
     return (
-       <div className="flex h-[50vh] flex-col items-center justify-center space-y-4">
-          <div className="w-12 h-12 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
+       <div className="relative flex h-[50vh] w-full flex-col items-center justify-center rounded-2xl overflow-hidden">
+          <PremiumLoader isOpen={true} />
        </div>
     );
   }
