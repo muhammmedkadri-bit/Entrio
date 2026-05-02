@@ -186,9 +186,9 @@ export const Dashboard = () => {
     setLoading(true);
     try {
       // ── Şirket Bilgisi ──────────────────────────────────────
-      const cInfo = await settingsService.getSettings();
-      if (cInfo?.company_info?.name) setCompanyName(cInfo.company_info.name);
-      if (cInfo?.company_info?.logo) setCompanyLogo(cInfo.company_info.logo);
+      const cInfo = await settingsService.get('company_info');
+      if (cInfo?.value?.name) setCompanyName(cInfo.value.name);
+      if (cInfo?.value?.logo) setCompanyLogo(cInfo.value.logo);
 
       // ── 1. Core Stats + Grafikler (paralel) ─────────────────
       const now = new Date();
