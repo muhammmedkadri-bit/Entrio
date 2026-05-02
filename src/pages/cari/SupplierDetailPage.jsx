@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/appStore';
 import toast from 'react-hot-toast';
 import {
-  ArrowLeft, Building2, Phone, Mail, MapPin, ChevronDown, ArrowUpRight, ArrowDownLeft, Edit, Printer, Trash2, Layers
+  ArrowLeft, Building2, Phone, Mail, MapPin, ChevronDown, ArrowUpRight, ArrowDownLeft, Edit, Printer, Trash2, Layers, FileText
 } from 'lucide-react';
 import { supplierService } from '../../services/supplierService';
 import { Button } from '../../components/ui/Button';
@@ -145,17 +145,18 @@ export const SupplierDetailPage = () => {
                   {/* Pills Section */}
                   <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-gray-500">
                     {supplier.phone && (
-                      <span className="flex items-center gap-1 font-mono bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full border border-gray-200">
-                        <Phone className="w-3.5 h-3.5" /> {supplier.phone}
+                      <span className="flex items-center gap-1 font-mono bg-white/60 px-2.5 py-1 rounded-full border border-gray-100 shadow-sm text-slate-500">
+                        <Phone className="w-3.5 h-3.5 text-gray-400" /> {supplier.phone}
                       </span>
                     )}
                     {supplier.email && (
-                      <span className="flex items-center gap-1 font-medium bg-white/60 px-2.5 py-1 rounded-full border border-gray-100 shadow-sm">
+                      <span className="flex items-center gap-1 font-medium bg-white/60 px-2.5 py-1 rounded-full border border-gray-100 shadow-sm text-slate-500">
                         <Mail className="w-3.5 h-3.5 text-gray-400" /> {supplier.email}
                       </span>
                     )}
                     {supplier.tax_number && (
                       <span className="flex items-center gap-1 font-mono bg-white/60 px-2.5 py-1 rounded-full border border-gray-100 shadow-sm text-slate-500">
+                        <FileText className="w-3.5 h-3.5 text-gray-400" />
                         <span className="text-[10px] font-bold text-slate-400 uppercase mr-0.5">VKN/TC:</span> {supplier.tax_number}
                       </span>
                     )}

@@ -352,7 +352,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged }) => {
         <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
           <button 
             onClick={() => setDayCloseModalOpen(true)}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded-xl transition-colors shadow-sm"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-white text-slate-800 border border-slate-800 hover:bg-slate-50 text-sm font-bold rounded-xl transition-colors shadow-sm"
           >
             <Moon className="w-4 h-4" /> Günsonu Yap
           </button>
@@ -364,7 +364,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged }) => {
           </button>
           <button 
             onClick={() => setCreateModalOpen(true)}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-[#5da83f] hover:bg-[#4b8a32] text-white text-sm font-bold rounded-xl transition-colors shadow-sm"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold bg-white border border-[#7ed957] rounded-lg text-[#7ed957] hover:bg-[#7ed957]/10 shadow-sm active:scale-95 transition-all outline-none"
           >
             <span className="text-lg leading-none">+</span> Yeni Kasa Ekle
           </button>

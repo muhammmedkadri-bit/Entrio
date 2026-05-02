@@ -248,7 +248,7 @@ export const StockPage = () => {
 
             <button
               onClick={() => handleEditProduct(null)}
-              className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold bg-[#5da83f] hover:bg-[#4b8a32] text-white rounded-lg shadow-sm transition-all whitespace-nowrap"
+              className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold bg-white border border-[#7ed957] rounded-lg text-[#7ed957] hover:bg-[#7ed957]/10 shadow-sm active:scale-95 transition-all outline-none whitespace-nowrap"
             >
               <Plus className="w-4 h-4" /> Yeni Ürün
             </button>

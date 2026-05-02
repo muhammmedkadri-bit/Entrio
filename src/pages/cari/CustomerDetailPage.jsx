@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/appStore';
 import toast from 'react-hot-toast';
 import {
-  ArrowLeft, User, Phone, Mail, MapPin, ChevronDown, HandCoins, Edit, Printer, Trash2, Layers, ArrowDownLeft, ArrowUpLeft
+  ArrowLeft, User, Phone, Mail, MapPin, ChevronDown, HandCoins, Edit, Printer, Trash2, Layers, ArrowDownLeft, ArrowUpLeft, FileText
 } from 'lucide-react';
 import { customerService } from '../../services/customerService';
 import { Button } from '../../components/ui/Button';
@@ -131,28 +131,35 @@ export const CustomerDetailPage = () => {
                   <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                     {customer.name}
                   </h1>
-                  <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-gray-500">
-                    {customer.phone && (
-                      <span className="flex items-center gap-1 font-mono bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full border border-gray-200">
-                        <Phone className="w-3.5 h-3.5" /> {customer.phone}
-                      </span>
-                    )}
-                    {customer.email && (
-                      <span className="flex items-center gap-1 font-medium bg-white/60 px-2.5 py-1 rounded-full border border-gray-100 shadow-sm">
-                        <Mail className="w-3.5 h-3.5 text-gray-400" /> {customer.email}
-                      </span>
-                    )}
-                    {customer.address && (
-                      <span className="flex items-center gap-1 font-medium bg-white/60 px-2.5 py-1 rounded-full border border-gray-100 shadow-sm">
-                        <MapPin className="w-3.5 h-3.5 text-gray-400" /> {customer.address}
+
+                  {/* Address Section */}
+                  <div className="text-sm text-slate-600 flex items-center gap-1.5">
+                    {customer.address || '-'}
+                    {(customer.city || customer.district) && (
+                      <span className="text-slate-500 font-medium ml-1">
+                        ({customer.district ? `${customer.district}, ` : ''}{customer.city})
                       </span>
                     )}
                   </div>
-                  {customer.tax_number && (
-                    <div className="font-mono text-xs text-slate-400 flex items-center gap-1 mt-1">
-                      Vergi/TC: {customer.tax_number}
-                    </div>
-                  )}
+
+                  <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-gray-500">
+                    {customer.phone && (
+                      <span className="flex items-center gap-1 font-mono bg-white/60 px-2.5 py-1 rounded-full border border-gray-100 shadow-sm text-slate-500">
+                        <Phone className="w-3.5 h-3.5 text-gray-400" /> {customer.phone}
+                      </span>
+                    )}
+                    {customer.email && (
+                      <span className="flex items-center gap-1 font-medium bg-white/60 px-2.5 py-1 rounded-full border border-gray-100 shadow-sm text-slate-500">
+                        <Mail className="w-3.5 h-3.5 text-gray-400" /> {customer.email}
+                      </span>
+                    )}
+                    {customer.tax_number && (
+                      <span className="flex items-center gap-1 font-mono bg-white/60 px-2.5 py-1 rounded-full border border-gray-100 shadow-sm text-slate-500">
+                        <FileText className="w-3.5 h-3.5 text-gray-400" />
+                        <span className="text-[10px] font-bold text-slate-400 uppercase mr-0.5">VKN/TC:</span> {customer.tax_number}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 

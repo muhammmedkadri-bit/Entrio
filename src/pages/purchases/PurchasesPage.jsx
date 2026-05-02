@@ -398,9 +398,9 @@ export const PurchasesPage = () => {
                 startNavigation();
                 setTimeout(() => navigate('/pos'), 150);
               }}
-              className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold bg-sky-50/50 backdrop-blur-sm border border-sky-100 rounded-lg text-sky-600 hover:bg-sky-100 shadow-sm active:scale-95 transition-all outline-none whitespace-nowrap"
+              className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold bg-white border border-[#7ed957] rounded-lg text-[#7ed957] hover:bg-[#7ed957]/10 shadow-sm active:scale-95 transition-all outline-none whitespace-nowrap"
             >
-              <Zap className="w-4 h-4 fill-sky-500" />
+              <Zap className="w-4 h-4" />
               Hızlı Alış
             </button>
 

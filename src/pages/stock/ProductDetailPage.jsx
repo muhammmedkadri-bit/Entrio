@@ -6,7 +6,7 @@ import {
   ArrowLeft, Package, Barcode, Tag, Layers, TrendingUp, TrendingDown, Percent,
   Pencil, RefreshCw, Archive, Trash2, ChevronDown,
   ArrowLeftRight, ShoppingCart, Truck, Info, Warehouse,
-  Search, CheckCircle
+  Search, CheckCircle, Hash
 } from 'lucide-react';
 import { productService } from '../../services/productService';
 import { stockService } from '../../services/stockService';
@@ -130,8 +130,8 @@ export const ProductDetailPage = () => {
   const stockColor =
     !product ? '' :
     product.stock_quantity > (product.min_stock_level || 0) ? 'text-[#5da83f] bg-white border-[#82e05a]/30 shadow-sm' :
-    product.stock_quantity > 0 ? 'text-orange-500 bg-white border-orange-200 shadow-sm' :
-    'text-red-500 bg-white border-red-200 shadow-sm';
+    product.stock_quantity > 0 ? 'text-[#5da83f] bg-white border-[#82e05a]/30 shadow-sm' :
+    'text-[#5da83f] bg-white border-[#82e05a]/30 shadow-sm';
 
   const handleCategorySelect = async (cat) => {
     if (cat.id === product.category_id) { setShowCatPopup(false); return; }
@@ -229,6 +229,11 @@ export const ProductDetailPage = () => {
                     <span className="flex items-center gap-1 font-mono bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full border border-gray-200">
                       <Barcode className="w-3.5 h-3.5" />{product.barcode}
                     </span>
+                    {product.sku && (
+                      <span className="flex items-center gap-1 font-mono bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full border border-gray-200">
+                        <Hash className="w-3.5 h-3.5" />{product.sku}
+                      </span>
+                    )}
                     {/* Category Pill Dropdown */}
                     <div className="relative z-[100]" ref={catPopupRef}>
                       <button

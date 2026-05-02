@@ -149,7 +149,7 @@ export const CustomersPage = () => {
         <div className="flex items-center gap-2 flex-shrink-0 h-[46px] ml-auto">
           <button
             onClick={() => openForm(null)}
-            className="flex items-center gap-2 px-4 py-3 h-full text-sm font-bold bg-emerald-50/10 backdrop-blur-md border border-emerald-500/20 rounded-lg text-emerald-600 hover:bg-emerald-500/20 shadow-sm active:scale-95 transition-all outline-none whitespace-nowrap"
+            className="flex items-center gap-2 px-4 py-3 h-full text-sm font-bold bg-white border border-[#7ed957] rounded-lg text-[#7ed957] hover:bg-[#7ed957]/10 shadow-sm active:scale-95 transition-all outline-none whitespace-nowrap"
           >
             <Plus className="w-4 h-4" />
             Müşteri Ekle

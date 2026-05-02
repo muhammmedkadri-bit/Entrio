@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { DollarSign, Euro, PoundSterling, Coins } from 'lucide-react';
+import { DollarSign, Euro, PoundSterling, Coins, LineChart } from 'lucide-react';
 
 const CURRENCIES = [
   { key: 'USD', label: 'Dolar',   Icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-100' },
@@ -64,7 +64,7 @@ export const CurrencyWidget = () => {
       {/* Header */}
       <div className="px-4 py-3.5 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-base">💱</span>
+          <LineChart className="w-5 h-5" style={{ color: '#7ed957' }} />
           <h3 className="font-bold text-slate-800 text-sm">Canlı Piyasalar</h3>
         </div>
       </div>
