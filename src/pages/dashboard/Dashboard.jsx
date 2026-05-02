@@ -304,7 +304,7 @@ export const Dashboard = () => {
   }
 
   return (
-    <div className="-mt-3 pb-3 flex flex-col min-h-full">
+    <div className="-mt-3 pb-0 flex flex-col min-h-full">
       
       {/* Dashboard Header - H-16 aligns exactly with Sidebar top border */}
       <div className="h-auto md:h-16 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-50">

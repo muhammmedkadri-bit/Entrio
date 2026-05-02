@@ -160,6 +160,18 @@ export const saleService = {
           
           const returnNumber = 'RET-' + Date.now().toString().slice(-6);
 
+          let refNote = returnNumber;
+          if (returnData.original_sale_id) {
+            const os = await db.sales.get(returnData.original_sale_id);
+            if (os && os.sale_number) {
+              refNote = `${os.sale_number} no'lu iade ödemesi`;
+            } else {
+              refNote = `${returnNumber} no'lu iade ödemesi`;
+            }
+          } else {
+            refNote = `${returnNumber} no'lu iade ödemesi`;
+          }
+
           const isMixed = paymentData.method === 'mixed';
           const pCash = isMixed ? (paymentData.cashAmount || 0) : (paymentData.method === 'cash' ? returnData.total_amount : 0);
           const pCard = isMixed ? (paymentData.cardAmount || 0) : (paymentData.method === 'card' ? returnData.total_amount : 0);
@@ -220,15 +232,15 @@ export const saleService = {
           };
 
           if (paymentData.method === 'cash') {
-            await removePaymentFromRegister(pCash, 'cash', `İade: ${returnNumber}`);
+            await removePaymentFromRegister(pCash, 'cash', `İade : ${refNote}`);
           } else if (paymentData.method === 'card') {
-            await removePaymentFromRegister(pCard, 'card', `İade (Kredi Kartı): ${returnNumber}`);
+            await removePaymentFromRegister(pCard, 'card', `İade : ${refNote} (Kredi Kartı)`);
           } else if (paymentData.method === 'transfer') {
-            await removePaymentFromRegister(pTrans, 'transfer', `İade (Havale/EFT): ${returnNumber}`);
+            await removePaymentFromRegister(pTrans, 'transfer', `İade : ${refNote} (Havale/EFT)`);
           } else if (paymentData.method === 'mixed') {
-            if (pCash > 0) await removePaymentFromRegister(pCash, 'cash', `Parçalı İade (Nakit): ${returnNumber}`);
-            if (pCard > 0) await removePaymentFromRegister(pCard, 'card', `Parçalı İade (Kart): ${returnNumber}`);
-            if (pTrans > 0) await removePaymentFromRegister(pTrans, 'transfer', `Parçalı İade (EFT): ${returnNumber}`);
+            if (pCash > 0) await removePaymentFromRegister(pCash, 'cash', `Parçalı İade : ${refNote} (Nakit)`);
+            if (pCard > 0) await removePaymentFromRegister(pCard, 'card', `Parçalı İade : ${refNote} (Kart)`);
+            if (pTrans > 0) await removePaymentFromRegister(pTrans, 'transfer', `Parçalı İade : ${refNote} (EFT)`);
           }
 
           if (pCredit > 0) {
@@ -244,7 +256,7 @@ export const saleService = {
                 amount: pCredit,
                 balance_after: newBalance,
                 sale_number: returnNumber,
-                notes: `Veresiye İade Düşümü: ${returnNumber}`,
+                notes: `Veresiye İade Düşümü: ${refNote}`,
                 created_at: now
               });
             }

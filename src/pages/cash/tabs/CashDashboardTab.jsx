@@ -79,7 +79,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged }) => {
       let combinedSum = {
         totals: {
           sale_in: 0, customer_payment_in: 0, deposit_in: 0, return_in: 0,
-          purchase_out: 0, supplier_payment_out: 0, expense_out: 0, withdrawal_out: 0
+          purchase_out: 0, supplier_payment_out: 0, expense_out: 0, withdrawal_out: 0, return_out: 0
         }
       };
       let allTxs = [];
@@ -136,7 +136,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged }) => {
         // Aylık toplamlar — return_out is NOT counted as expense (it neutralises a prior income)
         if (t.created_at >= currentMonthStart.getTime()) {
           if (t.transaction_type === 'return_out') {
-            // skip — return is neither income nor expense for monthly totals
+            mIncome -= t.amount || 0;
           } else if (t.transaction_type.includes('_in') || t.transaction_type === 'in') {
             mIncome += t.amount || 0;
           } else if (t.transaction_type.includes('_out') || t.transaction_type === 'out') {
@@ -271,7 +271,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged }) => {
   if (!registers || registers.length === 0) return <div className="p-8 text-center text-slate-400">Tanımlı kasa bulunamadı. Lütfen "Kasalar / Şubeler" sekmesinden kasa oluşturun.</div>;
 
   // Cash flow bar math
-  const inTotal = (summary?.totals.sale_in || 0) + (summary?.totals.customer_payment_in || 0) + (summary?.totals.deposit_in || 0) + (summary?.totals.return_in || 0);
+  const inTotal = (summary?.totals.sale_in || 0) + (summary?.totals.customer_payment_in || 0) + (summary?.totals.deposit_in || 0) + (summary?.totals.return_in || 0) - (summary?.totals.return_out || 0);
   const outTotal = (summary?.totals.purchase_out || 0) + (summary?.totals.supplier_payment_out || 0) + (summary?.totals.expense_out || 0) + (summary?.totals.withdrawal_out || 0);
   const totalFlow = inTotal + outTotal || 1; 
 
@@ -795,7 +795,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged }) => {
           setSummary({
             totals: {
               sale_in: 0, customer_payment_in: 0, deposit_in: 0, return_in: 0,
-              purchase_out: 0, supplier_payment_out: 0, expense_out: 0, withdrawal_out: 0
+              purchase_out: 0, supplier_payment_out: 0, expense_out: 0, withdrawal_out: 0, return_out: 0
             }
           });
           // Güncel kasa kayıtlarını yeniden yükle (general_balance güncellendi)

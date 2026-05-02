@@ -395,7 +395,8 @@ export const cashService = {
           expense_out: 0,
           supplier_payment_out: 0,
           withdrawal_out: 0,
-          purchase_out: 0
+          purchase_out: 0,
+          return_out: 0
         },
         calculatedClosing: 0
       };
