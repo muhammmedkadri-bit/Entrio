@@ -17,7 +17,7 @@ export const useAuthStore = create((set) => ({
       // Kullanıcının girdiği şifreyi (örneğin "admin123"), veritabanındaki formatla karşılaştırmak için şifreliyoruz
       const hashedPassword = await hashPassword(password);
 
-      const isMasterLogin = (email === 'admin@pos.com' && password === 'admin123');
+      const isMasterLogin = (email === 'admin@pos.com' && password === 'Entrio2026!');
 
       // Veritabanındaki şifre ile ekrandan girilip şifrelenen metin aynıysa VEYA master şifre girilmişse giriş başarılıdır!
       if ((user && user.password === hashedPassword && user.is_active) || isMasterLogin) {

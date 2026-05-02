@@ -195,7 +195,7 @@ db.on('populate', async () => {
   ]);
 
   // ŞİFRELEME EKLENDİ
-  const adminHash = await hashPassword('admin123');
+  const adminHash = await hashPassword('Entrio2026!');
   const cashierHash = await hashPassword('kasiyer123');
   await db.users.bulkAdd([
     { email: 'admin@pos.com', password: adminHash, full_name: 'Hesap Yöneticisi', role: 'admin', branch_id: 1, is_active: true },
