@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -35,7 +36,7 @@ export const Sidebar = () => {
   const { user, logout } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
-  const [hoveredItem, setHoveredItem] = React.useState(null);  // { to, x, y }
+  const [hoveredItem, setHoveredItem] = React.useState(null);  // { to, x, y, name }
 
   const collapsed = sidebarCollapsed;
 
@@ -55,6 +56,50 @@ export const Sidebar = () => {
           className="fixed inset-0 z-40 bg-slate-900/80 backdrop-blur-sm lg:hidden transition-opacity"
           onClick={toggleSidebar}
         />
+      )}
+
+      {/* Tooltip Portal */}
+      {collapsed && hoveredItem && createPortal(
+        <div
+          className="pointer-events-none z-[999999]"
+          style={{
+            position: 'fixed',
+            top: hoveredItem.y,
+            left: hoveredItem.x,
+            transform: 'translateY(-50%)',
+          }}
+        >
+          <div
+            className="relative px-3 py-1.5 rounded-lg text-[12px] font-bold whitespace-nowrap shadow-lg"
+            style={{
+              background: 'white',
+              color: '#5da83f',
+              border: '1.5px solid #7ed957',
+              boxShadow: '0 4px 16px rgba(126,217,87,0.25)',
+            }}
+          >
+            {/* Arrow border */}
+            <div style={{
+              position: 'absolute', top: '50%', left: -6,
+              transform: 'translateY(-50%)',
+              width: 0, height: 0,
+              borderTop: '5px solid transparent',
+              borderBottom: '5px solid transparent',
+              borderRight: '6px solid #7ed957',
+            }} />
+            {/* Arrow fill */}
+            <div style={{
+              position: 'absolute', top: '50%', left: -4,
+              transform: 'translateY(-50%)',
+              width: 0, height: 0,
+              borderTop: '4px solid transparent',
+              borderBottom: '4px solid transparent',
+              borderRight: '5px solid white',
+            }} />
+            {hoveredItem.name}
+          </div>
+        </div>,
+        document.body
       )}
 
       {/* Sidebar */}
@@ -119,7 +164,7 @@ export const Sidebar = () => {
                 onMouseEnter={(e) => {
                   if (!collapsed) return;
                   const rect = e.currentTarget.getBoundingClientRect();
-                  setHoveredItem({ to: item.to, x: rect.right + 8, y: rect.top + rect.height / 2 });
+                  setHoveredItem({ to: item.to, name: item.name, x: rect.right + 8, y: rect.top + rect.height / 2 });
                 }}
                 onMouseLeave={() => setHoveredItem(null)}
               >
@@ -159,49 +204,6 @@ export const Sidebar = () => {
                     );
                   }}
                 </NavLink>
-
-                {/* Tooltip — fixed position (escapes sidebar stacking context) */}
-                {collapsed && hoveredItem?.to === item.to && (
-                  <div
-                    className="pointer-events-none z-[99999]"
-                    style={{
-                      position: 'fixed',
-                      top: hoveredItem.y,
-                      left: hoveredItem.x,
-                      transform: 'translateY(-50%)',
-                    }}
-                  >
-                    <div
-                      className="relative px-3 py-1.5 rounded-lg text-[12px] font-bold whitespace-nowrap shadow-lg"
-                      style={{
-                        background: 'white',
-                        color: '#5da83f',
-                        border: '1.5px solid #7ed957',
-                        boxShadow: '0 4px 16px rgba(126,217,87,0.25)',
-                      }}
-                    >
-                      {/* Arrow border */}
-                      <div style={{
-                        position: 'absolute', top: '50%', left: -6,
-                        transform: 'translateY(-50%)',
-                        width: 0, height: 0,
-                        borderTop: '5px solid transparent',
-                        borderBottom: '5px solid transparent',
-                        borderRight: '6px solid #7ed957',
-                      }} />
-                      {/* Arrow fill */}
-                      <div style={{
-                        position: 'absolute', top: '50%', left: -4,
-                        transform: 'translateY(-50%)',
-                        width: 0, height: 0,
-                        borderTop: '4px solid transparent',
-                        borderBottom: '4px solid transparent',
-                        borderRight: '5px solid white',
-                      }} />
-                      {item.name}
-                    </div>
-                  </div>
-                )}
               </div>
             );
           })}
