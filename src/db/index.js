@@ -2,6 +2,17 @@ import Dexie from 'dexie';
 
 export const db = new Dexie('RetailPOSDB');
 
+// --- ŞİFRELEME (HASHING) YARDIMCI FONKSİYONU ---
+export async function hashPassword(password) {
+  // Şifreyi UTF-8 formatında byte dizisine çeviriyoruz
+  const msgBuffer = new TextEncoder().encode(password);
+  // Tarayıcının yerleşik crypto API'si ile SHA-256 algoritmasını kullanarak özetliyoruz (hashliyoruz)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  // Çıkan sonucu hexadecimal (onaltılık) bir metne çeviriyoruz
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 // --- VERSION 1 ---
 db.version(1).stores({
   branches: '++id, name, is_active',
@@ -89,17 +100,12 @@ db.version(4).stores({
 
 // --- VERSION 5 ---
 // Günlük bakiye / genel bakiye ayrımı
-// general_balance: önceki günlerin birikimli toplamı
-// last_day_close_date: son gün sonu kapanışının tarihi (YYYY-MM-DD, yerel saat)
 db.version(5).stores({
   cash_registers: '++id, name, type, is_default_for, is_active, general_balance, last_day_close_date'
 }).upgrade(async tx => {
-  // Yerel tarih (UTC değil) — Türkiye UTC+3
   const d = new Date();
-  const today = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   await tx.table('cash_registers').toCollection().modify(reg => {
-    // Temiz başlangıç: mevcut current_balance tüm genel bakiye sayılır
-    // Bugünden itibaren günlük bakiye 0'dan başlar
     if (reg.general_balance === undefined) reg.general_balance = reg.current_balance || 0;
     if (!reg.last_day_close_date) reg.last_day_close_date = today;
   });
@@ -111,15 +117,17 @@ db.version(6).stores({
   users: '++id, email, role, branch_id, is_active',
   settings: 'key' // key is the primary key
 }).upgrade(async tx => {
-  // Seed initial users
+  // Seed initial users - ŞİFRELEME EKLENDİ
   const usersCount = await tx.table('users').count();
   if (usersCount === 0) {
+    const adminHash = await hashPassword('admin123');
+    const cashierHash = await hashPassword('kasiyer123');
     await tx.table('users').bulkAdd([
-      { email: 'admin@pos.com', password: 'admin123', full_name: 'Hesap Yöneticisi', role: 'admin', branch_id: 1, is_active: true },
-      { email: 'kasiyer@pos.com', password: 'kasiyer123', full_name: 'Kasiyer', role: 'cashier', branch_id: 1, is_active: true }
+      { email: 'admin@pos.com', password: adminHash, full_name: 'Hesap Yöneticisi', role: 'admin', branch_id: 1, is_active: true },
+      { email: 'kasiyer@pos.com', password: cashierHash, full_name: 'Kasiyer', role: 'cashier', branch_id: 1, is_active: true }
     ]);
   }
-  
+
   // Seed initial settings
   const settingsCount = await tx.table('settings').count();
   if (settingsCount === 0) {
@@ -140,12 +148,26 @@ db.version(7).stores({
     if (reg.general_balance === undefined) reg.general_balance = reg.current_balance || 0;
     if (reg.last_day_close_at === undefined) reg.last_day_close_at = null;
   });
-  
+
   await tx.table('cash_transactions').toCollection().modify(t => {
     if (t.is_day_close === undefined) t.is_day_close = (t.transaction_type === 'day_close');
     if (t.is_consolidated === undefined) t.is_consolidated = !!t.is_consolidated;
     if (t.day_close_data === undefined) t.day_close_data = null;
   });
+});
+
+// --- VERSION 8 ---
+// Şifre düzeltme migrasyonu
+// db.on('ready') yerine upgrade mantığı ile (Deadlock engellemek için)
+db.version(8).stores({}).upgrade(async tx => {
+  const users = await tx.table('users').toArray();
+  for (const user of users) {
+    // Şifre 64 karakter (SHA-256 uzunluğu) değilse düz metin kabul et ve şifrele
+    if (user.password && user.password.length !== 64) {
+      const hashed = await hashPassword(user.password);
+      await tx.table('users').update(user.id, { password: hashed });
+    }
+  }
 });
 
 db.on('populate', async () => {
@@ -160,7 +182,6 @@ db.on('populate', async () => {
   // Seed both old default and new specialized registers
   const today = new Date().toISOString().split('T')[0];
   await db.cash_registers.bulkAdd([
-    { name: 'Ana Kasa', type: 'general', current_balance: 0, general_balance: 0, last_day_close_date: today, last_day_close_at: null, is_active: true },
     { name: 'Nakit Kasa', type: 'cash', is_default_for: 'cash', current_balance: 0, general_balance: 0, last_day_close_date: today, last_day_close_at: null, is_active: true },
     { name: 'POS Hesabı 1', type: 'pos', is_default_for: 'card', current_balance: 0, general_balance: 0, last_day_close_date: today, last_day_close_at: null, is_active: true },
     { name: 'Banka Hesabı 1', type: 'bank', is_default_for: 'transfer', current_balance: 0, general_balance: 0, last_day_close_date: today, last_day_close_at: null, is_active: true }
@@ -173,9 +194,12 @@ db.on('populate', async () => {
     { name: 'Giyim', color: '#f59e0b', icon: 'shirt' }
   ]);
 
+  // ŞİFRELEME EKLENDİ
+  const adminHash = await hashPassword('admin123');
+  const cashierHash = await hashPassword('kasiyer123');
   await db.users.bulkAdd([
-    { email: 'admin@pos.com', password: 'admin123', full_name: 'Hesap Yöneticisi', role: 'admin', branch_id: 1, is_active: true },
-    { email: 'kasiyer@pos.com', password: 'kasiyer123', full_name: 'Kasiyer', role: 'cashier', branch_id: 1, is_active: true }
+    { email: 'admin@pos.com', password: adminHash, full_name: 'Hesap Yöneticisi', role: 'admin', branch_id: 1, is_active: true },
+    { email: 'kasiyer@pos.com', password: cashierHash, full_name: 'Kasiyer', role: 'cashier', branch_id: 1, is_active: true }
   ]);
 
   await db.settings.bulkAdd([
