@@ -110,8 +110,8 @@ export const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [allRegisters, setAllRegisters] = useState([]);
-  const [companyName, setCompanyName] = useState('İşletme Özeti');
-  const [companyLogo, setCompanyLogo] = useState(null);
+  const [companyName, setCompanyName] = useState(() => localStorage.getItem('entrio_company_name') || 'İşletme Özeti');
+  const [companyLogo, setCompanyLogo] = useState(() => localStorage.getItem('entrio_company_logo') || null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showCalculator, setShowCalculator] = useState(false);
   const [showQuickBarcodes, setShowQuickBarcodes] = useState(false);
@@ -187,8 +187,14 @@ export const Dashboard = () => {
     try {
       // ── Şirket Bilgisi ──────────────────────────────────────
       const cInfo = await settingsService.get('company_info');
-      if (cInfo?.value?.name) setCompanyName(cInfo.value.name);
-      if (cInfo?.value?.logo) setCompanyLogo(cInfo.value.logo);
+      if (cInfo?.value?.name) {
+        setCompanyName(cInfo.value.name);
+        localStorage.setItem('entrio_company_name', cInfo.value.name);
+      }
+      if (cInfo?.value?.logo !== undefined) {
+        setCompanyLogo(cInfo.value.logo);
+        localStorage.setItem('entrio_company_logo', cInfo.value.logo || '');
+      }
 
       // ── 1. Core Stats + Grafikler (paralel) ─────────────────
       const now = new Date();
