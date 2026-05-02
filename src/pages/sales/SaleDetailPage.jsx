@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/appStore';
+import { useCartStore } from '../../store/cartStore';
 import toast from 'react-hot-toast';
 import {
   ArrowLeft, FileText, Calendar, Printer, ShoppingCart,
@@ -44,11 +45,13 @@ const METHOD_ICON = {
 /* ══════════════════════════════════════════════════════════════════════════ */
 export const SaleDetailPage = () => {
   const { id } = useParams();
+  const saleId = Number(id);
   const navigate = useNavigate();
   const { startNavigation } = useAppStore();
-  const saleId = parseInt(id);
+  const { clearCart, setPosMode, setReturnSaleId, setCustomer: setCartCustomer, addItem } = useCartStore();
 
   const [sale, setSale]         = useState(null);
+  const [returnSale, setReturnSale] = useState(null);
   const [customer, setCustomer] = useState(null);
   const [loading, setLoading]   = useState(true);
 
@@ -112,6 +115,12 @@ export const SaleDetailPage = () => {
         const c = await db.customers.get(saleData.customer_id).catch(() => null);
         setCustomer(c);
       }
+
+      // Load return details if exists
+      const ret = await db.sales.where('original_sale_id').equals(Number(saleId)).first().catch(() => null);
+      if (ret && ret.status === 'returned') {
+        setReturnSale(ret);
+      }
     } catch (e) {
       toast.error('Satış detayı yüklenemedi: ' + e.message);
       navigate(-1);
@@ -121,6 +130,32 @@ export const SaleDetailPage = () => {
   };
 
   useEffect(() => { loadAll(); }, [saleId]);
+
+  /* ── Return ─────────────────────────────────────────────────────────────── */
+  const handleReturn = async () => {
+    try {
+      clearCart();
+      setPosMode('return');
+      setReturnSaleId(saleId);
+      
+      if (sale.customer_id) {
+        const c = await db.customers.get(sale.customer_id).catch(() => null);
+        if (c) setCartCustomer(c);
+      }
+      
+      for (const item of sale.items) {
+        const product = await db.products.get(item.product_id).catch(() => null);
+        if (product) {
+          addItem(product, item.quantity);
+        }
+      }
+      
+      startNavigation();
+      setTimeout(() => navigate('/pos'), 150);
+    } catch (e) {
+      toast.error('İade işlemi başlatılamadı: ' + e.message);
+    }
+  };
 
   /* ── Delete ─────────────────────────────────────────────────────────────── */
   const handleDelete = async () => {
@@ -226,6 +261,16 @@ export const SaleDetailPage = () => {
 
               {/* Right: actions */}
               <div className="flex items-center gap-2 print:hidden">
+                {sale.status !== 'returned' && !sale.original_sale_id && !returnSale && (
+                  <button
+                    onClick={handleReturn}
+                    className="flex items-center gap-1.5 text-sm font-bold px-3 py-2 rounded-xl border border-orange-200 bg-orange-50 hover:bg-orange-100 text-orange-600 transition-all shadow-sm"
+                  >
+                    <Undo2 className="w-4 h-4" />
+                    İade Et
+                  </button>
+                )}
+
                 <button
                   onClick={handlePrint}
                   className="flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 transition-all"
@@ -588,6 +633,30 @@ export const SaleDetailPage = () => {
                   )}
                 </div>
               </div>
+
+              {/* Return Info Card */}
+              {returnSale && (
+                <div className="bg-orange-50 rounded-xl border border-orange-200 p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Undo2 className="w-4 h-4 text-orange-500" />
+                    <span className="text-sm font-semibold text-orange-700">İade Bilgileri</span>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-orange-600">Yöntem</span>
+                      <span className="font-semibold text-orange-800">{METHOD_LABELS[returnSale.payment_method] || returnSale.payment_method || '—'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-orange-600">Tutar</span>
+                      <span className="font-bold text-orange-700">₺{fmt(returnSale.total_amount)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-orange-600">Tarih/Saat</span>
+                      <span className="font-medium text-orange-700">{returnSale.created_at ? format(new Date(returnSale.created_at), 'd MMMM yyyy HH:mm', { locale: tr }) : '—'}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

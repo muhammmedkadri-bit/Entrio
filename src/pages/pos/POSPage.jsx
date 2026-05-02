@@ -375,6 +375,9 @@ export const POSPage = () => {
         setSearchQuery('');
         setShowDropdown(false);
       } else {
+        // Clear the search field immediately so the barcode char doesn't linger
+        setSearchQuery('');
+        setShowDropdown(false);
         // Open the Quick Product Manager in create mode with the scanned barcode pre-filled
         setScannedNotFound(code);
         setQpmOpen(true);

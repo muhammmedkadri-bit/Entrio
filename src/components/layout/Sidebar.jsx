@@ -164,12 +164,14 @@ export const Sidebar = () => {
                       {/* Collapsed tooltip */}
                       {collapsed && (
                         <span
-                          className="pointer-events-none absolute left-full ml-3 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-150 z-[200]"
+                          className="pointer-events-none absolute left-full ml-3 px-3 py-1.5 rounded-lg text-[12px] font-bold whitespace-nowrap shadow-md opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-150 z-[200]"
                           style={{
                             top: '50%',
-                            transform: 'translateY(-50%) translateX(4px)',
-                            background: '#1e293b',
-                            color: '#f1f5f9',
+                            transform: 'translateY(-50%) translateX(-4px)',
+                            transitionProperty: 'opacity, transform',
+                            background: 'white',
+                            color: '#5da83f',
+                            border: '1.5px solid #7ed957',
                           }}
                         >
                           {item.name}
