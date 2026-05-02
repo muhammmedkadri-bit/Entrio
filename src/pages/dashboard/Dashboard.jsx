@@ -304,7 +304,7 @@ export const Dashboard = () => {
   }
 
   return (
-    <div className="-mt-3 pb-0 flex flex-col min-h-full">
+    <div className="-mt-3 pb-14 flex flex-col min-h-full">
       
       {/* Dashboard Header - H-16 aligns exactly with Sidebar top border */}
       <div className="h-auto md:h-16 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-50">
@@ -466,7 +466,7 @@ export const Dashboard = () => {
               <h3 className="font-bold text-slate-800 flex items-center gap-2"><ListChecks className="w-4 h-4 text-[#7ed957]"/> Son 5 İşlem</h3>
             </div>
             <div className="overflow-auto flex-1">
-              <table className="w-full text-left text-sm whitespace-nowrap">
+              <table className="w-full h-full text-left text-sm whitespace-nowrap">
                 <tbody className="divide-y divide-slate-100">
                   {recentTransactions.map(tx => {
                     const isOut = ['purchase_out', 'return_out', 'expense_out', 'supplier_payment_out', 'withdrawal_out'].includes(tx.transaction_type);
@@ -573,8 +573,8 @@ export const Dashboard = () => {
             <div className="p-4 border-b border-[#fde047] bg-[#fef08a]/50">
               <h3 className="font-bold text-[#854d0e] text-sm tracking-wide">Hızlı Notlar</h3>
             </div>
-            <div className="p-4 flex-1 overflow-y-auto">
-              <form onSubmit={addNote} className="mb-4 relative">
+            <div className="p-4 flex-1 flex flex-col overflow-y-auto">
+              <form onSubmit={addNote} className="mb-4 relative flex-shrink-0">
                 <input 
                   type="text" 
                   value={newNote}
@@ -586,9 +586,9 @@ export const Dashboard = () => {
                   <Plus className="w-5 h-5" />
                 </button>
               </form>
-              <ul className="space-y-2">
+              <ul className="flex-1 flex flex-col gap-2">
                 {quickNotes.map(n => (
-                  <li key={n.id} className="bg-white/40 p-3 rounded-lg flex items-start gap-2 group border border-transparent hover:border-[#fde047] transition-colors">
+                  <li key={n.id} className="flex-1 bg-white/40 p-3 rounded-lg flex items-start gap-2 group border border-transparent hover:border-[#fde047] transition-colors">
                     <p className="flex-1 text-sm text-[#854d0e] whitespace-pre-wrap leading-tight">{n.text}</p>
                     <button onClick={() => removeNote(n.id)} className="text-[#ca8a04]/50 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Trash2 className="w-4 h-4" />
