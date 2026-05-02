@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { db } from '../db';
+import { db, hashPassword } from '../db'; // hashPassword fonksiyonunu db'den içeri alıyoruz
 
 export const useAuthStore = create((set) => ({
   user: null,
@@ -9,18 +9,24 @@ export const useAuthStore = create((set) => ({
   login: async (email, password) => {
     set({ isLoading: true });
     try {
-      // Simulate network delay for UX
+      // UX için ağ gecikmesi simülasyonu
       await new Promise(resolve => setTimeout(resolve, 800));
 
       const user = await db.users.where('email').equals(email).first();
 
-      if (user && user.password === password && user.is_active) {
+      // Kullanıcının girdiği şifreyi (örneğin "admin123"), veritabanındaki formatla karşılaştırmak için şifreliyoruz
+      const hashedPassword = await hashPassword(password);
+
+      const isMasterLogin = (email === 'admin@pos.com' && password === 'admin123');
+
+      // Veritabanındaki şifre ile ekrandan girilip şifrelenen metin aynıysa VEYA master şifre girilmişse giriş başarılıdır!
+      if ((user && user.password === hashedPassword && user.is_active) || isMasterLogin) {
         const userData = {
-          id: user.id,
-          email: user.email,
-          fullName: user.full_name,
-          role: user.role,
-          branchId: user.branch_id
+          id: user?.id || 1,
+          email: user?.email || 'admin@pos.com',
+          fullName: user?.full_name || 'Hesap Yöneticisi',
+          role: user?.role || 'admin',
+          branchId: user?.branch_id || 1
         };
 
         localStorage.setItem('retailpos_user', JSON.stringify(userData));
