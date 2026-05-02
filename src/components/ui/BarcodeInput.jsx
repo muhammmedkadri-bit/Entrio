@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Camera, Search, X } from 'lucide-react';
+import { Camera, Search } from 'lucide-react';
 import { BrowserMultiFormatReader } from '@zxing/library';
 
 export const BarcodeInput = ({ 
@@ -21,26 +21,14 @@ export const BarcodeInput = ({
   const currentVal = isControlled ? value : internalInput;
   const handleChange = isControlled ? onChange : (e) => setInternalInput(e.target.value);
 
-  // Keep refs for always-fresh values inside event closure
+  // Always-fresh ref so the keydown closure reads current value without stale closure
   const currentValRef = useRef(currentVal);
   useEffect(() => { currentValRef.current = currentVal; }, [currentVal]);
 
+  // Scanner chars accumulate here between keystrokes
   const bufferRef = useRef('');
-  // Make scanTimeout a ref so it can be cleared from anywhere (including value-reset effect)
+  // Timeout ref — accessible outside the closure for explicit clearing
   const scanTimeoutRef = useRef(null);
-
-  // ─── CRITICAL FIX: when controlled value becomes '' (modal closed / reset),
-  //   immediately flush the buffer + pending timeout so the next barcode scan
-  //   starts from a completely clean slate.
-  useEffect(() => {
-    if (currentVal === '' || currentVal == null) {
-      if (scanTimeoutRef.current) {
-        clearTimeout(scanTimeoutRef.current);
-        scanTimeoutRef.current = null;
-      }
-      bufferRef.current = '';
-    }
-  }, [currentVal]);
 
   // Camera
   useEffect(() => {
@@ -66,31 +54,29 @@ export const BarcodeInput = ({
 
     const handleKeydown = (e) => {
       if (e.key === 'Enter') {
+        // Stop any pending human-typing timeout
         if (scanTimeoutRef.current) {
           clearTimeout(scanTimeoutRef.current);
           scanTimeoutRef.current = null;
         }
 
-        if (bufferRef.current.length > 3) {
+        // ★ KEY FIX: combine whatever is in the visible input value AND the
+        //   internal buffer.  This handles the race where the 40 ms "human
+        //   typing" timeout fired mid-scan and moved some chars to currentVal
+        //   while the rest are still in bufferRef.
+        const combined = (currentValRef.current || '') + bufferRef.current;
+        bufferRef.current = '';
+
+        if (combined.trim().length > 0) {
           e.preventDefault();
           e.stopPropagation();
-          const scanned = bufferRef.current;
-          bufferRef.current = '';   // clear immediately before async work
-          onScan(scanned);
-          return;
-        }
 
-        if (currentValRef.current) {
-          e.preventDefault();
-          const val = currentValRef.current;
-          bufferRef.current = '';
-          onScan(val);
+          // Reset controlled/internal value to empty
           if (!isControlled) setInternalInput('');
           if (onChange) onChange({ target: { value: '' } });
-          return;
-        }
 
-        bufferRef.current = '';
+          onScan(combined.trim());
+        }
         return;
       }
 
@@ -99,9 +85,13 @@ export const BarcodeInput = ({
         e.stopPropagation();
         bufferRef.current += e.key;
 
+        // Clear any previous timeout so we don't flush mid-scan
         if (scanTimeoutRef.current) clearTimeout(scanTimeoutRef.current);
+
+        // Human-typing fallback: if no Enter arrives within 80 ms, treat as
+        // manual input and move chars to the visible input field.
+        // 80 ms > typical scanner inter-char gap (< 10 ms) but < human typing speed
         scanTimeoutRef.current = setTimeout(() => {
-          // Human-typing fallback — fires only if no Enter came within 40 ms
           if (bufferRef.current) {
             const newVal = (currentValRef.current || '') + bufferRef.current;
             bufferRef.current = '';
@@ -109,7 +99,7 @@ export const BarcodeInput = ({
             if (onChange) onChange({ target: { value: newVal } });
           }
           scanTimeoutRef.current = null;
-        }, 40);
+        }, 80);
       }
     };
 
@@ -117,8 +107,8 @@ export const BarcodeInput = ({
 
     return () => {
       input.removeEventListener('keydown', handleKeydown, true);
-      // DO NOT clear bufferRef here — doing so causes the first-char race condition.
-      // Buffer is only cleared: (a) after a successful scan, (b) when value resets to ''.
+      // ★ Do NOT clear bufferRef here — clearing it in cleanup caused the
+      //   first-char race condition when the effect re-ran due to prop changes.
       if (scanTimeoutRef.current) {
         clearTimeout(scanTimeoutRef.current);
         scanTimeoutRef.current = null;
@@ -126,32 +116,19 @@ export const BarcodeInput = ({
     };
   }, [isControlled, onChange, onScan, inputRef]);
 
-  // ─── Focus handler — also clears buffer for safety ───────────────────────
-  const handleFocusInternal = (e) => {
-    // Small guard: only clear if we're not in the middle of a fast scan
-    // (bufferRef would have chars if scanner already started firing)
-    if (!bufferRef.current) {
-      if (scanTimeoutRef.current) {
-        clearTimeout(scanTimeoutRef.current);
-        scanTimeoutRef.current = null;
-      }
-    }
-    onFocus?.(e);
-  };
-
   const glassButtonStyle = {
     background: 'rgba(126,217,87,0.1)',
     border: '1px solid rgba(126,217,87,0.2)',
     boxShadow: '0 2px 8px rgba(126,217,87,0.08), inset 0 1px 0 rgba(255,255,255,0.6)',
-    color: 'rgb(58,128,36)', 
-    fontSize: '12px', 
+    color: 'rgb(58,128,36)',
+    fontSize: '12px',
     fontWeight: '500',
-    padding: '5px 12px', 
-    borderRadius: '8px', 
+    padding: '5px 12px',
+    borderRadius: '8px',
     cursor: 'pointer',
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: '6px', 
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
     whiteSpace: 'nowrap',
     transition: 'all 0.15s ease',
   };
@@ -161,7 +138,7 @@ export const BarcodeInput = ({
       {useCamera ? (
         <div className="relative rounded-lg overflow-hidden border-2 border-brand-500 bg-black aspect-video">
           <video ref={videoRef} className="w-full h-full object-cover" />
-          <button 
+          <button
             onClick={() => setUseCamera(false)}
             className="absolute top-2 right-2 px-3 py-1 bg-red-500 text-white rounded-md text-xs font-semibold shadow-lg hover:bg-red-600 transition-colors"
           >
@@ -184,12 +161,12 @@ export const BarcodeInput = ({
             value={currentVal}
             onChange={handleChange}
             onKeyDown={() => {}}
-            onFocus={handleFocusInternal}
+            onFocus={onFocus}
             onBlur={onBlur}
             autoFocus
           />
           <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
-            <button 
+            <button
               type="button"
               onClick={() => setUseCamera(true)}
               style={glassButtonStyle}

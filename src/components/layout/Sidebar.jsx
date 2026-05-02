@@ -35,7 +35,7 @@ export const Sidebar = () => {
   const { user, logout } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
-  const [hoveredItem, setHoveredItem] = React.useState(null);
+  const [hoveredItem, setHoveredItem] = React.useState(null);  // { to, x, y }
 
   const collapsed = sidebarCollapsed;
 
@@ -116,7 +116,11 @@ export const Sidebar = () => {
               <div
                 key={item.to}
                 className="relative"
-                onMouseEnter={() => collapsed && setHoveredItem(item.to)}
+                onMouseEnter={(e) => {
+                  if (!collapsed) return;
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setHoveredItem({ to: item.to, x: rect.right + 8, y: rect.top + rect.height / 2 });
+                }}
                 onMouseLeave={() => setHoveredItem(null)}
               >
                 <NavLink
@@ -156,11 +160,16 @@ export const Sidebar = () => {
                   }}
                 </NavLink>
 
-                {/* Tooltip — React state controlled */}
-                {collapsed && hoveredItem === item.to && (
+                {/* Tooltip — fixed position (escapes sidebar stacking context) */}
+                {collapsed && hoveredItem?.to === item.to && (
                   <div
-                    className="pointer-events-none absolute left-full top-1/2 ml-2 z-[9999]"
-                    style={{ transform: 'translateY(-50%)' }}
+                    className="pointer-events-none z-[99999]"
+                    style={{
+                      position: 'fixed',
+                      top: hoveredItem.y,
+                      left: hoveredItem.x,
+                      transform: 'translateY(-50%)',
+                    }}
                   >
                     <div
                       className="relative px-3 py-1.5 rounded-lg text-[12px] font-bold whitespace-nowrap shadow-lg"

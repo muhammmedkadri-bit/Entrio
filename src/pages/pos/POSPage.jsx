@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { PremiumLoader } from '../../components/ui/PremiumLoader';
-import { CheckCircle2, ShoppingCart, User as UserIcon, Banknote, CreditCard, Building2, Shuffle, SplitSquareHorizontal, UserCheck, LayoutGrid, ArrowLeftRight, X, Zap, Package, ChevronDown } from 'lucide-react';
+import { CheckCircle2, ShoppingCart, User as UserIcon, Banknote, CreditCard, Building2, Shuffle, SplitSquareHorizontal, UserCheck, LayoutGrid, ArrowLeftRight, X, Zap, Package, ChevronDown, ScanBarcode } from 'lucide-react';
 import toast from '../../components/ui/CustomToast';
 import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
@@ -22,6 +22,7 @@ import { SwapConfirmModal } from './components/SwapConfirmModal';
 import { CartDiscountSection } from './components/CartDiscountSection';
 import { SupplierPaymentModal } from './components/SupplierPaymentModal';
 import { RemoveProductModal } from './components/RemoveProductModal';
+import { QuickBarcodesModal } from '../dashboard/modals/QuickBarcodesModal';
 import { db } from '../../db';
 
 const formatCurrency = (val) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
@@ -169,6 +170,7 @@ export const POSPage = () => {
   const [quickProductModalOpen, setQuickProductModalOpen] = useState(false);
   const [receiptModalOpen, setReceiptModalOpen] = useState(false);
   const [qpmOpen, setQpmOpen] = useState(false);              // QuickProductManager
+  const [quickBarcodesOpen, setQuickBarcodesOpen] = useState(false);  // QuickBarcodes
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
   const [supplierSearchOpen, setSupplierSearchOpen] = useState(false);
   const [returnSaleSearchOpen, setReturnSaleSearchOpen] = useState(false);
@@ -767,6 +769,24 @@ export const POSPage = () => {
               )}
             </div>
 
+            {/* Hızlı Barkodlar Button */}
+            <button
+              onClick={() => setQuickBarcodesOpen(true)}
+              style={{
+                background: 'rgba(126,217,87,0.1)',
+                border: '1px solid rgba(126,217,87,0.2)',
+                boxShadow: '0 2px 8px rgba(126,217,87,0.08), inset 0 1px 0 rgba(255,255,255,0.6)',
+                color: 'rgb(58,128,36)', fontSize: '12px', fontWeight: '600',
+                padding: '0 12px', height: '42px', borderRadius: '8px', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap',
+                transition: 'all 0.15s ease',
+              }}
+              className="hover:bg-brand-50 hover:scale-[1.02]"
+            >
+              <ScanBarcode style={{ width: 14, height: 14 }} />
+              Hızlı Barkodlar
+            </button>
+
             {/* Add/Swap Quick Product Manager Button */}
             <button
               onClick={() => setQpmOpen(true)}
@@ -775,7 +795,7 @@ export const POSPage = () => {
                 border: '1px solid rgba(126,217,87,0.2)',
                 boxShadow: '0 2px 8px rgba(126,217,87,0.08), inset 0 1px 0 rgba(255,255,255,0.6)',
                 color: 'rgb(58,128,36)', fontSize: '12px', fontWeight: '600',
-                padding: '0 12px', height: '42px', borderRadius: '8px', cursor: 'pointer', // matched height with BarcodeInput
+                padding: '0 12px', height: '42px', borderRadius: '8px', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap',
                 transition: 'all 0.15s ease',
               }}
@@ -1235,6 +1255,14 @@ export const POSPage = () => {
         product={displayedProducts.find(p => p.id === selectedProductId)}
         onConfirm={handleRemoveConfirm}
         onCancel={handleRemoveCancel}
+      />
+
+      <QuickBarcodesModal
+        isOpen={quickBarcodesOpen}
+        onClose={() => setQuickBarcodesOpen(false)}
+        onAddToCart={(product) => {
+          handleAddProduct(product, 1);
+        }}
       />
     </div>
   );
