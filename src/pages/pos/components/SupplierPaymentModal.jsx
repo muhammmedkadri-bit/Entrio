@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Building2, X, Search, CreditCard, Check } from 'lucide-react';
 import { supplierService } from '../../../services/supplierService';
 import { db } from '../../../db';
-import toast from 'react-hot-toast';
+import toast from '../../../components/ui/CustomToast';
 
 const fmt = (v) =>
   new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(v || 0);

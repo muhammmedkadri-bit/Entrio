@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useForm as useHookForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import toast from '../../components/ui/CustomToast';
 import { Eye as EyeIcon, EyeOff, Mail, Lock, LogIn, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import EntrioLogoPng from '../../assets/Entriologop.png';

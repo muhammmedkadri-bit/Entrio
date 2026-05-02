@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tag, AlertCircle, Package, ChevronLeft, ChevronRight, ChevronRight as Arrow, PackageX } from 'lucide-react';
-import toast from 'react-hot-toast';
+import toast from '../../../components/ui/CustomToast';
 import { productService } from '../../../services/productService';
 import { categoryService } from '../../../services/categoryService';
 import { useAppStore } from '../../../store/appStore';

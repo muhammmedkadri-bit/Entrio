@@ -61,11 +61,10 @@ export const Sidebar = () => {
         className={`
           fixed inset-y-0 left-0 z-50 bg-white border-r border-slate-200
           lg:translate-x-0 lg:static lg:inset-0 flex flex-col print:hidden
-          overflow-hidden
           transition-[width,transform] duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]
           will-change-[width,transform]
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-          ${collapsed ? 'w-14' : 'w-60'}
+          ${collapsed ? 'w-14 overflow-visible' : 'w-60 overflow-hidden'}
         `}
       >
 
@@ -118,7 +117,7 @@ export const Sidebar = () => {
         </div>
 
         {/* ── Navigation ── */}
-        <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-slate-200">
+        <nav className={`flex-1 px-2 py-4 space-y-0.5 ${collapsed ? 'overflow-visible' : 'overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-slate-200'}`}>
           {navItems.map((item) => {
             const extraActive = item.alsoActiveFor?.some(re => re.test(location.pathname)) ?? false;
             return (
@@ -161,21 +160,21 @@ export const Sidebar = () => {
                         {item.name}
                       </span>
 
-                      {/* Collapsed tooltip */}
+                      {/* Collapsed tooltip (Paraşüt Style) */}
                       {collapsed && (
-                        <span
-                          className="pointer-events-none absolute left-full ml-3 px-3 py-1.5 rounded-lg text-[12px] font-bold whitespace-nowrap shadow-md opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-150 z-[200]"
+                        <div
+                          className="pointer-events-none absolute left-full ml-2 z-[200] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-150"
                           style={{
                             top: '50%',
-                            transform: 'translateY(-50%) translateX(-4px)',
-                            transitionProperty: 'opacity, transform',
-                            background: 'white',
-                            color: '#5da83f',
-                            border: '1.5px solid #7ed957',
+                            transform: 'translateY(-50%)',
                           }}
                         >
-                          {item.name}
-                        </span>
+                          <div className="relative bg-[#1f1f1f] text-white px-2.5 py-1.5 rounded-sm text-[11px] font-bold tracking-wide uppercase whitespace-nowrap shadow-md">
+                            {/* Left Arrow */}
+                            <div className="absolute top-1/2 -left-[4px] -mt-[4px] w-0 h-0 border-t-[4px] border-t-transparent border-b-[4px] border-b-transparent border-r-[5px] border-r-[#1f1f1f]" />
+                            {item.name}
+                          </div>
+                        </div>
                       )}
                     </>
                   );

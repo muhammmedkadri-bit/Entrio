@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import toast from 'react-hot-toast';
+import toast from '../../../components/ui/CustomToast';
 import { Users, Building2, TrendingUp, TrendingDown, AlertCircle, UserCheck, UserX, Crown, PhoneCall } from 'lucide-react';
 import { StatCard } from '../../../components/ui/StatCard';
 import { EmptyReport } from '../components/EmptyReport';

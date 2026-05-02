@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../../db';
-import toast from 'react-hot-toast';
+import toast from '../../../components/ui/CustomToast';
 import { Save, CheckCircle2 } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 

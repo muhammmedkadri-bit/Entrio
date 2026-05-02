@@ -6,7 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { PremiumLoader } from '../../components/ui/PremiumLoader';
 import { db } from '../../db';
 import { useCartStore } from '../../store/cartStore';
-import toast from 'react-hot-toast';
+import toast from '../../components/ui/CustomToast';
 
 export const ReturnSaleSelectionModal = ({ isOpen, onClose, customerId }) => {
   const [sales, setSales] = useState([]);

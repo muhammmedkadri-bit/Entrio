@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { PremiumLoader } from '../../components/ui/PremiumLoader';
 import { CheckCircle2, ShoppingCart, User as UserIcon, Banknote, CreditCard, Building2, Shuffle, SplitSquareHorizontal, UserCheck, LayoutGrid, ArrowLeftRight, X, Zap, Package, ChevronDown } from 'lucide-react';
-import toast from 'react-hot-toast';
+import toast from '../../components/ui/CustomToast';
 import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
 import { productService } from '../../services/productService';
@@ -422,6 +422,9 @@ export const POSPage = () => {
     if (posMode !== 'purchase' && paymentMethod === 'credit' && selectedCustomer?.customer_type === 'retail') {
       toast.error('Perakende müşteriye veresiye işlem yapılamaz.'); return;
     }
+    if (posMode === 'purchase' && !selectedSupplier) {
+      toast.error('Alış işlemi yapabilmek için lütfen bir tedarikçi seçin.'); return;
+    }
     if (posMode === 'purchase' && paymentMethod === 'credit' && !selectedSupplier) {
       toast.error('Veresiye alış için bir tedarikçi seçmelisiniz.'); return;
     }
@@ -745,12 +748,13 @@ export const POSPage = () => {
             {/* Smart search input */}
             <div className="relative flex-1">
               <BarcodeInput
-                onScan={handleScan}
+                onScan={posMode === 'return' ? undefined : handleScan}
                 value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                onFocus={() => searchQuery && setShowDropdown(true)}
+                onChange={posMode === 'return' ? undefined : e => setSearchQuery(e.target.value)}
+                onFocus={posMode === 'return' ? undefined : () => searchQuery && setShowDropdown(true)}
                 onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
-                inputRef={searchInputRef}
+                inputRef={posMode === 'return' ? undefined : searchInputRef}
+                placeholder={posMode === 'return' ? 'İade modunda barkod okutma devre dışı' : undefined}
               />
               {/* Dropdown */}
               {showDropdown && (
@@ -837,6 +841,7 @@ export const POSPage = () => {
                       onSelect={handleSelectProduct}
                       onRemove={handleRemoveRequest}
                       onAdd={swapMode ? () => { } : handleAddProduct}
+                      posMode={posMode}
                     />
                     {swapMode && (
                       <div
@@ -1202,7 +1207,7 @@ export const POSPage = () => {
 
       <QuickProductManagerModal
         isOpen={qpmOpen}
-        onClose={() => { setQpmOpen(false); setScannedNotFound(''); }}
+        onClose={() => { setQpmOpen(false); setScannedNotFound(''); setSearchQuery(''); }}
         displayedProducts={displayedProducts}
         onAddProduct={handleQPMAdd}
         onStartSwap={handleStartSwap}

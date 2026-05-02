@@ -3,7 +3,7 @@ import { Search, UserPlus, X, ChevronLeft, ChevronRight, User } from 'lucide-rea
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { customerService } from '../../services/customerService';
-import toast from 'react-hot-toast';
+import toast from '../../components/ui/CustomToast';
 
 export const CustomerSearchModal = ({ isOpen, onClose, onSelect }) => {
   const [searchTerm, setSearchTerm]   = useState('');

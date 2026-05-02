@@ -3,7 +3,7 @@ import { Package, Plus, ArrowLeftRight, Search, X, ChevronLeft, ChevronRight, Pa
 import { productService } from '../../../services/productService';
 import { BarcodeStripes } from './BarcodeStripes';
 import { QuickCreateProductForm } from './QuickCreateProductForm';
-import toast from 'react-hot-toast';
+import toast from '../../../components/ui/CustomToast';
 
 const fmt = (v) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(v || 0);
 

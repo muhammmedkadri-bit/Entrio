@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Minus, Target, ArrowRight } from 'lucide-react';
-import toast from 'react-hot-toast';
+import toast from '../../../components/ui/CustomToast';
 import { Modal } from '../../../components/ui/Modal';
 import { Input } from '../../../components/ui/Input';
 import { Button } from '../../../components/ui/Button';

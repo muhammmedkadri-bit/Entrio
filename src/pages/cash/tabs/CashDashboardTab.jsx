@@ -13,7 +13,7 @@ import { CreateRegisterModal } from '../modals/CreateRegisterModal';
 import { TransactionDetailModal } from '../modals/TransactionDetailModal';
 import { DayCloseModal } from '../modals/DayCloseModal';
 import { cashService } from '../../../services/cashService';
-import toast from 'react-hot-toast';
+import toast from '../../../components/ui/CustomToast';
 
 import { ManualTransactionModal } from '../modals/ManualTransactionModal';
 import { DayCloseDetailModal } from '../modals/DayCloseDetailModal';
@@ -137,6 +137,8 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged }) => {
         if (t.created_at >= currentMonthStart.getTime()) {
           if (t.transaction_type === 'return_out') {
             mIncome -= t.amount || 0;
+          } else if (t.transaction_type === 'transfer_in' || t.transaction_type === 'transfer_out') {
+            // transferler gelir/gider tablosuna dahil edilmez
           } else if (t.transaction_type.includes('_in') || t.transaction_type === 'in') {
             mIncome += t.amount || 0;
           } else if (t.transaction_type.includes('_out') || t.transaction_type === 'out') {
@@ -401,7 +403,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged }) => {
                         {getRegIcon(reg.type)}
                         <h3 className="text-sm font-bold text-slate-700 truncate">{reg.name}</h3>
                         {reg.is_default_for && (
-                          <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-1.5 py-0.5 rounded-md border border-amber-200 ml-1 flex-shrink-0" title="Varsayılan Kasa">
+                          <span className="bg-[#7ed957]/15 text-[#5da83f] text-[10px] font-bold px-1.5 py-0.5 rounded-md border border-[#7ed957]/30 ml-1 flex-shrink-0" title="Varsayılan Kasa">
                             ★
                           </span>
                         )}
@@ -508,7 +510,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged }) => {
               <>
                 {!reg.is_default_for && (
                   <button onClick={() => { handleSetDefault(reg); setOpenMenuId(null); }} className="w-full px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2">
-                    <Star className="w-4 h-4 text-amber-400" /> Varsayılan Yap
+                    <Star className="w-4 h-4 text-[#7ed957]" /> Varsayılan Yap
                   </button>
                 )}
                 <button onClick={() => { setEditModalReg(reg); setOpenMenuId(null); }} className="w-full px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2">
@@ -655,7 +657,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged }) => {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {paginatedTxs.map(tx => {
-              const isOut = ['purchase_out', 'supplier_payment_out', 'expense_out', 'withdrawal_out', 'transfer_out'].includes(tx.transaction_type);
+              const isOut = ['purchase_out', 'supplier_payment_out', 'expense_out', 'withdrawal_out'].includes(tx.transaction_type);
               const isReturn = tx.transaction_type === 'return_out';
               const isTransfer = tx.transaction_type === 'transfer_out' || tx.transaction_type === 'transfer_in';
               const isAdj = tx.transaction_type === 'balance_adjustment';
@@ -732,8 +734,8 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged }) => {
                   <td className="p-3 text-xs whitespace-nowrap">
                     <span className="bg-slate-100 text-slate-600 font-semibold px-2.5 py-1 rounded-md">{tx.registerName}</span>
                   </td>
-                  <td className={`p-3 text-right font-bold tabular-nums whitespace-nowrap ${isOut || isReturn || tx.amount < 0 ? 'text-rose-600' : 'text-[#5da83f]'}`}>
-                    {isOut || isReturn || tx.amount < 0 ? '-' : '+'}{formatCurrency(Math.abs(tx.amount || 0))}
+                  <td className={`p-3 text-right font-bold tabular-nums whitespace-nowrap ${isTransfer ? 'text-slate-500' : isOut || isReturn || tx.amount < 0 ? 'text-rose-600' : 'text-[#5da83f]'}`}>
+                    {isTransfer ? (tx.transaction_type === 'transfer_out' ? '-' : '+') : isOut || isReturn || tx.amount < 0 ? '-' : '+'}{formatCurrency(Math.abs(tx.amount || 0))}
                   </td>
                 </tr>
               )

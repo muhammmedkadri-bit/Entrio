@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import toast from 'react-hot-toast';
+import toast from '../../../components/ui/CustomToast';
 import {
   format, startOfDay, endOfDay, subDays, startOfMonth, startOfYear, endOfMonth,
   addMonths, subMonths, startOfWeek, endOfWeek, addDays, isSameDay, isSameMonth, isToday

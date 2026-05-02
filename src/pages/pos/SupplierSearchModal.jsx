@@ -3,7 +3,7 @@ import { Search, Building2, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { db } from '../../db';
-import toast from 'react-hot-toast';
+import toast from '../../components/ui/CustomToast';
 
 export const SupplierSearchModal = ({ isOpen, onClose, onSelect }) => {
   const [searchTerm, setSearchTerm]   = useState('');

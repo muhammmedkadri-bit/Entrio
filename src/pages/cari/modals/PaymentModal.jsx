@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import toast from 'react-hot-toast';
+import toast from '../../../components/ui/CustomToast';
 import { X, HandCoins, CircleDollarSign, Check, ChevronDown, ListPlus, Banknote } from 'lucide-react';
 import { supplierService } from '../../../services/supplierService';
 import { db } from '../../../db'; // To fetch cash registers

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/appStore';
-import toast from 'react-hot-toast';
+import toast from '../../components/ui/CustomToast';
 import {
   ArrowLeft, Package, Barcode, Tag, Layers, TrendingUp, TrendingDown, Percent,
   Pencil, RefreshCw, Archive, Trash2, ChevronDown,

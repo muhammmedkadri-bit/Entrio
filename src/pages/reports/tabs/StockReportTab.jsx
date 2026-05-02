@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import toast from 'react-hot-toast';
+import toast from '../../../components/ui/CustomToast';
 import { Package, Warehouse, TrendingUp, Sparkles, AlertTriangle, PackageX } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
 import { StatCard } from '../../../components/ui/StatCard';

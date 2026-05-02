@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import toast from 'react-hot-toast';
+import toast from '../../../components/ui/CustomToast';
 import { X, Save, Building2, Hash, Phone, CircleDollarSign, MapPin, FileText } from 'lucide-react';
 import { supplierService } from '../../../services/supplierService';
 

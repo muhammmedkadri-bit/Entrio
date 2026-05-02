@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/appStore';
 import { Building2, TrendingDown, TrendingUp, Scale, Plus, HandCoins, Edit, Trash2, Search, ChevronLeft, ChevronRight, Building } from 'lucide-react';
-import toast from 'react-hot-toast';
+import toast from '../../components/ui/CustomToast';
 import { StatCard } from '../../components/ui/StatCard';
 import { DataTable } from '../../components/ui/DataTable';
 import { Input } from '../../components/ui/Input';

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import toast from 'react-hot-toast';
+import toast from '../../../components/ui/CustomToast';
 import { Modal } from '../../../components/ui/Modal';
 import { cashService } from '../../../services/cashService';
 import { Building2, Wallet, CreditCard, X, Check, Calculator } from 'lucide-react';

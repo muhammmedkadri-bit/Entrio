@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { CreditCard, Printer, FileText, CheckCircle, AlertTriangle } from 'lucide-react';
-import toast from 'react-hot-toast';
+import toast from '../../../components/ui/CustomToast';
 import { Modal } from '../../../components/ui/Modal';
 import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';

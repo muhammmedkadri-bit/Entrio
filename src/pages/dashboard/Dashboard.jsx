@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import toast from 'react-hot-toast';
-import { Banknote, ShoppingCart, AlertTriangle, TrendingUp, Users, ChevronRight, ArrowDownLeft, ArrowUpRight, ArrowRightLeft, Settings2, Moon, Plus, Trash2, ListChecks, Calendar, Clock, Calculator, Building2, TrendingDown, PieChart as PieChartIcon, Activity } from 'lucide-react';
+import toast from '../../components/ui/CustomToast';
+import { Banknote, ShoppingCart, AlertTriangle, TrendingUp, Users, ChevronRight, ArrowDownLeft, ArrowUpRight, ArrowRightLeft, Settings2, Moon, Plus, Trash2, ListChecks, Calendar, Clock, Calculator, Building2, TrendingDown, PieChart as PieChartIcon, Activity, ScanBarcode } from 'lucide-react';
 import { CurrencyWidget } from '../../components/ui/CurrencyWidget';
 import {
   AreaChart, Area, LineChart, Line, BarChart, Bar,
@@ -9,6 +9,7 @@ import {
 } from 'recharts';
 import { CalculatorWidget } from '../../components/ui/CalculatorModal';
 import { DatePicker } from '../../components/ui/DatePicker';
+import { QuickBarcodesModal } from './modals/QuickBarcodesModal';
 
 import { TransactionDetailModal } from '../cash/modals/TransactionDetailModal';
 import { reportService } from '../../services/reportService';
@@ -107,6 +108,7 @@ export const Dashboard = () => {
   const [companyLogo, setCompanyLogo] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showCalculator, setShowCalculator] = useState(false);
+  const [showQuickBarcodes, setShowQuickBarcodes] = useState(false);
 
   const [charts, setCharts] = useState({
     dailyIncomeExpense: [],
@@ -118,11 +120,13 @@ export const Dashboard = () => {
     try { return JSON.parse(localStorage.getItem('entrio_quick_notes')) || []; } catch { return []; }
   });
   const [newNote, setNewNote] = useState('');
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [editingNoteText, setEditingNoteText] = useState('');
 
   const addNote = (e) => {
     e.preventDefault();
     if(!newNote.trim()) return;
-    const notes = [{id: Date.now(), text: newNote}, ...quickNotes].slice(0, 10);
+    const notes = [{id: Date.now(), text: newNote}, ...quickNotes].slice(0, 5);
     setQuickNotes(notes);
     localStorage.setItem('entrio_quick_notes', JSON.stringify(notes));
     setNewNote('');
@@ -132,6 +136,17 @@ export const Dashboard = () => {
     const notes = quickNotes.filter(n => n.id !== id);
     setQuickNotes(notes);
     localStorage.setItem('entrio_quick_notes', JSON.stringify(notes));
+  };
+
+  const saveEditedNote = (id) => {
+    if (!editingNoteText.trim()) {
+      setEditingNoteId(null);
+      return;
+    }
+    const notes = quickNotes.map(n => n.id === id ? { ...n, text: editingNoteText } : n);
+    setQuickNotes(notes);
+    localStorage.setItem('entrio_quick_notes', JSON.stringify(notes));
+    setEditingNoteId(null);
   };
   const [urgentStock, setUrgentStock] = useState([]);
 
@@ -386,6 +401,15 @@ export const Dashboard = () => {
                </div>
              )}
            </div>
+
+           {/* Quick Barcodes Button */}
+           <button 
+             onClick={() => setShowQuickBarcodes(true)}
+             className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-100 bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors"
+           >
+             <ScanBarcode className="w-4 h-4 text-[#5da83f]" /> 
+             <span className="text-sm font-bold">Hızlı Barkodlar</span>
+           </button>
         </div>
       </div>
 
@@ -604,17 +628,42 @@ export const Dashboard = () => {
                 </button>
               </form>
               <ul className="flex-1 flex flex-col gap-2">
-                {quickNotes.map(n => (
-                  <li key={n.id} className="flex-1 bg-white/40 p-3 rounded-lg flex items-start gap-2 group border border-transparent hover:border-[#fde047] transition-colors">
-                    <p className="flex-1 text-sm text-[#854d0e] whitespace-pre-wrap leading-tight">{n.text}</p>
-                    <button onClick={() => removeNote(n.id)} className="text-[#ca8a04]/50 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </li>
-                ))}
-                {quickNotes.length === 0 && (
-                  <li className="text-center text-sm text-[#a16207]/60 mt-4">Henüz not eklenmemiş.</li>
-                )}
+                {[...quickNotes, ...Array(Math.max(0, 5 - quickNotes.length)).fill({ isEmpty: true })].map((n, idx) => {
+                  if (n.isEmpty) {
+                    return (
+                      <li key={`empty_${idx}`} className="flex-1 bg-white/20 p-3 rounded-lg border border-transparent min-h-[46px]"></li>
+                    );
+                  }
+                  
+                  return (
+                    <li key={n.id} className="flex-1 bg-white/40 p-3 rounded-lg flex items-start gap-2 group border border-transparent hover:border-[#fde047] transition-colors min-h-[46px]">
+                      {editingNoteId === n.id ? (
+                        <div className="flex-1 flex gap-2">
+                          <input 
+                            autoFocus
+                            type="text" 
+                            value={editingNoteText}
+                            onChange={(e) => setEditingNoteText(e.target.value)}
+                            onKeyDown={(e) => { if(e.key === 'Enter') saveEditedNote(n.id); if(e.key === 'Escape') setEditingNoteId(null); }}
+                            onBlur={() => saveEditedNote(n.id)}
+                            className="flex-1 bg-white border border-[#fde047] rounded px-2 py-1 text-sm text-[#713f12] outline-none focus:ring-1 focus:ring-[#eab308]"
+                          />
+                        </div>
+                      ) : (
+                        <p 
+                          className="flex-1 text-sm text-[#854d0e] whitespace-pre-wrap leading-tight cursor-pointer"
+                          onClick={() => { setEditingNoteId(n.id); setEditingNoteText(n.text); }}
+                          title="Düzenlemek için tıkla"
+                        >
+                          {n.text}
+                        </p>
+                      )}
+                      <button onClick={() => removeNote(n.id)} className="text-[#ca8a04]/50 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           </div>
@@ -633,6 +682,11 @@ export const Dashboard = () => {
           loadDashboard();
         }}
         allRegisters={allRegisters}
+      />
+
+      <QuickBarcodesModal 
+        isOpen={showQuickBarcodes} 
+        onClose={() => setShowQuickBarcodes(false)} 
       />
     </div>
   );

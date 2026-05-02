@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Plus, Trash2, Building2, Save } from 'lucide-react';
-import toast from 'react-hot-toast';
+import toast from '../../../components/ui/CustomToast';
 import { Input } from '../../../components/ui/Input';
 import { Button } from '../../../components/ui/Button';
 import { productService } from '../../../services/productService';

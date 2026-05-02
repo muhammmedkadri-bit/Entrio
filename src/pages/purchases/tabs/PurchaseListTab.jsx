@@ -6,7 +6,7 @@ import { DataTable } from '../../../components/ui/DataTable';
 import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { PurchaseDetailModal } from '../modals/PurchaseDetailModal';
-import toast from 'react-hot-toast';
+import toast from '../../../components/ui/CustomToast';
 
 export const PurchaseListTab = ({ onNewPurchase }) => {
   const [purchases, setPurchases] = useState([]);

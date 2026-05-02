@@ -85,7 +85,7 @@ const glassInCartBtnStyle = {
   marginTop: '4px',
 };
 
-export const ProductCard = ({ product = {}, onAdd = () => {}, isSelected = false, onSelect = () => {}, onRemove = () => {}, isWiggleMode = false, index = 0 }) => {
+export const ProductCard = ({ product = {}, onAdd = () => {}, isSelected = false, onSelect = () => {}, onRemove = () => {}, isWiggleMode = false, index = 0, posMode = 'sale' }) => {
   const [quantity, setQuantity] = useState(1);
   const [editingQty, setEditingQty] = useState(false);
   const [iconHovered, setIconHovered] = useState(false);
@@ -95,8 +95,10 @@ export const ProductCard = ({ product = {}, onAdd = () => {}, isSelected = false
   // Check if product is in cart (using specific selector to avoid wide re-renders)
   const isInCart = useCartStore(state => state.items.some(item => item.product.id === product.id));
 
+  const isReturnMode = posMode === 'return';
+
   const handleAdd = () => {
-    if (!isInCart) {
+    if (!isInCart && !isReturnMode) {
       onAdd(product, quantity);
       setQuantity(1);
     }
@@ -283,11 +285,14 @@ export const ProductCard = ({ product = {}, onAdd = () => {}, isSelected = false
 
             {/* Add Button / In Cart Button */}
             <button 
-              onClick={isInCart ? undefined : handleAdd} 
-              style={isInCart ? glassInCartBtnStyle : glassAddBtnStyle(false)}
+              onClick={isInCart || isReturnMode ? undefined : handleAdd} 
+              style={isInCart ? glassInCartBtnStyle : glassAddBtnStyle(isReturnMode)}
+              title={isReturnMode ? 'İade modunda yeni ürün eklenemez' : undefined}
             >
               {isInCart ? (
                 <><CheckCircle className="w-3.5 h-3.5" /> Sepette</>
+              ) : isReturnMode ? (
+                <><ShoppingCart className="w-3.5 h-3.5 opacity-40" /> Devre Dışı</>
               ) : (
                 <><ShoppingCart className="w-3.5 h-3.5" /> Sepete Ekle</>
               )}

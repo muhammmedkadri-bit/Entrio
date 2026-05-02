@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/appStore';
 import { useCartStore } from '../../store/cartStore';
-import toast from 'react-hot-toast';
+import toast from '../../components/ui/CustomToast';
 import {
   ArrowLeft, FileText, Calendar, Printer, ShoppingCart,
   ChevronDown, CheckCircle, Package, User, CreditCard,

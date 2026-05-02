@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Tag, Check, Loader2 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import toast from '../../../components/ui/CustomToast';
 import { Modal } from '../../../components/ui/Modal';
 import { Button } from '../../../components/ui/Button';
 import { productService } from '../../../services/productService';

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Package, Download, Plus, Filter, Tag, Activity, X, Layers } from 'lucide-react';
-import toast from 'react-hot-toast';
+import toast from '../../components/ui/CustomToast';
 import { ProductsTab } from './tabs/ProductsTab';
 import { ProductFormModal } from './modals/ProductFormModal';
 import { StockMovementModal } from './modals/StockMovementModal';

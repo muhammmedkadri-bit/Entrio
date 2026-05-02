@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Package, Search, X, ChevronLeft, ChevronRight, PackageX, CheckCircle, ArrowRight, Layers, Save } from 'lucide-react';
 import { productService } from '../../../services/productService';
 import { stockService } from '../../../services/stockService';
-import toast from 'react-hot-toast';
+import toast from '../../../components/ui/CustomToast';
 
 export const BulkStockUpdateModal = ({ isOpen, onClose, onSaved }) => {
   const [all, setAll] = useState([]);

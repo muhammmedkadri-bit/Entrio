@@ -7,7 +7,7 @@ import {
   ArrowDownLeft, RotateCcw, Star, BarChart2, Receipt, Users
 } from 'lucide-react';
 import { db } from '../../../db';
-import toast from 'react-hot-toast';
+import toast from '../../../components/ui/CustomToast';
 
 const fmt = (v) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(v || 0);
 const fmtDate = (ts) => { try { return format(new Date(ts), 'd MMMM yyyy', { locale: tr }); } catch { return '—'; } };

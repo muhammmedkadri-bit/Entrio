@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/appStore';
-import toast from 'react-hot-toast';
+import toast from '../../components/ui/CustomToast';
 import {
   ArrowLeft, FileText, Hash, Calendar, Tag, Printer, Pencil, CreditCard,
   Trash2, ChevronDown, CheckCircle, Package, ShoppingCart, Search, Layers, TrendingUp, TrendingDown,

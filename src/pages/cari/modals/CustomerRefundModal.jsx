@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import toast from 'react-hot-toast';
+import toast from '../../../components/ui/CustomToast';
 import {
   X, ArrowUpLeft, RefreshCw, Banknote, Building2, CreditCard,
   ChevronDown, Info

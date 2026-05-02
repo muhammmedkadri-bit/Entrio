@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { X, Building2, Phone, Hash, DollarSign, Save } from 'lucide-react';
 import { supplierService } from '../../../services/supplierService';
-import toast from 'react-hot-toast';
+import toast from '../../../components/ui/CustomToast';
 
 const inputClass =
   'w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 outline-none bg-white placeholder-gray-400 transition-colors';

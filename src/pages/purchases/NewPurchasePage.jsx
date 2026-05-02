@@ -7,7 +7,7 @@ import {
   Plus, Minus, ChevronDown, FileText, Package, Truck, Receipt,
   Banknote, Wallet, SplitSquareHorizontal, Landmark, Clock, CheckCircle2, PieChart
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import toast from '../../components/ui/CustomToast';
 import { format, addDays } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { purchaseService } from '../../services/purchaseService';

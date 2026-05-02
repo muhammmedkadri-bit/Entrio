@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, User, Plus, Search, ChevronRight, ChevronLeft, UserX } from 'lucide-react';
-import toast from 'react-hot-toast';
+import toast from '../../components/ui/CustomToast';
 import { CariBalanceBadge } from './components/CariBalanceBadge';
 import { customerService } from '../../services/customerService';
 import { CustomerFormModal } from './modals/CustomerFormModal';

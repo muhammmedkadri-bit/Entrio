@@ -42,43 +42,51 @@ export const BarcodeInput = ({
   const currentValRef = useRef(currentVal);
   useEffect(() => { currentValRef.current = currentVal; }, [currentVal]);
 
+  // Keep a ref to buffer to allow immediate reset from outside the closure
+  const bufferRef = useRef('');
+
   useEffect(() => {
     const input = inputRef?.current;
     if (!input) return;
 
-    let buffer = '';
     let scanTimeout = null;
 
     const handleKeydown = (e) => {
       if (e.key === 'Enter') {
-        if (buffer.length > 3) {
+        clearTimeout(scanTimeout);
+        if (bufferRef.current.length > 3) {
           e.preventDefault();
           e.stopPropagation();
-          onScan(buffer);
-          buffer = '';
+          const scanned = bufferRef.current;
+          bufferRef.current = '';
+          onScan(scanned);
           return;
         } else if (currentValRef.current) {
           e.preventDefault();
-          onScan(currentValRef.current);
+          const val = currentValRef.current;
+          bufferRef.current = '';
+          onScan(val);
           if (!isControlled) setInternalInput('');
           if (onChange) onChange({ target: { value: '' } });
           return;
         }
+        bufferRef.current = '';
+        return;
       }
 
       if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault();
         e.stopPropagation();
-        buffer += e.key;
+        bufferRef.current += e.key;
 
         clearTimeout(scanTimeout);
         scanTimeout = setTimeout(() => {
           // Human typing fallback
-          if (buffer) {
-            const newVal = (currentValRef.current || '') + buffer;
+          if (bufferRef.current) {
+            const newVal = (currentValRef.current || '') + bufferRef.current;
+            bufferRef.current = '';
             if (!isControlled) setInternalInput(newVal);
             if (onChange) onChange({ target: { value: newVal } });
-            buffer = '';
           }
         }, 40);
       }
@@ -88,6 +96,7 @@ export const BarcodeInput = ({
     return () => {
       input.removeEventListener('keydown', handleKeydown, true);
       clearTimeout(scanTimeout);
+      bufferRef.current = '';
     };
   }, [isControlled, onChange, onScan, inputRef]);
 

@@ -4,7 +4,7 @@ import { Modal } from '../../../components/ui/Modal';
 import { Input } from '../../../components/ui/Input';
 import { Button } from '../../../components/ui/Button';
 import { supplierService } from '../../../services/supplierService';
-import toast from 'react-hot-toast';
+import toast from '../../../components/ui/CustomToast';
 
 export const SupplierSearchModal = ({ isOpen, onClose, onSelect }) => {
   const [searchTerm, setSearchTerm] = useState('');

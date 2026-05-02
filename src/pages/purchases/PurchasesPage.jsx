@@ -7,7 +7,7 @@ import {
   Plus, ShoppingBag, CheckCircle, Clock,
   Building2, Eye, Trash2, ChevronLeft, ChevronRight, Zap, Filter, Calendar, Tag, X
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import toast from '../../components/ui/CustomToast';
 import { format, parseISO, isAfter, isSameDay, isWithinInterval, startOfDay, endOfDay, subDays } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { purchaseService } from '../../services/purchaseService';

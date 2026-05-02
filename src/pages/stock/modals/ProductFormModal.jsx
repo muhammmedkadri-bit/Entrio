@@ -5,7 +5,7 @@ import {
   BadgeDollarSign, ShoppingCart, BadgeMinus, TrendingDown,
   Package, ChevronDown, Plus, Check, PackageCheck, PackageX,
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import toast from '../../../components/ui/CustomToast';
 import { productService } from '../../../services/productService';
 import { categoryService } from '../../../services/categoryService';
 

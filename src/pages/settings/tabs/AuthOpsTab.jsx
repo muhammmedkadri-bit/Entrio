@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../../db';
 import { useAuthStore } from '../../../store/authStore';
-import toast from 'react-hot-toast';
+import toast from '../../../components/ui/CustomToast';
 import { Edit2, Save, X, User, UserPlus, Mail, Lock, ChevronDown } from 'lucide-react';
 
 const inputCls = 'w-full pl-10 pr-4 py-2.5 rounded-xl text-sm font-medium text-slate-800 placeholder:text-slate-400 bg-slate-50 border-2 border-slate-200 focus:bg-white focus:border-[#5da83f] focus:ring-4 focus:ring-[#5da83f]/10 outline-none transition-all';
