@@ -368,7 +368,6 @@ export const Dashboard = () => {
     return (
        <div className="flex h-[50vh] flex-col items-center justify-center space-y-4">
           <div className="w-12 h-12 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
-          <p className="text-slate-500 font-bold animate-pulse">Komuta Merkezi Yükleniyor...</p>
        </div>
     );
   }
