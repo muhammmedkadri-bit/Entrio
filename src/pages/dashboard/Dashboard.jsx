@@ -364,13 +364,7 @@ export const Dashboard = () => {
 
   // Tooltip bileşenleri component dışında tanımlı (performans — her render'da yeniden oluşturulmuyor)
 
-  if (loading) {
-    return (
-       <div className="relative flex h-[50vh] w-full flex-col items-center justify-center rounded-2xl overflow-hidden">
-          <PremiumLoader isOpen={true} />
-       </div>
-    );
-  }
+  // Yükleme ekranı iptal edildi, sayfa direkt açılıp verileri arkaplanda çekecek.
 
   return (
     <div className="-mt-3 pb-[46px] flex flex-col h-full">
