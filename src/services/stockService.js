@@ -26,7 +26,7 @@ export const stockService = {
         await db.products.update(productId, { stock_quantity: newQty });
 
         await db.stock_movements.add({
-          product_id: productId,
+          product_id: Number(productId),
           movement_type: type,
           quantity: qty,
           unit_price: unitPrice,
@@ -48,7 +48,8 @@ export const stockService = {
       movements.sort((a, b) => b.created_at - a.created_at);
 
       if (filters.product_id) {
-        movements = movements.filter(m => m.product_id === filters.product_id);
+        const pid = Number(filters.product_id);
+        movements = movements.filter(m => Number(m.product_id) === pid);
       }
       if (filters.type && filters.type !== 'all') {
         movements = movements.filter(m => m.movement_type === filters.type);

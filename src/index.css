@@ -64,3 +64,23 @@
 .recharts-surface {
   outline: none !important;
 }
+
+@keyframes light-pulse {
+  0%, 100% {
+    text-shadow: 0 0 4px rgba(255,255,255,0.5), 
+                 0 0 10px rgba(126,217,87,0.3);
+    color: rgba(255, 255, 255, 0.9);
+  }
+  50% {
+    text-shadow: 0 0 10px #ffffff, 
+                 0 0 20px #ffffff, 
+                 0 0 30px #7ed957, 
+                 0 0 50px #7ed957, 
+                 0 0 70px #7ed957;
+    color: #ffffff;
+  }
+}
+
+.animate-light-pulse {
+  animation: light-pulse 1.8s ease-in-out infinite;
+}

@@ -51,7 +51,7 @@ export const saleService = {
                 stock_quantity: product.stock_quantity - item.quantity,
               });
               await db.stock_movements.add({
-                product_id:    item.product_id,
+                product_id:    Number(item.product_id),
                 movement_type: 'sale',
                 quantity:      item.quantity,
                 unit_price:    item.unit_price,
@@ -480,7 +480,7 @@ export const saleService = {
   async getByProductId(productId) {
     try {
       // Find all sale_items for this product
-      const saleItems = await db.sale_items.where('product_id').equals(productId).toArray();
+      const saleItems = await db.sale_items.where('product_id').equals(Number(productId)).toArray();
       if (!saleItems.length) return [];
 
       // Get unique sale IDs

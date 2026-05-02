@@ -279,6 +279,13 @@ export const Dashboard = () => {
         });
       }
 
+      while (uniqueTxs.length < 5) {
+        uniqueTxs.push({
+          id: `empty_${uniqueTxs.length}`,
+          isEmpty: true
+        });
+      }
+
       setRecentTransactions(uniqueTxs);
 
       // ── 3. Kritik Stok ──────────────────────────────────────
@@ -530,8 +537,12 @@ export const Dashboard = () => {
                       }
                     };
 
-                    return (
-                      <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors cursor-pointer" onClick={handleRowClick}>
+                    return tx.isEmpty ? (
+                      <tr key={tx.id} className="h-[46px] border-b border-transparent">
+                        <td colSpan="5"></td>
+                      </tr>
+                    ) : (
+                      <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors cursor-pointer border-b border-slate-100 last:border-0" onClick={handleRowClick}>
                         <td className="px-4 py-2">
                           <div className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${pillClass}`}>
                             <IconComponent className="w-3 h-3 flex-shrink-0" />

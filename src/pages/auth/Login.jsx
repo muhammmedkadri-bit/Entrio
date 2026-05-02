@@ -125,10 +125,17 @@ export const Login = () => {
   const navigate = useNavigate();
   const { login, isLoading: isAuthLoading } = useAuthStore();
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useHookForm();
+
+  // Set page title
+  useEffect(() => {
+    document.title = 'Entrio | Giriş';
+    return () => { document.title = 'Entrio POS'; };
+  }, []);
   
   const [showPassword, setShowPassword] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [isLookingAtEachOther, setIsLookingAtEachOther] = useState(false);
   const [isPurplePeeking, setIsPurplePeeking] = useState(false);
   
@@ -225,11 +232,11 @@ export const Login = () => {
 
   const isPasswordHidden = (passwordValue && passwordValue.length > 0 && !showPassword);
   const isPasswordVisible = (passwordValue && passwordValue.length > 0 && showPassword);
+  const shouldCloseEyes = isPasswordFocused && !showPassword;
 
   const onSubmit = async (data) => {
     const res = await login(data.email, data.password);
     if (res.success) {
-      toast.success('Giriş başarılı, yönlendiriliyorsunuz...');
       navigate('/dashboard');
     } else {
       toast.error(res.error || 'Giriş başarısız.');
@@ -258,13 +265,13 @@ export const Login = () => {
           {/* Slogan + Characters — full width centered column */}
           <div className="relative z-20 flex flex-col items-center w-full">
             {/* Logo centered */}
-            <img src={EntrioLogoPng} alt="Entrio" className="h-32 w-auto mb-6" style={{ filter: 'none' }} />
+            <img src={EntrioLogoPng} alt="Entrio" className="h-32 w-auto mb-6" style={{ filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.9)) drop-shadow(0 0 20px rgba(255,255,255,0.7)) drop-shadow(0 0 35px rgba(255,255,255,0.5))' }} />
             
             {/* Slogan (Responsive Typography applied) */}
             <div className="text-center mb-16 px-6 w-full max-w-2xl">
               <h2 className="text-2xl lg:text-[28px] font-extrabold tracking-tight leading-snug" style={{ color: '#1a4d0a' }}>
                 Perakende yönetiminde
-                <span className="relative inline-block ml-1.5" style={{ color: '#ffffff', textShadow: '0 0 12px rgba(255,255,255,0.9), 0 0 24px rgba(255,255,255,0.6)' }}>
+                <span className="relative inline-block ml-1.5 animate-light-pulse" style={{ color: '#ffffff' }}>
                   yeni nesil
                   {/* Chalk-style underline */}
                   <svg className="absolute -bottom-1 left-0 w-full h-3" viewBox="0 0 100 10" preserveAspectRatio="none">
@@ -273,7 +280,7 @@ export const Login = () => {
                 </span> deneyim
               </h2>
               <p className="mt-2 text-sm lg:text-base font-medium" style={{ color: 'rgba(20,60,5,0.7)' }}>
-                Satış · Stok · Kasa · Raporlama hepsi tek platformda.
+                Barkodlu Satış · Stok · Kasa · Raporlama hepsi tek platformda.
               </p>
             </div>
 
@@ -291,9 +298,9 @@ export const Login = () => {
                   }}>
                   <div className="absolute flex gap-8 transition-all duration-700 ease-in-out"
                     style={{ left: isPasswordVisible ? 20 : isLookingAtEachOther ? 55 : 45 + pp.faceX, top: isPasswordVisible ? 35 : isLookingAtEachOther ? 65 : 40 + pp.faceY }}>
-                    <Eye globalMouse={globalMouse} size={18} pupilSize={7} maxDistance={5} isBlinking={isPurpleBlinking}
+                    <Eye globalMouse={globalMouse} size={18} pupilSize={7} maxDistance={5} isBlinking={isPurpleBlinking || shouldCloseEyes}
                       forceLookX={isPasswordVisible ? (isPurplePeeking ? 4 : -4) : isLookingAtEachOther ? 3 : undefined} forceLookY={isPasswordVisible ? (isPurplePeeking ? 5 : -4) : isLookingAtEachOther ? 4 : undefined} />
-                    <Eye globalMouse={globalMouse} size={18} pupilSize={7} maxDistance={5} isBlinking={isPurpleBlinking}
+                    <Eye globalMouse={globalMouse} size={18} pupilSize={7} maxDistance={5} isBlinking={isPurpleBlinking || shouldCloseEyes}
                       forceLookX={isPasswordVisible ? (isPurplePeeking ? 4 : -4) : isLookingAtEachOther ? 3 : undefined} forceLookY={isPasswordVisible ? (isPurplePeeking ? 5 : -4) : isLookingAtEachOther ? 4 : undefined} />
                   </div>
                 </div>
@@ -307,9 +314,9 @@ export const Login = () => {
                   }}>
                   <div className="absolute flex gap-6 transition-all duration-700 ease-in-out"
                     style={{ left: isPasswordVisible ? 10 : isLookingAtEachOther ? 32 : 26 + bp.faceX, top: isPasswordVisible ? 28 : isLookingAtEachOther ? 12 : 32 + bp.faceY }}>
-                    <Eye globalMouse={globalMouse} size={16} pupilSize={6} maxDistance={4} isBlinking={isBlackBlinking}
+                    <Eye globalMouse={globalMouse} size={16} pupilSize={6} maxDistance={4} isBlinking={isBlackBlinking || shouldCloseEyes}
                       forceLookX={isPasswordVisible ? -4 : isLookingAtEachOther ? 0 : undefined} forceLookY={isPasswordVisible ? -4 : isLookingAtEachOther ? -4 : undefined} />
-                    <Eye globalMouse={globalMouse} size={16} pupilSize={6} maxDistance={4} isBlinking={isBlackBlinking}
+                    <Eye globalMouse={globalMouse} size={16} pupilSize={6} maxDistance={4} isBlinking={isBlackBlinking || shouldCloseEyes}
                       forceLookX={isPasswordVisible ? -4 : isLookingAtEachOther ? 0 : undefined} forceLookY={isPasswordVisible ? -4 : isLookingAtEachOther ? -4 : undefined} />
                   </div>
                 </div>
@@ -322,8 +329,8 @@ export const Login = () => {
                   }}>
                   <div className="absolute flex gap-8 transition-all duration-200 ease-out"
                     style={{ left: isPasswordVisible ? 50 : 82 + op.faceX, top: isPasswordVisible ? 85 : 90 + op.faceY }}>
-                    <Eye globalMouse={globalMouse} showWhite={false} size={12} pupilColor="#2D2D2D" forceLookX={isPasswordVisible ? -5 : undefined} forceLookY={isPasswordVisible ? -4 : undefined} />
-                    <Eye globalMouse={globalMouse} showWhite={false} size={12} pupilColor="#2D2D2D" forceLookX={isPasswordVisible ? -5 : undefined} forceLookY={isPasswordVisible ? -4 : undefined} />
+                    <Eye globalMouse={globalMouse} size={14} pupilSize={6} maxDistance={3} isBlinking={shouldCloseEyes} forceLookX={isPasswordVisible ? -5 : undefined} forceLookY={isPasswordVisible ? -4 : undefined} />
+                    <Eye globalMouse={globalMouse} size={14} pupilSize={6} maxDistance={3} isBlinking={shouldCloseEyes} forceLookX={isPasswordVisible ? -5 : undefined} forceLookY={isPasswordVisible ? -4 : undefined} />
                   </div>
                 </div>
 
@@ -335,8 +342,8 @@ export const Login = () => {
                   }}>
                   <div className="absolute flex gap-6 transition-all duration-200 ease-out"
                     style={{ left: isPasswordVisible ? 20 : 52 + yp.faceX, top: isPasswordVisible ? 35 : 40 + yp.faceY }}>
-                    <Eye globalMouse={globalMouse} showWhite={false} size={12} pupilColor="#2D2D2D" forceLookX={isPasswordVisible ? -5 : undefined} forceLookY={isPasswordVisible ? -4 : undefined} />
-                    <Eye globalMouse={globalMouse} showWhite={false} size={12} pupilColor="#2D2D2D" forceLookX={isPasswordVisible ? -5 : undefined} forceLookY={isPasswordVisible ? -4 : undefined} />
+                    <Eye globalMouse={globalMouse} size={14} pupilSize={6} maxDistance={3} isBlinking={shouldCloseEyes} forceLookX={isPasswordVisible ? -5 : undefined} forceLookY={isPasswordVisible ? -4 : undefined} />
+                    <Eye globalMouse={globalMouse} size={14} pupilSize={6} maxDistance={3} isBlinking={shouldCloseEyes} forceLookX={isPasswordVisible ? -5 : undefined} forceLookY={isPasswordVisible ? -4 : undefined} />
                   </div>
                   <div className="absolute rounded-full transition-all duration-200 ease-out"
                     style={{ width: 80, height: 4, backgroundColor: '#2D2D2D', left: isPasswordVisible ? 10 : 40 + yp.faceX, top: isPasswordVisible ? 88 : 88 + yp.faceY }} />
@@ -394,6 +401,8 @@ export const Login = () => {
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                   <input type={showPassword ? 'text' : 'password'} placeholder="••••••••"
                     {...register('password', { required: 'Şifre zorunludur.' })}
+                    onFocus={() => setIsPasswordFocused(true)}
+                    onBlur={() => setIsPasswordFocused(false)}
                     className={`w-full h-12 pl-11 pr-12 rounded-xl text-sm font-medium text-slate-800 placeholder:text-slate-400 outline-none transition-all border-2 ${errors.password ? 'bg-rose-50 border-rose-400' : 'bg-slate-50 border-slate-200 focus:bg-white focus:border-[#7ed957]'}`}
                   />
                   <button type="button" onClick={() => setShowPassword(v => !v)}

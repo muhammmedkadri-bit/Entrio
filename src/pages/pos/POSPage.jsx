@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { PremiumLoader } from '../../components/ui/PremiumLoader';
 import { CheckCircle2, ShoppingCart, User as UserIcon, Banknote, CreditCard, Building2, Shuffle, SplitSquareHorizontal, UserCheck, LayoutGrid, ArrowLeftRight, X, Zap, Package, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -122,11 +122,31 @@ export const POSPage = () => {
     items, selectedCustomer, selectedSupplier, paymentMethod,
     posMode, setPosMode, returnSaleId, setReturnSaleId, setSupplier,
     addItem, removeItem, updateQty, updateItemPrice,
-    clearCart, setCustomer, setPaymentMethod, calculateTotals,
+    clearCart, setCustomer, setPaymentMethod,
     discountType, discountValue, discountEnabled, discountReason
   } = useCartStore();
 
-  const { subtotal, discountAmount, total } = calculateTotals();
+  const { subtotal, discountAmount, total } = useMemo(() => {
+    const sub = items.reduce((sum, item) => sum + item.lineTotal, 0);
+    
+    let disc = 0;
+    if (discountEnabled && discountValue > 0) {
+      if (discountType === 'percent') {
+        disc = Math.round((sub * (discountValue / 100)) * 100) / 100;
+        disc = Math.min(disc, sub);
+      } else if (discountType === 'amount') {
+        disc = Math.min(discountValue, sub);
+      }
+    }
+
+    const totalVal = Math.round((sub - disc) * 100) / 100;
+
+    return { 
+      subtotal: sub, 
+      discountAmount: disc, 
+      total: totalVal 
+    };
+  }, [items, discountType, discountValue, discountEnabled]);
 
   // ── Product grid state ─────────────────────────────────────────────────────
   const [displayedProducts, setDisplayedProducts] = useState([]);
@@ -173,8 +193,11 @@ export const POSPage = () => {
 
   // ── Refs ───────────────────────────────────────────────────────────────────
   const barcodeWrapperRef = useRef(null);
-  const searchInputRef    = useRef(null);
-  const isInitializedRef  = useRef(false); // prevents overwriting LS before initLoad reads it
+  const searchInputRef = useRef(null);
+  const isInitializedRef = useRef(false); // prevents overwriting LS before initLoad reads it
+
+  // YENİ: Barkod çift okuma (debounce) koruması için hafıza referansı
+  const lastScanRef = useRef({ code: '', time: 0 });
 
   // ── initLoad — useEffect'ten ÖNCE tanımlanmalı (TDZ kuralı: const hoist edilmez)
   const initLoad = useCallback(async () => {
@@ -183,8 +206,15 @@ export const POSPage = () => {
       const all = await productService.getAll({});
       setAllProducts(all);
 
-      // Restore from localStorage
-      const savedIds = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+      // Restore from localStorage (try-catch koruması eklendi)
+      let savedIds = [];
+      try {
+        savedIds = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+      } catch (error) {
+        console.error('[POS] localStorage okuma hatası:', error);
+        savedIds = [];
+      }
+
       if (savedIds.length > 0) {
         const idSet = new Map(all.map(p => [p.id, p]));
         const restored = savedIds.map(id => idSet.get(id)).filter(Boolean);
@@ -204,9 +234,6 @@ export const POSPage = () => {
   // ── Initial load ───────────────────────────────────────────────────────────
   useEffect(() => {
     initLoad();
-    if (!selectedCustomer) {
-      db.customers.get(1).then(c => { if (c) setCustomer(c); });
-    }
     cashService.getRegisters().then(regs => {
       setCashRegisters(regs || []);
       const cashDefault = regs.find(r => r.type === 'cash' && r.is_active !== false)?.id || '';
@@ -214,7 +241,14 @@ export const POSPage = () => {
       const transferDefault = regs.find(r => r.type === 'bank' && r.is_active !== false)?.id || '';
       setSelectedRegisters({ cash: cashDefault, card: cardDefault, transfer: transferDefault });
     }).catch(e => console.error('[POS] Kasa listesi yüklenemedi:', e));
-  }, [initLoad, selectedCustomer, setCustomer]);
+  }, [initLoad]);
+
+  // Set default customer if none selected
+  useEffect(() => {
+    if (!selectedCustomer) {
+      db.customers.get(1).then(c => { if (c) setCustomer(c); });
+    }
+  }, [selectedCustomer, setCustomer]);
 
   // Persist displayed product IDs to localStorage — only after init to avoid overwriting saved data
   useEffect(() => {
@@ -234,8 +268,8 @@ export const POSPage = () => {
         const results = await productService.searchByNameOrBarcode(searchQuery);
         setDropdownResults(results.slice(0, 8));
         setShowDropdown(results.length > 0 || searchQuery.length > 0);
-      } catch (e) { 
-        console.error('[POS] Arama Hatası:', e); 
+      } catch (e) {
+        console.error('[POS] Arama Hatası:', e);
       }
     }, 200);
     return () => clearTimeout(timer);
@@ -300,6 +334,18 @@ export const POSPage = () => {
 
   // ── Barcode scan (Enter on pure numeric input) ─────────────────────────────
   const handleScan = async (code) => {
+    const now = Date.now();
+
+    // YENİ: Zaman Kalkanı (Debounce Kontrolü)
+    // Aynı barkod 600ms içinde tekrar gelirse yoksay
+    if (code === lastScanRef.current.code && now - lastScanRef.current.time < 600) {
+      console.log('[POS] Çift okuma engellendi:', code); // Arka planda geliştirici için bilgi mesajı
+      return;
+    }
+
+    // Son okutulan barkodu ve zamanını hafızaya kaydet
+    lastScanRef.current = { code, time: now };
+
     try {
       const product = await productService.getByBarcode(code);
       if (product) {
@@ -391,7 +437,7 @@ export const POSPage = () => {
     setIsProcessing(true);
     try {
       const paymentData = { method: paymentMethod, cashAmount: pCash, cardAmount: pCard, transferAmount: pTransfer, creditAmount: pCredit };
-      
+
       if (posMode === 'purchase') {
         const purchaseData = {
           supplier_id: selectedSupplier?.id || 1,
@@ -432,18 +478,48 @@ export const POSPage = () => {
         await saleService.createReturn(returnData, returnItemsData, paymentData);
         toast.success('İade başarıyla tamamlandı!');
       } else {
-        const saleData = { 
-          customer_id: selectedCustomer?.id || 1, 
-          total_amount: total, 
+        const saleData = {
+          customer_id: selectedCustomer?.id || 1,
+          total_amount: total,
           discount_amount: discountAmount || 0,
           discount_type: discountType,
           discount_reason: discountReason || '',
           subtotal: subtotal
         };
-        const saleItemsData = items.map(item => ({
-          product_id: item.product.id, name: item.product.name,
-          quantity: item.quantity, unit_price: item.product.sale_price, line_total: item.lineTotal,
+
+        // Proportionally distribute the cart-level discount across items
+        const rawItems = items.map(item => ({
+          product_id: item.product.id,
+          name: item.product.name,
+          quantity: item.quantity,
+          unit_price: item.product.sale_price,
+          gross_total: item.lineTotal,
         }));
+
+        const totalGross = rawItems.reduce((s, i) => s + i.gross_total, 0);
+
+        let distributedDiscount = 0;
+        const saleItemsData = rawItems.map((item, idx) => {
+          let itemDiscount = 0;
+          if (discountAmount > 0 && totalGross > 0) {
+            if (idx === rawItems.length - 1) {
+              // Last item absorbs rounding residual
+              itemDiscount = Math.round((discountAmount - distributedDiscount) * 100) / 100;
+            } else {
+              itemDiscount = Math.round((discountAmount * (item.gross_total / totalGross)) * 100) / 100;
+              distributedDiscount += itemDiscount;
+            }
+          }
+          const netLineTotal = Math.round((item.gross_total - itemDiscount) * 100) / 100;
+          return {
+            product_id: item.product_id,
+            name: item.name,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            discount: itemDiscount,
+            line_total: netLineTotal,
+          };
+        });
         const result = await saleService.create(saleData, saleItemsData, paymentData);
 
         setSaleResult({
@@ -584,17 +660,17 @@ export const POSPage = () => {
   const isRetailCustomer = posMode === 'purchase' ? !selectedSupplier : (!selectedCustomer || selectedCustomer.customer_type === 'retail');
 
   const topPayments = [
-    { id: 'cash',     label: 'Nakit',      shortcut: 'F5', icon: Banknote },
-    { id: 'card',     label: 'Kart',       shortcut: 'F6', icon: CreditCard },
+    { id: 'cash', label: 'Nakit', shortcut: 'F5', icon: Banknote },
+    { id: 'card', label: 'Kart', shortcut: 'F6', icon: CreditCard },
     { id: 'transfer', label: 'Havale/EFT', shortcut: 'F7', icon: Building2 },
-    { id: 'mixed',    label: 'Parçalı\nÖdeme', shortcut: 'F8', icon: SplitSquareHorizontal },
+    { id: 'mixed', label: 'Parçalı\nÖdeme', shortcut: 'F8', icon: SplitSquareHorizontal },
   ];
 
   const paymentActiveStyle = {
-    cash:     { background: 'rgba(34,197,94,0.15)',   border: '1px solid rgba(34,197,94,0.35)',   boxShadow: '0 4px 12px rgba(34,197,94,0.2)',   color: '#15803d' },
-    card:     { background: 'rgba(59,130,246,0.15)',  border: '1px solid rgba(59,130,246,0.35)',  boxShadow: '0 4px 12px rgba(59,130,246,0.2)',  color: '#1d4ed8' },
-    transfer: { background: 'rgba(139,92,246,0.15)',  border: '1px solid rgba(139,92,246,0.35)', boxShadow: '0 4px 12px rgba(139,92,246,0.2)',  color: '#7e22ce' },
-    mixed:    { background: 'rgba(249,115,22,0.15)',  border: '1px solid rgba(249,115,22,0.35)', boxShadow: '0 4px 12px rgba(249,115,22,0.2)',  color: '#c2410c' },
+    cash: { background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.35)', boxShadow: '0 4px 12px rgba(34,197,94,0.2)', color: '#15803d' },
+    card: { background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.35)', boxShadow: '0 4px 12px rgba(59,130,246,0.2)', color: '#1d4ed8' },
+    transfer: { background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.35)', boxShadow: '0 4px 12px rgba(139,92,246,0.2)', color: '#7e22ce' },
+    mixed: { background: 'rgba(249,115,22,0.15)', border: '1px solid rgba(249,115,22,0.35)', boxShadow: '0 4px 12px rgba(249,115,22,0.2)', color: '#c2410c' },
   };
 
   const paymentInactiveStyle = {
@@ -633,7 +709,7 @@ export const POSPage = () => {
                 />
               )}
             </div>
-            
+
             {/* Add/Swap Quick Product Manager Button */}
             <button
               onClick={() => setQpmOpen(true)}
@@ -681,67 +757,67 @@ export const POSPage = () => {
 
         {/* Product Grid Area */}
         <div className="flex-1 flex flex-col overflow-hidden bg-slate-50/50">
-          
+
           {/* Grid Content */}
           <div className="flex-1 overflow-y-auto p-2">
-          {loading ? (
-            <div className="relative flex items-center justify-center h-full">
-              <PremiumLoader isOpen={true} />
-            </div>
-          ) : displayedProducts.length > 0 ? (
-            <div className={`grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 relative ${swapMode ? 'relative' : ''}`}>
-              {displayedProducts.map((p, idx) => (
-                <div
-                  key={p.id}
-                  className={swapMode ? 'relative cursor-pointer' : 'relative z-20'}
-                  onClick={swapMode ? () => handleGridCardClickForSwap(p, idx) : undefined}
-                  style={{
-                    transition: 'transform 0.2s ease, opacity 0.2s ease',
-                    transform: removingIds.has(p.id) ? 'scale(0)' : 'scale(1)',
-                    opacity: removingIds.has(p.id) ? 0 : 1,
-                    ...(swapMode ? { transition: 'transform 0.1s ease' } : {}),
-                  }}
-                >
-                  <ProductCard
-                    product={p}
-                    isSelected={selectedProductId === p.id}
-                    onSelect={handleSelectProduct}
-                    onRemove={handleRemoveRequest}
-                    onAdd={swapMode ? () => {} : handleAddProduct}
-                  />
-                  {swapMode && (
-                    <div
-                      style={{
-                        position: 'absolute', inset: 0, borderRadius: '12px',
-                        background: 'rgba(126,217,87,0.08)',
-                        border: '2px solid transparent',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transition: 'all 0.15s ease',
-                        cursor: 'pointer',
-                      }}
-                      className="hover:!border-brand-400 hover:!bg-brand-50/30 hover:scale-[1.02]"
-                    >
-                      <span
+            {loading ? (
+              <div className="relative flex items-center justify-center h-full">
+                <PremiumLoader isOpen={true} />
+              </div>
+            ) : displayedProducts.length > 0 ? (
+              <div className={`grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 relative ${swapMode ? 'relative' : ''}`}>
+                {displayedProducts.map((p, idx) => (
+                  <div
+                    key={p.id}
+                    className={swapMode ? 'relative cursor-pointer' : 'relative z-20'}
+                    onClick={swapMode ? () => handleGridCardClickForSwap(p, idx) : undefined}
+                    style={{
+                      transition: 'transform 0.2s ease, opacity 0.2s ease',
+                      transform: removingIds.has(p.id) ? 'scale(0)' : 'scale(1)',
+                      opacity: removingIds.has(p.id) ? 0 : 1,
+                      ...(swapMode ? { transition: 'transform 0.1s ease' } : {}),
+                    }}
+                  >
+                    <ProductCard
+                      product={p}
+                      isSelected={selectedProductId === p.id}
+                      onSelect={handleSelectProduct}
+                      onRemove={handleRemoveRequest}
+                      onAdd={swapMode ? () => { } : handleAddProduct}
+                    />
+                    {swapMode && (
+                      <div
                         style={{
-                          background: 'rgba(126,217,87,0.12)', backdropFilter: 'blur(8px)',
-                          border: '1px solid rgba(126,217,87,0.25)', borderRadius: '8px',
-                          color: '#3a8024', fontSize: 11, fontWeight: 600, padding: '4px 10px',
+                          position: 'absolute', inset: 0, borderRadius: '12px',
+                          background: 'rgba(126,217,87,0.08)',
+                          border: '2px solid transparent',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          transition: 'all 0.15s ease',
+                          cursor: 'pointer',
                         }}
+                        className="hover:!border-brand-400 hover:!bg-brand-50/30 hover:scale-[1.02]"
                       >
-                        Bu kartla değiştir
-                      </span>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-3">
-              <ShoppingCart className="w-12 h-12 opacity-50" />
-              <p>Ürün bulunamadı. "Hızlı Ürün" ile ekleyebilirsiniz.</p>
-            </div>
-          )}
-        </div>
+                        <span
+                          style={{
+                            background: 'rgba(126,217,87,0.12)', backdropFilter: 'blur(8px)',
+                            border: '1px solid rgba(126,217,87,0.25)', borderRadius: '8px',
+                            color: '#3a8024', fontSize: 11, fontWeight: 600, padding: '4px 10px',
+                          }}
+                        >
+                          Bu kartla değiştir
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-3">
+                <ShoppingCart className="w-12 h-12 opacity-50" />
+                <p>Ürün bulunamadı. "Hızlı Ürün" ile ekleyebilirsiniz.</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       {/* ── RIGHT PANEL ────────────────────────────────────────────────────── */}
@@ -780,33 +856,30 @@ export const POSPage = () => {
 
           {/* Mode Selector (Right Half) */}
           <div className="flex-1 p-2 flex items-center justify-center gap-1.5 bg-slate-50/50">
-             <button
-                onClick={() => { setPosMode('sale'); setReturnSaleId(null); clearCart(true); }}
-                className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border text-[11px] font-bold transition-all h-full ${
-                  posMode === 'sale' ? 'bg-brand-50 border-brand-200 text-brand-700 shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+            <button
+              onClick={() => { setPosMode('sale'); setReturnSaleId(null); clearCart(true); }}
+              className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border text-[11px] font-bold transition-all h-full ${posMode === 'sale' ? 'bg-brand-50 border-brand-200 text-brand-700 shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
                 }`}
-             >
-                <ShoppingCart className="w-4 h-4 mb-0.5" />
-                Satış
-             </button>
-             <button
-                onClick={() => { setPosMode('return'); clearCart(true); setReturnSaleSearchOpen(true); }}
-                className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border text-[11px] font-bold transition-all h-full ${
-                  posMode === 'return' ? 'bg-orange-50 border-orange-200 text-orange-700 shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+            >
+              <ShoppingCart className="w-4 h-4 mb-0.5" />
+              Satış
+            </button>
+            <button
+              onClick={() => { setPosMode('return'); clearCart(true); setReturnSaleSearchOpen(true); }}
+              className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border text-[11px] font-bold transition-all h-full ${posMode === 'return' ? 'bg-orange-50 border-orange-200 text-orange-700 shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
                 }`}
-             >
-                <ArrowLeftRight className="w-4 h-4 mb-0.5" />
-                İade
-             </button>
-             <button
-                onClick={() => { setPosMode('purchase'); setReturnSaleId(null); clearCart(true); }}
-                className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border text-[11px] font-bold transition-all h-full ${
-                  posMode === 'purchase' ? 'bg-blue-50 border-blue-200 text-blue-700 shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+            >
+              <ArrowLeftRight className="w-4 h-4 mb-0.5" />
+              İade
+            </button>
+            <button
+              onClick={() => { setPosMode('purchase'); setReturnSaleId(null); clearCart(true); }}
+              className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border text-[11px] font-bold transition-all h-full ${posMode === 'purchase' ? 'bg-blue-50 border-blue-200 text-blue-700 shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
                 }`}
-             >
-                <Package className="w-4 h-4 mb-0.5" />
-                Alış
-             </button>
+            >
+              <Package className="w-4 h-4 mb-0.5" />
+              Alış
+            </button>
           </div>
         </div>
 
@@ -837,7 +910,7 @@ export const POSPage = () => {
         {/* Totals & Payment Section - SPLIT LAYOUT RESTORED */}
         <div className="bg-white border-t border-slate-200 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] z-10 p-4">
           <div className="flex gap-6 items-stretch">
-            
+
             {/* LEFT: Payment Options — 1x1 Grid */}
             <div className="flex-[1] flex flex-col gap-2">
               <div className="grid grid-cols-1 gap-1.5 h-full">
@@ -883,14 +956,14 @@ export const POSPage = () => {
                             ? { background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.35)', color: '#b91c1c', boxShadow: '0 2px 8px rgba(239,68,68,0.15)' }
                             : (posMode === 'return' || (posMode === 'sale' && isRetailCustomer))
                               ? { background: 'rgba(241,245,249,0.6)', borderColor: 'transparent', color: '#cbd5e1', cursor: 'not-allowed' }
-                              : { 
-                                  background: 'rgba(248,250,252,0.85)', 
-                                  borderColor: (anySelected && !isCredit) ? '#cbd5e1' : 'rgba(226,232,240,0.9)', 
-                                  color: '#64748b', boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-                                  opacity: (anySelected && !isCredit) ? 0.6 : 1,
-                                  filter: (anySelected && !isCredit) ? 'grayscale(0.6)' : 'none',
-                                  transform: (anySelected && !isCredit) ? 'scale(0.98)' : 'scale(1)'
-                                }
+                              : {
+                                background: 'rgba(248,250,252,0.85)',
+                                borderColor: (anySelected && !isCredit) ? '#cbd5e1' : 'rgba(226,232,240,0.9)',
+                                color: '#64748b', boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+                                opacity: (anySelected && !isCredit) ? 0.6 : 1,
+                                filter: (anySelected && !isCredit) ? 'grayscale(0.6)' : 'none',
+                                transform: (anySelected && !isCredit) ? 'scale(0.98)' : 'scale(1)'
+                              }
                           }
                         >
                           <button
@@ -916,14 +989,14 @@ export const POSPage = () => {
                             ? { background: 'rgba(234,179,8,0.12)', border: '1px solid rgba(234,179,8,0.35)', color: '#854d0e', boxShadow: '0 2px 8px rgba(234,179,8,0.15)' }
                             : (posMode === 'purchase' || posMode === 'return' || items.length === 0)
                               ? { background: 'rgba(241,245,249,0.6)', borderColor: 'transparent', color: '#cbd5e1', cursor: 'not-allowed' }
-                              : { 
-                                  background: 'rgba(248,250,252,0.85)', 
-                                  borderColor: (anySelected && !isSupplier) ? '#cbd5e1' : 'rgba(226,232,240,0.9)', 
-                                  color: '#64748b', boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-                                  opacity: (anySelected && !isSupplier) ? 0.6 : 1,
-                                  filter: (anySelected && !isSupplier) ? 'grayscale(0.6)' : 'none',
-                                  transform: (anySelected && !isSupplier) ? 'scale(0.98)' : 'scale(1)'
-                                }
+                              : {
+                                background: 'rgba(248,250,252,0.85)',
+                                borderColor: (anySelected && !isSupplier) ? '#cbd5e1' : 'rgba(226,232,240,0.9)',
+                                color: '#64748b', boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+                                opacity: (anySelected && !isSupplier) ? 0.6 : 1,
+                                filter: (anySelected && !isSupplier) ? 'grayscale(0.6)' : 'none',
+                                transform: (anySelected && !isSupplier) ? 'scale(0.98)' : 'scale(1)'
+                              }
                           }
                         >
                           <button
@@ -936,7 +1009,7 @@ export const POSPage = () => {
                               <Building2 className="w-3.5 h-3.5" style={{ color: supplierModalOpen ? 'currentColor' : '#94a3b8' }} />
                             </div>
                             <div className="flex flex-col flex-1 min-w-0 pr-3">
-                              <span className="text-[10px] xl:text-[11px] font-bold leading-tight">Tedarikçiye<br/>Ödeme</span>
+                              <span className="text-[10px] xl:text-[11px] font-bold leading-tight">Tedarikçiye<br />Ödeme</span>
                             </div>
                             <span className="absolute top-1.5 right-8 text-[8px] font-black" style={{ opacity: 0.25 }}>F10</span>
                           </button>
@@ -972,11 +1045,36 @@ export const POSPage = () => {
                 </div>
               </div>
 
+              {/* Clear Cart Button */}
+              <button
+                onClick={() => {
+                  if (items.length === 0) return;
+                  clearCart();
+                  setCashAmount('');
+                  setCardAmount('');
+                  setTransferAmount('');
+                  toast('Sepet temizlendi', { icon: '🗑️', duration: 2000 });
+                }}
+                disabled={items.length === 0}
+                className="w-full h-10 mt-3 flex items-center justify-center gap-2 rounded-2xl text-sm font-bold tracking-tight transition-all duration-300"
+                style={items.length === 0 ? {
+                  background: '#f1f5f9', color: '#cbd5e1', border: 'none', cursor: 'not-allowed',
+                } : {
+                  background: 'linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(220,38,38,0.12) 100%)',
+                  color: '#dc2626',
+                  border: '1.5px solid rgba(239,68,68,0.25)',
+                  boxShadow: '0 2px 8px rgba(239,68,68,0.1)',
+                }}
+              >
+                <X className="w-4 h-4 shrink-0" />
+                Sepeti Temizle
+              </button>
+
               {/* Action Button */}
               <button
                 onClick={!isProcessing && items.length > 0 && !(paymentMethod === 'credit' && isRetailCustomer) ? handleCheckout : undefined}
                 disabled={items.length === 0 || (paymentMethod === 'credit' && isRetailCustomer) || isProcessing}
-                className="w-full h-14 mt-4 flex items-center justify-center gap-3 rounded-2xl text-lg font-black tracking-tight transition-all duration-300 shadow-xl"
+                className="w-full h-14 mt-3 flex items-center justify-center gap-3 rounded-2xl text-lg font-black tracking-tight transition-all duration-300 shadow-xl"
                 style={(items.length === 0 || (paymentMethod === 'credit' && isRetailCustomer)) ? {
                   background: '#e2e8f0', color: '#94a3b8', border: 'none', cursor: 'not-allowed',
                 } : {
@@ -996,7 +1094,7 @@ export const POSPage = () => {
           {/* Mixed inputs - Detailed View */}
           {paymentMethod === 'mixed' && (
             <div className="mt-4 pt-4 border-t border-slate-100 animate-in slide-in-from-top-4 duration-300">
-               <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block ml-1">Nakit Tutar</label>
                   <input type="number" value={cashAmount} onChange={e => setCashAmount(e.target.value)}
@@ -1014,9 +1112,9 @@ export const POSPage = () => {
                 </div>
               </div>
               <div className="flex items-center justify-between mt-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="text-sm text-slate-500 font-bold">Toplam Girilen: <span className="text-slate-900 text-lg">{formatCurrency((parseFloat(cashAmount)||0) + (parseFloat(cardAmount)||0) + (parseFloat(transferAmount)||0))}</span></span>
+                <span className="text-sm text-slate-500 font-bold">Toplam Girilen: <span className="text-slate-900 text-lg">{formatCurrency((parseFloat(cashAmount) || 0) + (parseFloat(cardAmount) || 0) + (parseFloat(transferAmount) || 0))}</span></span>
                 {(() => {
-                  const sum = (parseFloat(cashAmount)||0) + (parseFloat(cardAmount)||0) + (parseFloat(transferAmount)||0);
+                  const sum = (parseFloat(cashAmount) || 0) + (parseFloat(cardAmount) || 0) + (parseFloat(transferAmount) || 0);
                   if (Math.abs(sum - total) < 0.01) return <span className="px-3 py-1 bg-emerald-500 text-white rounded-full text-xs font-black shadow-sm">ÖDEME TAMAM ✓</span>;
                   if (sum < total) return <span className="px-3 py-1 bg-orange-500 text-white rounded-full text-xs font-black shadow-sm">KALAN: {formatCurrency(total - sum)}</span>;
                   return <span className="px-3 py-1 bg-red-500 text-white rounded-full text-xs font-black shadow-sm">FAZLA: {formatCurrency(sum - total)}</span>;
@@ -1030,10 +1128,10 @@ export const POSPage = () => {
       {/* ── Modals ─────────────────────────────────────────────────────────── */}
       <CustomerSearchModal isOpen={customerModalOpen} onClose={() => setCustomerModalOpen(false)} onSelect={setCustomer} />
       <SupplierSearchModal isOpen={supplierSearchOpen} onClose={() => setSupplierSearchOpen(false)} onSelect={setSupplier} />
-      <ReturnSaleSelectionModal 
-        isOpen={returnSaleSearchOpen} 
-        onClose={() => setReturnSaleSearchOpen(false)} 
-        customerId={selectedCustomer?.id} 
+      <ReturnSaleSelectionModal
+        isOpen={returnSaleSearchOpen}
+        onClose={() => setReturnSaleSearchOpen(false)}
+        customerId={selectedCustomer?.id}
       />
 
       <QuickProductModal
@@ -1064,8 +1162,8 @@ export const POSPage = () => {
         onConfirm={confirmSwap}
         onCancel={cancelSwap}
       />
-      
-      <SupplierPaymentModal 
+
+      <SupplierPaymentModal
         isOpen={supplierModalOpen}
         onClose={() => setSupplierModalOpen(false)}
         defaultAmount={total}
@@ -1081,4 +1179,3 @@ export const POSPage = () => {
     </div>
   );
 };
-

@@ -29,7 +29,10 @@ export const SalesHistoryTab = ({ salesHistory = [], product }) => {
   const totalRevenue = useMemo(() => salesHistory.reduce((s, si) => s + (si.line_total || 0), 0), [salesHistory]);
   const avgPrice = totalQty > 0 ? totalRevenue / totalQty : 0;
   const totalProfit = useMemo(() =>
-    salesHistory.reduce((s, si) => s + ((si.unit_price || 0) - (product?.purchase_price || 0)) * (si.quantity || 0), 0),
+    salesHistory.reduce((s, si) => {
+      const cost = (product?.purchase_price || 0) * (si.quantity || 0);
+      return s + ((si.line_total || 0) - cost);
+    }, 0),
     [salesHistory, product]);
 
   const totalPages = Math.ceil(salesHistory.length / ITEMS_PER_PAGE);
@@ -90,7 +93,8 @@ export const SalesHistoryTab = ({ salesHistory = [], product }) => {
               <tr><td colSpan={9} className="text-center py-10 text-gray-400 text-sm">Satış kaydı bulunamadı.</td></tr>
             )}
             {paginated.map((si, i) => {
-              const profit = ((si.unit_price || 0) - (product?.purchase_price || 0)) * (si.quantity || 0);
+              const cost = (product?.purchase_price || 0) * (si.quantity || 0);
+              const profit = (si.line_total || 0) - cost;
               const pm = PAYMENT_LABELS[si.payment_method] || { label: si.payment_method || '—', color: 'bg-gray-100 text-gray-600' };
               return (
                 <tr 

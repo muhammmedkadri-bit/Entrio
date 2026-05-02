@@ -10,8 +10,8 @@ import { useDayCloseScheduler } from '../../hooks/useDayCloseScheduler';
 const titleMap = {
   '/dashboard': 'Entrio',
   '/pos': 'Entrio I Hızlı Satış',
-  '/stock': 'Entrio I Stok Yönetimi',
-  '/purchases': 'Entrio I Satın Alma',
+  '/stock': 'Entrio I Stok',
+  '/purchases': 'Entrio I Alış Yönetimi',
   '/customers': 'Entrio I Müşteriler',
   '/suppliers': 'Entrio I Tedarikçiler',
   '/cash': 'Entrio I Kasa Ve Finans',
