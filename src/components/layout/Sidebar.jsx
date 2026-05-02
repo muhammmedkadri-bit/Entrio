@@ -74,10 +74,9 @@ export const Sidebar = () => {
           
           {/* Expanded logo — fades/slides out when collapsing */}
           <div
-            className="absolute inset-0 flex items-center px-4 transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
+            className="absolute inset-0 flex items-center px-4 transition-opacity duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
             style={{
               opacity: collapsed ? 0 : 1,
-              transform: collapsed ? 'translateX(-8px) scale(0.95)' : 'translateX(0) scale(1)',
               pointerEvents: collapsed ? 'none' : 'auto',
             }}
           >
@@ -90,10 +89,9 @@ export const Sidebar = () => {
 
           {/* Collapsed icon — fades/scales in when collapsing */}
           <div
-            className="absolute inset-0 flex items-center justify-center transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
+            className="absolute inset-0 flex items-center justify-center transition-opacity duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
             style={{
               opacity: collapsed ? 1 : 0,
-              transform: collapsed ? 'scale(1)' : 'scale(0.6)',
               pointerEvents: collapsed ? 'auto' : 'none',
             }}
           >
