@@ -373,7 +373,8 @@ export const Dashboard = () => {
   // Yükleme ekranı iptal edildi, sayfa direkt açılıp verileri arkaplanda çekecek.
 
   return (
-    <div className="-mt-3 pb-[46px] flex flex-col h-full">
+    <div className="-mt-3 pb-[46px] flex flex-col h-full relative">
+      <PremiumLoader isOpen={loading} />
       
       {/* Dashboard Header - H-16 aligns exactly with Sidebar top border */}
       <div className="h-auto md:h-16 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-50">

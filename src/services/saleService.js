@@ -187,9 +187,22 @@ export const saleService = {
       if (isSupabase()) {
         const { data, error } = await supabase.from('cash_transactions').select('*').eq('reference_id', saleId);
         if (error) throw error;
-        return data;
+        return (data || []).map(t => ({
+          ...t,
+          date: t.created_at,
+          method: t.notes && t.notes.includes('Kredi Kartı') ? 'card' : 
+                  t.notes && t.notes.includes('Havale') ? 'transfer' : 'cash',
+          register: t.register_id
+        }));
       }
-      return await db.cash_transactions.filter(t => t.reference_id === Number(saleId)).toArray();
+      const raw = await db.cash_transactions.filter(t => t.reference_id === Number(saleId)).toArray();
+      return raw.map(t => ({
+        ...t,
+        date: t.created_at,
+        method: t.notes && t.notes.includes('Kredi Kartı') ? 'card' : 
+                t.notes && t.notes.includes('Havale') ? 'transfer' : 'cash',
+        register: t.register_id
+      }));
     } catch (e) { return []; }
   },
 
