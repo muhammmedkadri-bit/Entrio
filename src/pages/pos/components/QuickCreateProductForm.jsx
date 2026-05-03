@@ -223,8 +223,10 @@ export const QuickCreateProductForm = ({ searchQuery, onClose, onAddProduct, has
     setLoading(true);
     try {
       const payload = {
-        ...formData,
+        name: formData.name,
+        barcode: formData.barcode || null,
         category_id: categoryId ? parseInt(categoryId) : null,
+        supplier_id: null,
         unit,
         track_stock: trackStock,
         purchase_price: parseFloat(formData.purchase_price) || 0,
@@ -233,7 +235,6 @@ export const QuickCreateProductForm = ({ searchQuery, onClose, onAddProduct, has
         stock_quantity: trackStock ? (parseFloat(formData.stock_quantity) || 0) : 0,
         min_stock_level: trackStock ? (parseFloat(formData.min_stock_level) || 0) : 0,
         is_active: true,
-        created_at: new Date().toISOString(),
       };
 
       const newProduct = await productService.create(payload);
