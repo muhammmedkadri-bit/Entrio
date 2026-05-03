@@ -100,13 +100,6 @@ const CustomPieTooltip = ({ active, payload }) => {
 export const Dashboard = () => {
   const navigate = useNavigate();
   const startNavigation = useAppStore(state => state.startNavigation);
-  const [stats, setStats] = useState({
-    todayRevenue: 0,
-    todayCount: 0,
-    totalCash: 0,
-    criticalCount: 0,
-    totalReceivable: 0
-  });
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   useGlobalLoader(loading);
@@ -174,7 +167,6 @@ export const Dashboard = () => {
       console.error('Not güncellenemedi:', err);
     }
   };
-  const [urgentStock, setUrgentStock] = useState([]);
 
   useEffect(() => {
     loadDashboard();
@@ -198,16 +190,28 @@ export const Dashboard = () => {
         localStorage.setItem('entrio_company_logo', cInfo.value.logo || '');
       }
 
-      // ── 1. Core Stats + Grafikler (paralel) ─────────────────
+      // ── 1. Core Stats + Grafikler + Son İşlemler (tamamen paralel) ─────────
       const now = new Date();
-      const [st, cashReport, textDaySummary, registers] = await Promise.all([
-        reportService.getDashboardStats(),
+      
+      const fetchRecentTxs = async () => {
+        if (isSupabase()) {
+          const { data } = await supabase.from('cash_transactions')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(50);
+          return data || [];
+        } else {
+          return await db.cash_transactions.orderBy('created_at').reverse().limit(50).toArray();
+        }
+      };
+
+      const [cashReport, textDaySummary, registers, allTxs] = await Promise.all([
         reportService.getCashReport(startOfDay(subDays(now, 6)), endOfDay(now)),
         reportService.getSalesSummary(startOfDay(now), endOfDay(now)),
         cashService.getRegisters(),
+        fetchRecentTxs()
       ]);
 
-      setStats(st);
       setAllRegisters(registers.filter(r => r.is_active !== false));
 
       const pieData = Object.keys(textDaySummary.byPaymentMethod)
@@ -227,19 +231,8 @@ export const Dashboard = () => {
         todayPie: pieData 
       });
 
-      // ── 2. Son İşlemler — ID bazlı hedefli sorgular ─────────
+      // ── 2. Son İşlemler İlişkileri — ID bazlı hedefli sorgular ─────────
       const allowedTypes = ['sale_in','purchase_out','return_in','return_out','expense_out','supplier_payment_out','withdrawal_out','customer_payment_in','deposit_in'];
-      
-      let allTxs = [];
-      if (isSupabase()) {
-        const { data } = await supabase.from('cash_transactions')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(50);
-        allTxs = data || [];
-      } else {
-        allTxs = await db.cash_transactions.orderBy('created_at').reverse().limit(50).toArray();
-      }
       
       const rawFiltered = allTxs.filter(t => allowedTypes.includes(t.transaction_type));
 

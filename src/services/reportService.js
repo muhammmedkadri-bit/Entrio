@@ -422,21 +422,26 @@ export const reportService = {
       const allDayCloseTxs = await fetchFiltered('cash_transactions', 'created_at', todayStart.getTime(), end.getTime(),
         () => db.cash_transactions.where('created_at').between(todayStart.getTime(), end.getTime())
           .filter(t => t.is_day_close || t.transaction_type === 'day_close').toArray());
+      
       const todayDayCloseTxs = allDayCloseTxs.filter(t => t.is_day_close || t.transaction_type === 'day_close');
       const latestDayClose = todayDayCloseTxs.sort((a, b) => Number(b.created_at) - Number(a.created_at))[0];
       const startTimestamp = latestDayClose ? Number(latestDayClose.created_at) : todayStart.getTime();
 
-      const allSalesToday = await fetchFiltered('sales', 'created_at', startTimestamp, end.getTime(),
-        () => db.sales.where('created_at').between(startTimestamp, end.getTime()).toArray());
+      // PARALLEL FETCH
+      const [allSalesToday, todayTxs, registers] = await Promise.all([
+        fetchFiltered('sales', 'created_at', startTimestamp, end.getTime(),
+          () => db.sales.where('created_at').between(startTimestamp, end.getTime()).toArray()),
+        fetchFiltered('cash_transactions', 'created_at', startTimestamp, end.getTime(),
+          () => db.cash_transactions.where('created_at').between(startTimestamp, end.getTime()).toArray()),
+        fetchAll('cash_registers', () => db.cash_registers.filter(r => r.is_active !== false).toArray())
+      ]);
+
       const completed = allSalesToday.filter(s => s.status === 'completed');
       const todayRevenue = completed.reduce((acc, s) => acc + Number(s.total_amount), 0);
 
-      const todayTxs = await fetchFiltered('cash_transactions', 'created_at', startTimestamp, end.getTime(),
-        () => db.cash_transactions.where('created_at').between(startTimestamp, end.getTime()).toArray());
       const todayReturns = todayTxs.filter(t => t.transaction_type === 'return_out').reduce((acc, t) => acc + Number(t.amount), 0);
       const todayReturnCount = allSalesToday.filter(s => s.status === 'returned').length;
 
-      const registers = await fetchAll('cash_registers', () => db.cash_registers.filter(r => r.is_active !== false).toArray());
       const totalCash = registers.filter(r => r.is_active !== false).reduce((acc, r) => acc + Number(r.current_balance), 0);
 
       let criticalCount = 0;
@@ -445,12 +450,12 @@ export const reportService = {
       if (isSupabase()) {
         // Only fetch what's needed for the dashboard (not all columns, not all products/customers)
         const [{ data: pData }, { data: cData }] = await Promise.all([
-          supabase.from('products').select('min_stock_level, stock_quantity').eq('is_active', true),
-          supabase.from('customers').select('balance').eq('is_active', true)
+          supabase.from('products').select('min_stock_level, stock_quantity').eq('is_active', true).gt('min_stock_level', 0),
+          supabase.from('customers').select('balance').eq('is_active', true).gt('balance', 0)
         ]);
         
-        criticalCount = (pData || []).filter(p => Number(p.min_stock_level) > 0 && Number(p.stock_quantity) <= Number(p.min_stock_level)).length;
-        totalReceivable = (cData || []).reduce((acc, c) => acc + (Number(c.balance) > 0 ? Number(c.balance) : 0), 0);
+        criticalCount = (pData || []).filter(p => Number(p.stock_quantity) <= Number(p.min_stock_level)).length;
+        totalReceivable = (cData || []).reduce((acc, c) => acc + Number(c.balance), 0);
       } else {
         const products = await db.products.filter(p => p.is_active !== false).toArray();
         criticalCount = products.filter(p => Number(p.min_stock_level) > 0 && Number(p.stock_quantity) <= Number(p.min_stock_level)).length;

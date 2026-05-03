@@ -7,6 +7,8 @@ import {
   ArrowDownLeft, RotateCcw, Star, BarChart2, Receipt, Users
 } from 'lucide-react';
 import { db } from '../../../db';
+import { isSupabase } from '../../../config/database';
+import { supabase } from '../../../lib/supabaseClient';
 import toast from '../../../components/ui/CustomToast';
 
 const fmt = (v) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(v || 0);
@@ -34,42 +36,63 @@ export const DayCloseDetailModal = ({ tx, onClose }) => {
       const dayEnd = new Date(closeDate);
       dayEnd.setHours(23, 59, 59, 999);
 
-      const [allTxs, allSales, allSaleItems, allProducts, allRegisters, allPurchases] = await Promise.all([
-        db.cash_transactions.toArray(),
-        db.sales.toArray(),
-        db.sale_items.toArray(),
-        db.products.toArray(),
-        db.cash_registers.toArray(),   // ✔ doğru tablo adı
-        db.purchases.toArray(),
-      ]);
+      const startMs = dayStart.getTime();
+      const endMs = dayEnd.getTime();
+
+      let dayTxs = [];
+      let daySales = [];
+      let dayPurchases = [];
+      let allProducts = [];
+      let allRegisters = [];
+      let dayItems = [];
+
+      if (isSupabase()) {
+        const [
+          { data: tData }, { data: sData }, { data: pData },
+          { data: prData }, { data: rData }
+        ] = await Promise.all([
+          supabase.from('cash_transactions').select('*').gte('created_at', startMs).lte('created_at', endMs),
+          supabase.from('sales').select('*').gte('created_at', startMs).lte('created_at', endMs),
+          supabase.from('purchases').select('*').gte('created_at', startMs).lte('created_at', endMs),
+          supabase.from('products').select('*'),
+          supabase.from('cash_registers').select('*')
+        ]);
+        
+        dayTxs = tData || [];
+        daySales = sData || [];
+        dayPurchases = pData || [];
+        allProducts = prData || [];
+        allRegisters = rData || [];
+
+        const saleIds = daySales.map(s => s.id);
+        if (saleIds.length > 0) {
+          const { data: siData } = await supabase.from('sale_items').select('*').in('sale_id', saleIds);
+          dayItems = siData || [];
+        }
+      } else {
+        const [allTxs, allSalesLocal, allSaleItems, prData, rData, allPurchasesLocal] = await Promise.all([
+          db.cash_transactions.where('created_at').between(startMs, endMs).toArray(),
+          db.sales.where('created_at').between(startMs, endMs).toArray(),
+          db.sale_items.toArray(),
+          db.products.toArray(),
+          db.cash_registers.toArray(),
+          db.purchases.where('created_at').between(startMs, endMs).toArray(),
+        ]);
+        dayTxs = allTxs;
+        daySales = allSalesLocal;
+        dayPurchases = allPurchasesLocal;
+        allProducts = prData;
+        allRegisters = rData;
+        const saleIds = new Set(daySales.map(s => s.id));
+        dayItems = allSaleItems.filter(item => saleIds.has(item.sale_id));
+      }
 
       const productMap = Object.fromEntries(allProducts.map(p => [p.id, p]));
       const registerMap = Object.fromEntries(allRegisters.map(r => [r.id, r]));
 
-      // Filter transactions for that day
-      const dayTxs = allTxs.filter(t =>
-        t.created_at >= dayStart.getTime() && t.created_at <= dayEnd.getTime()
-      );
-
-      // Filter sales for that day (non-return)
-      const daySales = allSales.filter(s =>
-        s.created_at >= dayStart.getTime() &&
-        s.created_at <= dayEnd.getTime() &&
-        !s.original_sale_id  // exclude return receipts
-      );
-
-      // Return sales
-      const dayReturns = allSales.filter(s =>
-        s.created_at >= dayStart.getTime() &&
-        s.created_at <= dayEnd.getTime() &&
-        s.original_sale_id
-      );
-
-      // Purchases that day
-      const dayPurchases = allPurchases.filter(p =>
-        p.created_at >= dayStart.getTime() &&
-        p.created_at <= dayEnd.getTime()
-      );
+      // Ayrıştır - Satış ve iadeler
+      const daySalesOnly = daySales.filter(s => !s.original_sale_id);
+      const dayReturns = daySales.filter(s => s.original_sale_id);
 
       // Income/expense breakdown from cash txs
       // ℹ️ İade Ödemeleri (return_out) AYRI kalem — gerçek giderlerle karıştırılmaz
@@ -108,16 +131,14 @@ export const DayCloseDetailModal = ({ tx, onClose }) => {
 
       // Payment method breakdown from sales
       const paymentBreakdown = {};
-      daySales.forEach(s => {
+      daySalesOnly.forEach(s => {
         const pm = s.payment_method || 'other';
         if (!paymentBreakdown[pm]) paymentBreakdown[pm] = { count: 0, total: 0 };
         paymentBreakdown[pm].count++;
         paymentBreakdown[pm].total += s.total_amount || 0;
       });
 
-      // Top selling products — sale_items tablosundan çek (sale.items değil)
-      const daySaleIds = new Set(daySales.map(s => s.id));
-      const dayItems = allSaleItems.filter(item => daySaleIds.has(item.sale_id));
+      // Top selling products — dayItems kullanılarak hesaplanır
 
       const productSales = {};
       dayItems.forEach(item => {
@@ -137,7 +158,7 @@ export const DayCloseDetailModal = ({ tx, onClose }) => {
         .sort((a, b) => b.qty - a.qty)
         .slice(0, 5);
 
-      const totalSalesAmount = daySales.reduce((acc, s) => acc + (s.total_amount || 0), 0);
+      const totalSalesAmount = daySalesOnly.reduce((acc, s) => acc + (s.total_amount || 0), 0);
       const totalReturnsAmount = dayReturns.reduce((acc, s) => acc + (s.total_amount || 0), 0);
 
       setData({
@@ -148,7 +169,7 @@ export const DayCloseDetailModal = ({ tx, onClose }) => {
         totalReturns,
         // Net = Gelir − Gerçek Giderler − İade Ödemeleri
         net: totalIncome - totalExpense - totalReturns,
-        salesCount: daySales.length,
+        salesCount: daySalesOnly.length,
         totalSalesAmount,
         returnsCount: dayReturns.length,
         totalReturnsAmount,

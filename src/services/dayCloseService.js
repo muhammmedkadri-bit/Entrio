@@ -35,16 +35,9 @@ export const dayCloseService = {
 
   async getRegisterTransactionsForToday(register) {
     const today = this.getLocalDateStr();
-    const todayStartMs = new Date(); todayStartMs.setHours(0, 0, 0, 0);
-
-    let fromMs;
-    if (!register.last_day_close_date || register.last_day_close_date < today) {
-      fromMs = todayStartMs.getTime();
-    } else {
-      fromMs = register.last_day_close_at
-        ? (typeof register.last_day_close_at === 'number' ? register.last_day_close_at : new Date(register.last_day_close_at).getTime())
-        : todayStartMs.getTime();
-    }
+    const fromMs = register.last_day_close_at 
+      ? (typeof register.last_day_close_at === 'number' ? register.last_day_close_at : new Date(register.last_day_close_at).getTime())
+      : 0;
 
     if (isSupabase()) {
       const { data, error } = await supabase.from('cash_transactions')

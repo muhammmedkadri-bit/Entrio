@@ -260,12 +260,8 @@ BEGIN
   FOR v_reg IN SELECT * FROM public.cash_registers WHERE is_active = true LOOP
     IF v_primary_reg_id IS NULL THEN v_primary_reg_id := v_reg.id; END IF;
 
-    -- Bu kasa için kesim noktasını belirle
-    IF v_reg.last_day_close_date IS NULL OR v_reg.last_day_close_date < v_today THEN
-      v_from_ms := v_today_start_ms;
-    ELSE
-      v_from_ms := COALESCE(v_reg.last_day_close_at, v_today_start_ms);
-    END IF;
+    -- SADECE son kapanıştan bu yana olanları al (Eğer hiç kapanmadıysa tümünü al)
+    v_from_ms := COALESCE(v_reg.last_day_close_at, 0);
 
     -- Gelir topla
     SELECT COALESCE(SUM(amount), 0) INTO v_income
@@ -317,12 +313,12 @@ BEGIN
 
   -- Konsolide gün sonu fişi
   v_description := CASE WHEN p_is_auto
-    THEN TO_CHAR(v_today, 'DD Mon YYYY') || ' Otomatik Gün Sonu'
-    ELSE TO_CHAR(v_today, 'DD Mon YYYY') || ' Manuel Gün Sonu'
+    THEN TO_CHAR(NOW(), 'DD Mon YYYY') || ' Otomatik Gün Sonu'
+    ELSE TO_CHAR(NOW(), 'DD Mon YYYY') || ' Manuel Gün Sonu'
   END;
 
   v_close_data := jsonb_build_object(
-    'date',           v_today,
+    'date',           TO_CHAR(NOW(), 'YYYY-MM-DD'),
     'triggered_at',   v_now_ts,
     'trigger_type',   p_triggered_by,
     'is_auto',        p_is_auto,
