@@ -16,6 +16,7 @@ export const SupplierSearchModal = ({ isOpen, onClose, onSelect }) => {
   const [formData, setFormData]       = useState({ name: '', phone: '' });
   const [saving, setSaving]           = useState(false);
   const [page, setPage]               = useState(1);
+  const [isLoading, setIsLoading]     = useState(false);
   const ITEMS_PER_PAGE = 10;
 
   // In-memory cache — loaded once per open, filtered synchronously (no loading flash)
@@ -33,12 +34,13 @@ export const SupplierSearchModal = ({ isOpen, onClose, onSelect }) => {
       return;
     }
 
+    setIsLoading(true);
     supplierService.getAll().then(all => {
       _supplierCache = all;
       _supplierCacheLoaded = true;
       allRef.current = all;
       setSuppliers(all.slice(0, 10));
-    });
+    }).finally(() => setIsLoading(false));
   }, [isOpen]);
 
   // Synchronous in-memory filter
@@ -211,7 +213,14 @@ export const SupplierSearchModal = ({ isOpen, onClose, onSelect }) => {
 
             {/* ── Supplier list ──────────────────────────────────────── */}
             <div className="border border-slate-200 bg-white rounded-lg overflow-y-auto flex-1 custom-scrollbar">
-              {paginatedSuppliers.length > 0 ? (
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full py-12">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-xs text-slate-400 font-medium">Tedarikçiler yükleniyor...</p>
+                  </div>
+                </div>
+              ) : paginatedSuppliers.length > 0 ? (
                 <ul className="divide-y divide-slate-200 flex flex-col h-full">
                   {paginatedSuppliers.map(s => (
                     <li

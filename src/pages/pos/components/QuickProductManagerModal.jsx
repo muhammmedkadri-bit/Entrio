@@ -22,6 +22,7 @@ export const QuickProductManagerModal = ({
   const [filtered, setFiltered] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [showQuickCreate, setShowQuickCreate] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const fetchProducts = async () => {
     if (_qpmCacheLoaded) {
@@ -29,12 +30,16 @@ export const QuickProductManagerModal = ({
       setFiltered(_qpmCache);
       return;
     }
-
-    const res = await productService.getAll({});
-    _qpmCache = res;
-    _qpmCacheLoaded = true;
-    setAll(res);
-    setFiltered(res);
+    setIsLoading(true);
+    try {
+      const res = await productService.getAll({});
+      _qpmCache = res;
+      _qpmCacheLoaded = true;
+      setAll(res);
+      setFiltered(res);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -213,7 +218,12 @@ export const QuickProductManagerModal = ({
           />
         ) : (
           <div className="flex flex-col flex-1 overflow-hidden p-4">
-             {filtered.length === 0 && query.length > 0 ? (
+             {isLoading ? (
+               <div className="flex-1 flex flex-col items-center justify-center gap-3">
+                 <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+                 <p className="text-xs text-slate-400 font-medium">Ürünler yükleniyor...</p>
+               </div>
+             ) : filtered.length === 0 && query.length > 0 ? (
                 /* Empty State */
                 <div className="flex-1 flex flex-col items-center justify-center">
                    <PackageX className="w-10 h-10 text-gray-300 mb-3" />

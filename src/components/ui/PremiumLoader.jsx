@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import entrioLogo from '../../assets/Entriologop.png';
+import entrioLogo from '../../assets/Entriologo.svg';
 
 export const PremiumLoader = ({ isOpen }) => {
   return (

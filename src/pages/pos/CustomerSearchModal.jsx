@@ -16,6 +16,7 @@ export const CustomerSearchModal = ({ isOpen, onClose, onSelect }) => {
   const [formData, setFormData]       = useState({ name: '', phone: '' });
   const [saving, setSaving]           = useState(false);
   const [page, setPage]               = useState(1);
+  const [isLoading, setIsLoading]     = useState(false);
   const ITEMS_PER_PAGE = 10;
 
   // In-memory cache — loaded once per open, filtered synchronously
@@ -35,13 +36,14 @@ export const CustomerSearchModal = ({ isOpen, onClose, onSelect }) => {
       return;
     }
 
+    setIsLoading(true);
     customerService.getAll().then(all => {
       _customerCache = all;
       _customerCacheLoaded = true;
       _customerCacheLoaded = true;
       allRef.current = all;
       setCustomers(all.slice(0, 10));
-    });
+    }).finally(() => setIsLoading(false));
   }, [isOpen]);
 
   // Synchronous in-memory filter — zero DB round-trips, no flicker
@@ -217,7 +219,14 @@ export const CustomerSearchModal = ({ isOpen, onClose, onSelect }) => {
 
             {/* ── Customer list ──────────────────────────────────────── */}
             <div className="border border-slate-200 bg-white rounded-lg overflow-y-auto flex-1 custom-scrollbar">
-              {paginatedCustomers.length > 0 ? (
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full py-12">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-xs text-slate-400 font-medium">Müşteriler yükleniyor...</p>
+                  </div>
+                </div>
+              ) : paginatedCustomers.length > 0 ? (
                 <ul className="divide-y divide-slate-200 flex flex-col h-full">
                   {paginatedCustomers.map(c => (
                     <li

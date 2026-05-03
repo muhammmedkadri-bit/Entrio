@@ -8,7 +8,8 @@ import { useGlobalLoader } from '../../hooks/useGlobalLoader';
 export const CashPage = () => {
   const [registers, setRegisters] = useState([]);
   const [loading, setLoading] = useState(true);
-  useGlobalLoader(loading);
+  const [dashboardLoading, setDashboardLoading] = useState(true);
+  useGlobalLoader(loading || dashboardLoading);
 
   useEffect(() => {
     loadRegisters();
@@ -42,7 +43,7 @@ export const CashPage = () => {
       </div>
 
       <div className="flex-1 mt-2">
-        <CashDashboardTab registers={registers} onRegisterChanged={loadRegisters} />
+        <CashDashboardTab registers={registers} onRegisterChanged={loadRegisters} onLoadingChange={setDashboardLoading} />
       </div>
     </div>
   );

@@ -51,17 +51,20 @@ function DropdownRow({ product, onAdd, isHighlighted, rowRef }) {
           className="h-9 px-3 rounded-lg flex items-center justify-center transition-all bg-white/40 border border-black/5 backdrop-blur-[4px] shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] flex-shrink-0"
           style={{ background: 'rgba(255, 255, 255, 0.45)' }}
         >
-          <Package className="w-5 h-5 text-gray-400" />
+          {product.barcode ? (
+            <div className="scale-[0.85] origin-center -my-1">
+              <BarcodeStripes value={product.barcode} color="#000000" />
+            </div>
+          ) : (
+            <Package className="w-5 h-5 text-gray-400" />
+          )}
         </div>
         
         <div className="min-w-0 flex-1">
           <div className="text-sm font-bold text-gray-800 line-clamp-1">{product.name}</div>
         </div>
         
-        {/* Price Pill */}
-        <span className="text-sm font-black text-brand-700 bg-brand-50 px-2.5 py-1 rounded-lg border border-brand-100 flex-shrink-0 whitespace-nowrap shadow-sm">
-          {formatCurrency(product.sale_price)}
-        </span>
+
 
         {/* Stock Pill */}
         <span

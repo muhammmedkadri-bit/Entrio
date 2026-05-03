@@ -22,7 +22,7 @@ import { DayCloseDetailModal } from '../modals/DayCloseDetailModal';
 const ITEMS_PER_PAGE = 10;
 const CARDS_PER_PAGE = 5;
 
-export const CashDashboardTab = ({ registers = [], onRegisterChanged }) => {
+export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingChange }) => {
   const [activeCategory, setActiveCategory] = useState('all');
   const [summary, setSummary] = useState(null);
   const [monthlySummary, setMonthlySummary] = useState({ income: 0, expense: 0 });
@@ -74,6 +74,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged }) => {
   };
 
   const loadDashboard = async () => {
+    onLoadingChange?.(true);
     try {
       const filteredRegisters = getFilteredRegisters();
       if (filteredRegisters.length === 0) {
@@ -244,6 +245,8 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged }) => {
     } catch (e) {
       console.error('[CashDashboard] Kasa özeti alınamadı:', e);
       toast.error(e?.message || 'Kasa özeti alınırken bir hata oluştu.');
+    } finally {
+      onLoadingChange?.(false);
     }
   };
 
