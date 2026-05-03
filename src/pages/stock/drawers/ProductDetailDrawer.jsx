@@ -104,9 +104,7 @@ export const ProductDetailDrawer = ({ isOpen, onClose, product, onEditClick, onM
               <h4 className="text-sm font-bold text-slate-800">Son Hareketler</h4>
             </div>
             
-            {loading ? (
-              
-            ) : movements.length > 0 ? (
+            {loading  ? ( <div className="p-8 text-center text-slate-400 flex items-center justify-center"><div className="w-6 h-6 border-2 border-[#7ed957] border-t-transparent rounded-full animate-spin"></div></div> ) : movements.length > 0 ? (
               <ul className="space-y-3">
                 {movements.map(m => {
                   const props = getMovementTypeProps(m.movement_type);
