@@ -24,6 +24,8 @@ import { SupplierPaymentModal } from './components/SupplierPaymentModal';
 import { RemoveProductModal } from './components/RemoveProductModal';
 import { QuickBarcodesModal } from '../dashboard/modals/QuickBarcodesModal';
 import { db } from '../../db';
+import { supabase } from '../../lib/supabaseClient';
+import { isSupabase } from '../../config/database';
 
 const formatCurrency = (val) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
 const LS_KEY = 'pos_displayed_product_ids';
@@ -566,10 +568,22 @@ export const POSPage = () => {
       // Refresh displayed products to update stock pills instantly
       const refreshDisplayedProducts = async () => {
         try {
-          const updated = await Promise.all(
-            displayedProducts.map(p => productService.getById(p.id))
-          );
-          setDisplayedProducts(updated.filter(Boolean));
+          const ids = displayedProducts.map(p => p.id);
+          if (ids.length === 0) return;
+          if (isSupabase()) {
+            const { data } = await supabase
+              .from('products')
+              .select('id, name, barcode, sale_price, purchase_price, stock_quantity, min_stock_level, category_id, supplier_id, unit, tax_rate, track_stock, is_active')
+              .in('id', ids);
+            if (data) {
+              const map = Object.fromEntries(data.map(p => [p.id, p]));
+              setDisplayedProducts(prev => prev.map(p => map[p.id] || p));
+            }
+          } else {
+            const updated = await Promise.all(ids.map(id => db.products.get(Number(id))));
+            const map = Object.fromEntries(updated.filter(Boolean).map(p => [p.id, p]));
+            setDisplayedProducts(prev => prev.map(p => map[p.id] || p));
+          }
         } catch (e) {
           console.error('[POS] Hızlı ürünler yenilenemedi', e);
         }
@@ -623,10 +637,16 @@ export const POSPage = () => {
       // Refresh displayed products to update stock pills instantly
       const refreshDisplayedProducts = async () => {
         try {
-          const updated = await Promise.all(
-            displayedProducts.map(p => productService.getById(p.id))
-          );
-          setDisplayedProducts(updated.filter(Boolean));
+          const ids = displayedProducts.map(p => p.id);
+          if (ids.length === 0) return;
+          const { data } = await supabase
+            .from('products')
+            .select('id, name, barcode, sale_price, purchase_price, stock_quantity, min_stock_level, category_id, supplier_id, unit, tax_rate, track_stock, is_active')
+            .in('id', ids);
+          if (data) {
+            const map = Object.fromEntries(data.map(p => [p.id, p]));
+            setDisplayedProducts(prev => prev.map(p => map[p.id] || p));
+          }
         } catch (e) {
           console.error('[POS] Hızlı ürünler yenilenemedi', e);
         }

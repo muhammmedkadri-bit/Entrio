@@ -7,7 +7,10 @@ export const productService = {
   async getAll(filters = {}) {
     try {
       if (isSupabase()) {
-        let query = supabase.from('products').select('*').eq('is_active', true);
+        let query = supabase
+          .from('products')
+          .select('id, name, barcode, sale_price, purchase_price, stock_quantity, min_stock_level, category_id, supplier_id, unit, tax_rate, track_stock, is_active')
+          .eq('is_active', true);
         if (filters.category_id) query = query.eq('category_id', filters.category_id);
         if (filters.search) {
           query = query.or(`name.ilike.%${filters.search}%,barcode.ilike.%${filters.search}%`);

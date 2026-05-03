@@ -203,5 +203,36 @@ export const saleService = {
       await db.sales.update(Number(id), { status: 'cancelled' });
       return true;
     } catch (e) { throw new Error('İptal işlemi başarısız: ' + e.message); }
+  },
+
+  async getByProductId(productId) {
+    try {
+      if (isSupabase()) {
+        const { data: items, error: iErr } = await supabase
+          .from('sale_items')
+          .select('id, sale_id, quantity, unit_price, line_total, discount')
+          .eq('product_id', productId);
+        if (iErr) throw iErr;
+        if (!items || items.length === 0) return [];
+
+        const saleIds = [...new Set(items.map(i => i.sale_id))];
+        const { data: sales, error: sErr } = await supabase
+          .from('sales')
+          .select('id, sale_number, created_at, status, customer_id, payment_method, total_amount')
+          .in('id', saleIds)
+          .order('created_at', { ascending: false });
+        if (sErr) throw sErr;
+
+        const saleMap = Object.fromEntries((sales || []).map(s => [s.id, s]));
+        return items.map(item => ({ ...item, sale: saleMap[item.sale_id] || null }));
+      }
+
+      // Dexie fallback
+      const items = await db.sale_items.where('product_id').equals(Number(productId)).toArray();
+      const saleIds = [...new Set(items.map(i => i.sale_id))];
+      const sales = await Promise.all(saleIds.map(sid => db.sales.get(Number(sid))));
+      const saleMap = Object.fromEntries(sales.filter(Boolean).map(s => [s.id, s]));
+      return items.map(item => ({ ...item, sale: saleMap[item.sale_id] || null }));
+    } catch (e) { throw new Error('Ürün satış geçmişi alınamadı: ' + e.message); }
   }
 };
