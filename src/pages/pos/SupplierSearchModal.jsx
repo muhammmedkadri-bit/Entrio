@@ -2,8 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, Building2, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
-import { db } from '../../db';
+import { supplierService } from '../../services/supplierService';
 import toast from '../../components/ui/CustomToast';
+
+// Module-level cache
+let _supplierCache = [];
+let _supplierCacheLoaded = false;
 
 export const SupplierSearchModal = ({ isOpen, onClose, onSelect }) => {
   const [searchTerm, setSearchTerm]   = useState('');
@@ -23,7 +27,21 @@ export const SupplierSearchModal = ({ isOpen, onClose, onSelect }) => {
     setShowForm(false);
     setFormData({ name: '', phone: '' });
 
-    db.suppliers.toArray().then(all => {
+    if (_supplierCacheLoaded) {
+      allRef.current = _supplierCache;
+      setSuppliers(_supplierCache.slice(0, 10));
+      // Background refresh
+      supplierService.getAll().then(all => {
+        _supplierCache = all;
+        allRef.current = all;
+        setSuppliers(all.slice(0, 10));
+      }).catch(() => {});
+      return;
+    }
+
+    supplierService.getAll().then(all => {
+      _supplierCache = all;
+      _supplierCacheLoaded = true;
       allRef.current = all;
       setSuppliers(all.slice(0, 10));
     });
@@ -54,13 +72,12 @@ export const SupplierSearchModal = ({ isOpen, onClose, onSelect }) => {
     if (!formData.name.trim()) { toast.error('Tedarikçi adı zorunlu.'); return; }
     setSaving(true);
     try {
-      const id = await db.suppliers.add({
+      const newSupplier = await supplierService.create({
         name: formData.name.trim(),
         phone: formData.phone.trim() || null,
         balance: 0,
         is_active: true
       });
-      const newSupplier = await db.suppliers.get(id);
       toast.success('Tedarikçi eklendi!');
       onSelect(newSupplier);
       onClose();

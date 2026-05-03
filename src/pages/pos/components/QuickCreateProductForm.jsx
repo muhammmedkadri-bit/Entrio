@@ -241,7 +241,8 @@ export const QuickCreateProductForm = ({ searchQuery, onClose, onAddProduct, has
       toast.success(`${payload.name} başarıyla oluşturuldu`);
 
       if (mode === 'add' && hasEmptySlot) {
-        onAddProduct({ ...payload, id: newProduct });
+        // newProduct is the full created object from Supabase
+        onAddProduct(newProduct);
       } else {
         onClose();
       }

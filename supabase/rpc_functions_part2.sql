@@ -316,7 +316,7 @@ BEGIN
   END LOOP;
 
   -- Konsolide gün sonu fişi
-  v_description := CASE p_is_auto
+  v_description := CASE WHEN p_is_auto
     THEN TO_CHAR(v_today, 'DD Mon YYYY') || ' Otomatik Gün Sonu'
     ELSE TO_CHAR(v_today, 'DD Mon YYYY') || ' Manuel Gün Sonu'
   END;

@@ -5,6 +5,10 @@ import { Button } from '../../components/ui/Button';
 import { customerService } from '../../services/customerService';
 import toast from '../../components/ui/CustomToast';
 
+// Module-level cache — survives re-opens, zero DB round-trips after first load
+let _customerCache = [];
+let _customerCacheLoaded = false;
+
 export const CustomerSearchModal = ({ isOpen, onClose, onSelect }) => {
   const [searchTerm, setSearchTerm]   = useState('');
   const [customers, setCustomers]     = useState([]);
@@ -24,7 +28,22 @@ export const CustomerSearchModal = ({ isOpen, onClose, onSelect }) => {
     setShowForm(false);
     setFormData({ name: '', phone: '' });
 
+    // If already cached, show instantly
+    if (_customerCacheLoaded) {
+      allRef.current = _customerCache;
+      setCustomers(_customerCache.slice(0, 10));
+      // Background refresh
+      customerService.getAll().then(all => {
+        _customerCache = all;
+        allRef.current = all;
+        setCustomers(all.slice(0, 10));
+      }).catch(() => {});
+      return;
+    }
+
     customerService.getAll().then(all => {
+      _customerCache = all;
+      _customerCacheLoaded = true;
       allRef.current = all;
       setCustomers(all.slice(0, 10));
     });

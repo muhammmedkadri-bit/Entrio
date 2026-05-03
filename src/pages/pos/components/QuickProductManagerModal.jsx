@@ -7,6 +7,10 @@ import toast from '../../../components/ui/CustomToast';
 
 const fmt = (v) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(v || 0);
 
+// Module-level cache
+let _qpmCache = [];
+let _qpmCacheLoaded = false;
+
 export const QuickProductManagerModal = ({
   isOpen, onClose,
   displayedProducts, onAddProduct, onStartSwap,
@@ -20,7 +24,21 @@ export const QuickProductManagerModal = ({
   const [showQuickCreate, setShowQuickCreate] = useState(false);
 
   const fetchProducts = async () => {
+    if (_qpmCacheLoaded) {
+      setAll(_qpmCache);
+      setFiltered(_qpmCache);
+      // Background fetch
+      productService.getAll({}).then(res => {
+        _qpmCache = res;
+        setAll(res);
+        setFiltered(res);
+      }).catch(() => {});
+      return;
+    }
+
     const res = await productService.getAll({});
+    _qpmCache = res;
+    _qpmCacheLoaded = true;
     setAll(res);
     setFiltered(res);
   };
@@ -187,7 +205,12 @@ export const QuickProductManagerModal = ({
             initialBarcode={initialBarcode}
             hasEmptySlot={displayedProducts.length < 12}
             onClose={() => { setShowQuickCreate(false); fetchProducts(); }}
-            onAddProduct={(prod) => { handleAdd(prod); setShowQuickCreate(false); fetchProducts(); }}
+            onAddProduct={(prod) => { 
+              setShowQuickCreate(false); 
+              fetchProducts(); 
+              // Small delay to let fetchProducts settle, then add
+              setTimeout(() => handleAdd(prod), 50);
+            }}
           />
         ) : (
           <div className="flex flex-col flex-1 overflow-hidden p-4">

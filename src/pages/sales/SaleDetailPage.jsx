@@ -84,42 +84,72 @@ export const SaleDetailPage = () => {
   const loadAll = async () => {
     setLoading(true);
     try {
-      const minWait = new Promise(r => setTimeout(r, 1300));
-
       const [saleData, payms, regs] = await Promise.all([
         saleService.getById(saleId),
         saleService.getSalePayments(saleId),
         cashService.getRegisters(),
-        minWait,
       ]);
 
-      // Enrich items with product names
-      const enrichedItems = await Promise.all(
-        (saleData.items || []).map(async (item) => {
-          const product = await db.products.get(item.product_id).catch(() => null);
-          return {
-            ...item,
-            productName: product?.name || `Ürün #${item.product_id}`,
-            productUnit: product?.unit || 'Adet',
-            kdv_rate: item.kdv_rate || product?.kdv_rate || 0
-          };
-        })
-      );
+      // Enrich items with product names — use Supabase if available
+      let productMap = {};
+      if (saleData.items && saleData.items.length > 0) {
+        const productIds = [...new Set(saleData.items.map(i => i.product_id))];
+        try {
+          const { supabase } = await import('../../lib/supabaseClient');
+          const { data: products } = await supabase
+            .from('products')
+            .select('id, name, unit, tax_rate')
+            .in('id', productIds);
+          if (products) productMap = Object.fromEntries(products.map(p => [p.id, p]));
+        } catch {
+          // Dexie fallback
+          for (const pid of productIds) {
+            const p = await db.products.get(Number(pid)).catch(() => null);
+            if (p) productMap[pid] = p;
+          }
+        }
+      }
+
+      const enrichedItems = (saleData.items || []).map(item => ({
+        ...item,
+        productName: productMap[item.product_id]?.name || item.name || `Ürün #${item.product_id}`,
+        productUnit: productMap[item.product_id]?.unit || 'Adet',
+        kdv_rate: item.kdv_rate ?? productMap[item.product_id]?.tax_rate ?? 0,
+      }));
 
       setSale({ ...saleData, items: enrichedItems });
       setPayments(payms || []);
       setCashRegisters(regs || []);
 
-      // Load customer
-      if (saleData.customer_id) {
-        const c = await db.customers.get(saleData.customer_id).catch(() => null);
-        setCustomer(c);
+      // Load customer — try Supabase first
+      if (saleData.customer_id && saleData.customer_id !== 1) {
+        try {
+          const { supabase } = await import('../../lib/supabaseClient');
+          const { data: cust } = await supabase
+            .from('customers')
+            .select('id, name, phone, email, balance')
+            .eq('id', saleData.customer_id)
+            .maybeSingle();
+          setCustomer(cust || null);
+        } catch {
+          const c = await db.customers.get(saleData.customer_id).catch(() => null);
+          setCustomer(c || null);
+        }
       }
 
-      // Load return details if exists
-      const ret = await db.sales.where('original_sale_id').equals(Number(saleId)).first().catch(() => null);
-      if (ret && ret.status === 'returned') {
-        setReturnSale(ret);
+      // Load return sale if any — try Supabase first
+      try {
+        const { supabase } = await import('../../lib/supabaseClient');
+        const { data: retSales } = await supabase
+          .from('sales')
+          .select('id, sale_number, payment_method, total_amount, status, created_at')
+          .eq('original_sale_id', saleId)
+          .eq('status', 'returned')
+          .maybeSingle();
+        if (retSales) setReturnSale(retSales);
+      } catch {
+        const ret = await db.sales.where('original_sale_id').equals(Number(saleId)).first().catch(() => null);
+        if (ret && ret.status === 'returned') setReturnSale(ret);
       }
     } catch (e) {
       toast.error('Satış detayı yüklenemedi: ' + e.message);
@@ -499,15 +529,16 @@ export const SaleDetailPage = () => {
                               amountColor = 'text-orange-600';
                               amountPrefix = '+';
                             } else {
-                              if (mov.method.includes('Havale') || mov.method.includes('EFT') || mov.method.includes('Banka')) {
+                              const method = String(mov.method || '');
+                              if (method.includes('Havale') || method.includes('EFT') || method.includes('Banka') || method.includes('bank') || method.includes('transfer')) {
                                 Icon = Landmark;
                                 methodLabel = 'Havale / EFT';
-                              } else if (mov.method.includes('Nakit')) {
+                              } else if (method.includes('Nakit') || method.includes('cash')) {
                                 Icon = Banknote;
                                 methodLabel = 'Nakit';
-                              } else if (mov.method.includes('Kredi Kartı') || mov.method.includes('POS')) {
+                              } else if (method.includes('Kredi') || method.includes('POS') || method.includes('card') || method.includes('credit_card')) {
                                 methodLabel = 'Kredi Kartı';
-                              } else if (mov.method.includes('Çek')) {
+                              } else if (method.includes('Çek')) {
                                 methodLabel = 'Çek';
                               }
                             }

@@ -93,25 +93,32 @@ export const SalesHistoryTab = ({ salesHistory = [], product }) => {
               <tr><td colSpan={9} className="text-center py-10 text-gray-400 text-sm">Satış kaydı bulunamadı.</td></tr>
             )}
             {paginated.map((si, i) => {
+              const sale = si.sale || {};
               const cost = (product?.purchase_price || 0) * (si.quantity || 0);
               const profit = (si.line_total || 0) - cost;
-              const pm = PAYMENT_LABELS[si.payment_method] || { label: si.payment_method || '—', color: 'bg-gray-100 text-gray-600' };
+              const payMethod = sale.payment_method || si.payment_method || '';
+              const pm = PAYMENT_LABELS[payMethod] || { label: payMethod || '—', color: 'bg-gray-100 text-gray-600' };
+              const saleNumber = sale.sale_number || si.sale_number || '—';
+              const customerName = si.customer_name || sale.customer_name || (sale.customer_id && sale.customer_id !== 1 ? `Müşteri #${sale.customer_id}` : 'Perakende');
+              const createdAt = sale.created_at || si.created_at;
+              const saleId = si.sale_id || sale.id;
               return (
                 <tr 
                   key={si.id || i} 
                   onClick={() => {
+                    if (!saleId) return;
                     startNavigation();
-                    setTimeout(() => navigate(`/sales/${si.sale_id}`), 150);
+                    setTimeout(() => navigate(`/sales/${saleId}`), 150);
                   }}
-                  className="hover:bg-gray-100/80 transition-colors cursor-pointer"
+                  className={`transition-colors ${saleId ? 'hover:bg-gray-100/80 cursor-pointer' : 'hover:bg-gray-50/80'}`}
                 >
                   <td className="px-4 py-[11.5px] whitespace-nowrap text-xs text-slate-900 font-semibold tabular-nums">
                     <span className="text-[#10b981] font-mono transition-colors">
-                      {si.sale_number}
+                      {saleNumber}
                     </span>
                   </td>
-                  <td className="px-4 py-[11.5px] text-xs text-gray-800 font-bold whitespace-nowrap truncate max-w-[150px]" title={si.customer_name || '—'}>{si.customer_name || '—'}</td>
-                  <td className="px-4 py-[11.5px] whitespace-nowrap text-xs font-medium text-gray-500">{fmtDate(si.created_at)}</td>
+                  <td className="px-4 py-[11.5px] text-xs text-gray-800 font-bold whitespace-nowrap truncate max-w-[150px]" title={customerName}>{customerName}</td>
+                  <td className="px-4 py-[11.5px] whitespace-nowrap text-xs font-medium text-gray-500">{fmtDate(createdAt)}</td>
                   <td className="px-4 py-[11.5px] font-bold tabular-nums whitespace-nowrap">
                     <span className="text-slate-900">-{si.quantity} {product?.unit}</span>
                   </td>
