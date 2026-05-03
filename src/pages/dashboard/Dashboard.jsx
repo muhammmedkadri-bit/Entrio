@@ -443,14 +443,6 @@ export const Dashboard = () => {
              )}
            </div>
 
-           {/* Quick Barcodes Button */}
-           <button 
-             onClick={() => setShowQuickBarcodes(true)}
-             className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-100 bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors"
-           >
-             <ScanBarcode className="w-4 h-4 text-[#5da83f]" /> 
-             <span className="text-sm font-bold">Hızlı Barkodlar</span>
-           </button>
         </div>
       </div>
 
@@ -656,15 +648,15 @@ export const Dashboard = () => {
               <h3 className="font-bold text-[#854d0e] text-sm tracking-wide">Hızlı Notlar</h3>
             </div>
             <div className="p-4 flex-1 flex flex-col overflow-y-auto">
-              <form onSubmit={addNote} className="mb-4 relative flex-shrink-0">
+              <form onSubmit={addNote} className="mb-4 flex flex-shrink-0 bg-white/60 border border-[#fde047] rounded-lg focus-within:ring-2 focus-within:ring-[#eab308] overflow-hidden shadow-sm">
                 <input 
                   type="text" 
                   value={newNote}
                   onChange={e => setNewNote(e.target.value)}
-                  placeholder="Not ekle..."
-                  className="w-full bg-white/60 border border-[#fde047] rounded-lg pl-3 pr-10 py-2 text-sm text-[#713f12] placeholder-[#a16207]/50 focus:outline-none focus:ring-2 focus:ring-[#eab308]"
+                  placeholder="Hızlı not ekle..."
+                  className="flex-1 bg-transparent px-4 py-2.5 text-sm font-medium text-[#713f12] placeholder-[#a16207]/50 focus:outline-none"
                 />
-                <button type="submit" className="absolute right-2 top-2 text-[#a16207] hover:text-[#713f12]">
+                <button type="submit" className="px-4 flex items-center justify-center bg-[#fde047]/30 text-[#a16207] hover:text-[#713f12] hover:bg-[#fde047]/70 transition-colors border-l border-[#fde047]/50">
                   <Plus className="w-5 h-5" />
                 </button>
               </form>
@@ -677,9 +669,9 @@ export const Dashboard = () => {
                   }
                   
                   return (
-                    <li key={n.id} className="flex-1 bg-white/60 p-3 rounded-lg flex items-start gap-2 group border border-[#fde047] hover:border-[#eab308] transition-colors min-h-[46px]">
+                    <li key={n.id} className="flex-1 bg-white/60 p-3 rounded-lg flex items-center gap-2 group border border-[#fde047] hover:border-[#eab308] transition-colors min-h-[46px]">
                       {editingNoteId === n.id ? (
-                        <div className="flex-1 flex gap-2">
+                        <div className="flex-1 flex gap-2 w-full">
                           <input 
                             autoFocus
                             type="text" 
@@ -687,32 +679,32 @@ export const Dashboard = () => {
                             onChange={(e) => setEditingNoteText(e.target.value)}
                             onKeyDown={(e) => { if(e.key === 'Enter') saveEditedNote(n.id); if(e.key === 'Escape') setEditingNoteId(null); }}
                             onBlur={() => saveEditedNote(n.id)}
-                            className="flex-1 bg-white border border-[#fde047] rounded px-2 py-1 text-sm text-[#713f12] outline-none focus:ring-1 focus:ring-[#eab308]"
+                            className="flex-1 bg-white border border-[#fde047] rounded-md px-3 py-1.5 text-sm font-medium text-[#713f12] outline-none focus:ring-2 focus:ring-[#eab308]"
                           />
                         </div>
                       ) : (
                         <p 
-                          className="flex-1 text-sm text-[#854d0e] whitespace-pre-wrap leading-tight cursor-pointer"
+                          className="flex-1 text-sm font-medium text-[#854d0e] whitespace-pre-wrap leading-tight cursor-pointer px-1"
                           onClick={() => { setEditingNoteId(n.id); setEditingNoteText(n.text); }}
                           title="Düzenlemek için tıkla"
                         >
                           {n.text}
                         </p>
                       )}
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
                         <button 
                           onClick={() => { setEditingNoteId(n.id); setEditingNoteText(n.text); }} 
-                          className="text-slate-500 hover:text-slate-700"
+                          className="p-1.5 rounded-md bg-[#fef08a] text-[#854d0e] hover:bg-[#fde047] hover:text-[#713f12] transition-colors"
                           title="Düzenle"
                         >
-                          <Edit2 className="w-4 h-4" />
+                          <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button 
                           onClick={() => removeNote(n.id)} 
-                          className="text-[#ca8a04]/60 hover:text-red-500"
+                          className="p-1.5 rounded-md bg-rose-100 text-rose-600 hover:bg-rose-200 transition-colors"
                           title="Sil"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </li>
