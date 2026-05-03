@@ -79,7 +79,25 @@ export const reportService = {
       // Sale Items for Top Products
       const saleIds = completedSales.map(s => s.id);
       if (saleIds.length > 0) {
-        const items = await db.sale_items.where('sale_id').anyOf(saleIds).toArray();
+        let items = [];
+        if (isSupabase()) {
+          const { data } = await supabase.from('sale_items').select('*').in('sale_id', saleIds);
+          items = data || [];
+        } else {
+          items = await db.sale_items.where('sale_id').anyOf(saleIds).toArray();
+        }
+
+        // Fetch all related products in ONE single batch request (Fixing N+1 problem)
+        const productIds = [...new Set(items.map(i => i.product_id))];
+        let productsData = [];
+        if (isSupabase()) {
+          const { data } = await supabase.from('products').select('id, name, purchase_price').in('id', productIds);
+          productsData = data || [];
+        } else {
+          productsData = await db.products.where('id').anyOf(productIds).toArray();
+        }
+        const productInfoMap = new Map(productsData.map(p => [p.id, p]));
+
         const productMap = new Map();
         const salesMap = new Map(completedSales.map(s => [s.id, s]));
 
@@ -88,9 +106,7 @@ export const reportService = {
           if (!sale) continue;
 
           if (!productMap.has(item.product_id)) {
-            const productInfo = isSupabase()
-              ? (await supabase.from('products').select('name,purchase_price').eq('id', item.product_id).single()).data
-              : await db.products.get(item.product_id);
+            const productInfo = productInfoMap.get(item.product_id);
             productMap.set(item.product_id, {
               id: item.product_id,
               name: productInfo?.name || item.product_name || 'Bilinmeyen Ürün',
@@ -117,9 +133,7 @@ export const reportService = {
           pStat.revenue += netItemRevenue;
 
           // Maliyet hesabı: O anki product_price üzerinden
-          const productInfoCost = isSupabase()
-            ? (await supabase.from('products').select('purchase_price').eq('id', item.product_id).single()).data
-            : await db.products.get(item.product_id);
+          const productInfoCost = productInfoMap.get(item.product_id);
           pStat.cost += (productInfoCost?.purchase_price || 0) * (item.quantity || 0);
         }
 
@@ -425,11 +439,25 @@ export const reportService = {
       const registers = await fetchAll('cash_registers', () => db.cash_registers.filter(r => r.is_active !== false).toArray());
       const totalCash = registers.filter(r => r.is_active !== false).reduce((acc, r) => acc + Number(r.current_balance), 0);
 
-      const products = await fetchAll('products', () => db.products.filter(p => p.is_active !== false).toArray());
-      const criticalCount = products.filter(p => p.is_active !== false && Number(p.min_stock_level) > 0 && Number(p.stock_quantity) <= Number(p.min_stock_level)).length;
+      let criticalCount = 0;
+      let totalReceivable = 0;
 
-      const customers = await fetchAll('customers', () => db.customers.filter(c => c.is_active !== false).toArray());
-      const totalReceivable = customers.filter(c => c.is_active !== false).reduce((acc, c) => acc + (Number(c.balance) > 0 ? Number(c.balance) : 0), 0);
+      if (isSupabase()) {
+        // Only fetch what's needed for the dashboard (not all columns, not all products/customers)
+        const [{ data: pData }, { data: cData }] = await Promise.all([
+          supabase.from('products').select('min_stock_level, stock_quantity').eq('is_active', true),
+          supabase.from('customers').select('balance').eq('is_active', true)
+        ]);
+        
+        criticalCount = (pData || []).filter(p => Number(p.min_stock_level) > 0 && Number(p.stock_quantity) <= Number(p.min_stock_level)).length;
+        totalReceivable = (cData || []).reduce((acc, c) => acc + (Number(c.balance) > 0 ? Number(c.balance) : 0), 0);
+      } else {
+        const products = await db.products.filter(p => p.is_active !== false).toArray();
+        criticalCount = products.filter(p => Number(p.min_stock_level) > 0 && Number(p.stock_quantity) <= Number(p.min_stock_level)).length;
+
+        const customers = await db.customers.filter(c => c.is_active !== false).toArray();
+        totalReceivable = customers.reduce((acc, c) => acc + (Number(c.balance) > 0 ? Number(c.balance) : 0), 0);
+      }
       
       return {
          todayRevenue,           // Brüt satış
