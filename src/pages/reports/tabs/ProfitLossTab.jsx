@@ -51,7 +51,7 @@ export const ProfitLossTab = ({ startDate, endDate }) => {
 
   const formatCurrency = (val) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
 
-  if (loading) return <div className="relative h-96"><PremiumLoader isOpen={true} /></div>;
+  if (loading) return <div className="relative h-96"></div>;
   if (!data) return <EmptyReport message="Hata." />;
 
   return (

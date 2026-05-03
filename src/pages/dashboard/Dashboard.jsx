@@ -1,3 +1,4 @@
+import { useGlobalLoader } from "../../hooks/useGlobalLoader";
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import toast from '../../components/ui/CustomToast';
 import { Banknote, ShoppingCart, AlertTriangle, TrendingUp, Users, ChevronRight, ArrowDownLeft, ArrowUpRight, ArrowRightLeft, Settings2, Moon, Plus, Trash2, ListChecks, Calendar, Clock, Calculator, Building2, TrendingDown, PieChart as PieChartIcon, Activity, ScanBarcode, Edit2 } from 'lucide-react';
@@ -108,6 +109,7 @@ export const Dashboard = () => {
   });
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  useGlobalLoader(loading);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [allRegisters, setAllRegisters] = useState([]);
   const [companyName, setCompanyName] = useState(() => localStorage.getItem('entrio_company_name') || 'İşletme Özeti');
@@ -374,7 +376,7 @@ export const Dashboard = () => {
 
   return (
     <div className="-mt-3 pb-[46px] flex flex-col h-full relative">
-      <PremiumLoader isOpen={loading} />
+      
       
       {/* Dashboard Header - H-16 aligns exactly with Sidebar top border */}
       <div className="h-auto md:h-16 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-50">
@@ -670,9 +672,9 @@ export const Dashboard = () => {
                   }
                   
                   return (
-                    <li key={n.id} className="flex-1 bg-white/60 p-3 rounded-lg flex items-center gap-2 group border border-[#fde047] hover:border-[#eab308] transition-colors min-h-[46px]">
+                    <li key={n.id} className="w-full bg-white/60 px-3 py-2 rounded-lg flex items-center justify-between group border border-[#fde047] hover:border-[#eab308] transition-colors min-h-[46px]">
                       {editingNoteId === n.id ? (
-                        <div className="flex-1 flex gap-2 w-full">
+                        <div className="flex-1 w-full mr-2">
                           <input 
                             autoFocus
                             type="text" 
@@ -680,12 +682,12 @@ export const Dashboard = () => {
                             onChange={(e) => setEditingNoteText(e.target.value)}
                             onKeyDown={(e) => { if(e.key === 'Enter') saveEditedNote(n.id); if(e.key === 'Escape') setEditingNoteId(null); }}
                             onBlur={() => saveEditedNote(n.id)}
-                            className="flex-1 bg-white border border-[#fde047] rounded-md px-3 py-1.5 text-sm font-medium text-[#713f12] outline-none focus:ring-2 focus:ring-[#eab308]"
+                            className="w-full bg-white border border-[#fde047] rounded-md px-2 py-1 text-sm font-medium text-[#713f12] outline-none focus:ring-2 focus:ring-[#eab308]"
                           />
                         </div>
                       ) : (
                         <p 
-                          className="flex-1 text-sm font-medium text-[#854d0e] whitespace-pre-wrap leading-tight cursor-pointer px-1"
+                          className="flex-1 text-sm font-medium text-[#854d0e] whitespace-pre-wrap leading-tight cursor-pointer px-2 py-1 min-h-[28px] flex items-center"
                           onClick={() => { setEditingNoteId(n.id); setEditingNoteText(n.text); }}
                           title="Düzenlemek için tıkla"
                         >

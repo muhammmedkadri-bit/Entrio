@@ -185,7 +185,7 @@ export const ReturnSaleSelectionModal = ({ isOpen, onClose, customerId }) => {
           <div className="border border-slate-200 bg-white rounded-lg overflow-y-auto flex-1 custom-scrollbar relative">
             {loading ? (
               <div className="relative h-48">
-                <PremiumLoader isOpen={true} />
+                
               </div>
             ) : paginatedSales.length > 0 ? (
               <ul className="divide-y divide-slate-200 flex flex-col h-full">

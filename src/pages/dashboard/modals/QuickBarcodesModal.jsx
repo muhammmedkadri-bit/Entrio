@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, ChevronLeft, ChevronRight, Edit2, ScanBarcode, CheckCircle } from 'lucide-react';
+import { X, Search, ChevronLeft, ChevronRight, Edit2, ScanBarcode, CheckCircle, Plus } from 'lucide-react';
 import { db } from '../../../db';
 import Barcode from 'react-barcode';
+import { QuickProductManagerModal } from '../../pos/components/QuickProductManagerModal';
 
 export const QuickBarcodesModal = ({ isOpen, onClose, onAddToCart }) => {
   const [allProducts, setAllProducts] = useState([]);
@@ -10,6 +11,7 @@ export const QuickBarcodesModal = ({ isOpen, onClose, onAddToCart }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [addedId, setAddedId] = useState(null);
+  const [showProductManager, setShowProductManager] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -129,6 +131,12 @@ export const QuickBarcodesModal = ({ isOpen, onClose, onAddToCart }) => {
                 </div>
               </div>
               <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setShowProductManager(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#7ed957] text-white rounded-xl font-bold hover:bg-[#6cc549] transition-colors shadow-sm"
+                >
+                  <Plus className="w-4 h-4" /> Yeni Ürün Ekle
+                </button>
                 <div className="relative w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
@@ -193,6 +201,17 @@ export const QuickBarcodesModal = ({ isOpen, onClose, onAddToCart }) => {
           </>
         )}
       </div>
+
+      <QuickProductManagerModal
+        isOpen={showProductManager}
+        onClose={() => {
+          setShowProductManager(false);
+          loadProducts(); // Ürün eklendikten sonra listeyi yenile
+        }}
+        displayedProducts={allProducts}
+        onAddProduct={() => {}}
+        openOnCreate={true}
+      />
     </div>
   );
 };

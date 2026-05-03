@@ -67,7 +67,8 @@ BEGIN
     v_sale_status, p_sale_data->>'notes', v_now
   ) RETURNING id INTO v_sale_id;
 
-  v_sale_number := 'SAT-' || SUBSTRING(EXTRACT(YEAR FROM NOW())::TEXT, 3, 2) || LPAD(v_sale_id::TEXT, 5, '0');
+  -- Fiş numarası ataması: JavaScript'ten gönderildiyse onu kullan, yoksa standart formatı kullan.
+  v_sale_number := COALESCE(p_sale_data->>'sale_number', 'SAT-' || SUBSTRING(EXTRACT(YEAR FROM NOW())::TEXT, 3, 2) || LPAD(v_sale_id::TEXT, 5, '0'));
   UPDATE public.sales SET sale_number = v_sale_number WHERE id = v_sale_id;
 
   -- Satış kalemleri ve stok güncelleme
@@ -189,7 +190,7 @@ BEGIN
     v_now
   ) RETURNING id INTO v_return_id;
 
-  v_return_number := 'IAD-' || SUBSTRING(EXTRACT(YEAR FROM NOW())::TEXT, 3, 2) || LPAD(v_return_id::TEXT, 5, '0');
+  v_return_number := COALESCE(p_return_data->>'sale_number', 'IAD-' || SUBSTRING(EXTRACT(YEAR FROM NOW())::TEXT, 3, 2) || LPAD(v_return_id::TEXT, 5, '0'));
   UPDATE public.sales SET sale_number = v_return_number WHERE id = v_return_id;
 
   -- İade kalemleri ve stok geri yükleme

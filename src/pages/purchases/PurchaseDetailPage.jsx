@@ -144,7 +144,7 @@ export const PurchaseDetailPage = () => {
     } finally { setActionLoading(false); }
   };
 
-  if (loading) return <div className="relative h-screen"><PremiumLoader isOpen={true} /></div>;
+  if (loading) return <div className="relative h-screen"></div>;
   if (!purchase) return null;
 
   const filteredCats = categories.filter(c =>

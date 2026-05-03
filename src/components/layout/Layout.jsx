@@ -22,7 +22,7 @@ const titleMap = {
 export const Layout = () => {
   const location = useLocation();
   const isPos = location.pathname === '/pos';
-  const { isNavigating, stopNavigation } = useAppStore();
+  const { isNavigating, stopNavigation, isPageLoading } = useAppStore();
   const navTimerRef = React.useRef(null);
 
   // Otomatik gün sonu servisini çalıştır
@@ -33,14 +33,15 @@ export const Layout = () => {
     document.title = title;
   }, [location.pathname]);
 
-  // Auto-stop the loader after page has settled
+  // isNavigating flag controls the initial mount overlay.
+  // It stops quickly so that the page mounts, but isPageLoading keeps it open until data is fully loaded.
   React.useEffect(() => {
     if (isNavigating) {
       clearTimeout(navTimerRef.current);
-      navTimerRef.current = setTimeout(() => stopNavigation(), 700);
+      navTimerRef.current = setTimeout(() => stopNavigation(), 300);
     }
     return () => clearTimeout(navTimerRef.current);
-  }, [isNavigating, location.pathname]);
+  }, [isNavigating, location.pathname, stopNavigation]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 font-sans print:bg-white print:h-auto print:overflow-visible">
@@ -52,7 +53,7 @@ export const Layout = () => {
           </div>
         </main>
         {/* Render loader over the entire flex column body, edge-to-edge */}
-        <PremiumLoader isOpen={isNavigating} />
+        <PremiumLoader isOpen={isNavigating || isPageLoading} />
         
         {/* Global Quick Action FAB */}
         <GlobalFAB />

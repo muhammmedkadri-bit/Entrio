@@ -182,7 +182,7 @@ export const ProductDetailPage = () => {
 
   return (
     <div className="flex flex-col h-full gap-4 relative">
-      <PremiumLoader isOpen={loading} />
+      
 
       {product && (
         <>

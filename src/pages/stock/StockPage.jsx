@@ -267,7 +267,7 @@ export const StockPage = () => {
           onEditProduct={handleEditProduct}
           onStockMovement={handleStockMovement}
         />
-        <PremiumLoader isOpen={isLoading} />
+        
       </div>
 
       {/* Modals & Drawers */}

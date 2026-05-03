@@ -67,7 +67,7 @@ export const SalesReportTab = ({ startDate, endDate }) => {
 
   const formatCurrency = (val) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
 
-  if (loading) return <div className="relative h-96"><PremiumLoader isOpen={true} /></div>;
+  if (loading) return <div className="relative h-96"></div>;
   if (!data || data.totalCount === 0) return <EmptyReport message="Bu dönemde tamamlanmış herhangi bir satış bulunamadı." />;
 
   const PIE_COLORS = { cash: '#22c55e', card: '#3b82f6', credit: '#ef4444', mixed: '#f59e0b' };

@@ -24,6 +24,7 @@ import { SupplierPaymentModal } from './components/SupplierPaymentModal';
 import { RemoveProductModal } from './components/RemoveProductModal';
 import { QuickBarcodesModal } from '../dashboard/modals/QuickBarcodesModal';
 import { db } from '../../db';
+import { generateSaleNumber } from '../../utils/invoiceUtils';
 import { supabase } from '../../lib/supabaseClient';
 import { isSupabase } from '../../config/database';
 
@@ -498,7 +499,9 @@ export const POSPage = () => {
         await purchaseService.create(purchaseData, purchaseItems, purchasePaymentData);
         toast.success('Alış işlemi başarıyla tamamlandı!');
       } else if (posMode === 'return') {
+        const customNumber = await generateSaleNumber();
         const returnData = {
+          sale_number: customNumber,
           customer_id: selectedCustomer?.id || 1,
           original_sale_id: returnSaleId,
           total_amount: total,
@@ -510,7 +513,9 @@ export const POSPage = () => {
         await saleService.createReturn(returnData, returnItemsData, paymentData);
         toast.success('İade başarıyla tamamlandı!');
       } else {
+        const customNumber = await generateSaleNumber();
         const saleData = {
+          sale_number: customNumber,
           customer_id: selectedCustomer?.id || 1,
           total_amount: total,
           discount_amount: discountAmount || 0,
@@ -612,7 +617,9 @@ export const POSPage = () => {
         method: 'card', cashAmount: 0, cardAmount: total, transferAmount: 0, creditAmount: 0,
         overrideRegisterId: registerId,
       };
+      const customNumber = await generateSaleNumber();
       const saleData = {
+        sale_number: customNumber,
         customer_id: selectedCustomer?.id || 1,
         total_amount: total,
         discount_amount: discountAmount || 0,
@@ -859,7 +866,7 @@ export const POSPage = () => {
           <div className="flex-1 overflow-y-auto p-2">
             {loading ? (
               <div className="relative flex items-center justify-center h-full">
-                <PremiumLoader isOpen={true} />
+                
               </div>
             ) : displayedProducts.length > 0 ? (
               <div className={`grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 relative ${swapMode ? 'relative' : ''}`}>

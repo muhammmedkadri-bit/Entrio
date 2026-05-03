@@ -256,7 +256,7 @@ export const SaleDetailPage = () => {
   /* ════════════════════════════════════════════════════════════════════════ */
   return (
     <div className="flex flex-col gap-4 h-full relative">
-      <PremiumLoader isOpen={loading} />
+      
 
       {sale && (
         <>

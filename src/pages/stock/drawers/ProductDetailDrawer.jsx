@@ -105,7 +105,7 @@ export const ProductDetailDrawer = ({ isOpen, onClose, product, onEditClick, onM
             </div>
             
             {loading ? (
-              <PremiumLoader isOpen={true} />
+              
             ) : movements.length > 0 ? (
               <ul className="space-y-3">
                 {movements.map(m => {
