@@ -51,13 +51,7 @@ function DropdownRow({ product, onAdd, isHighlighted, rowRef }) {
           className="h-9 px-3 rounded-lg flex items-center justify-center transition-all bg-white/40 border border-black/5 backdrop-blur-[4px] shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] flex-shrink-0"
           style={{ background: 'rgba(255, 255, 255, 0.45)' }}
         >
-          {product.barcode ? (
-            <div className="scale-[0.85] origin-center -my-1">
-              <BarcodeStripes value={product.barcode} color="#000000" />
-            </div>
-          ) : (
-            <Package className="w-5 h-5 text-gray-400" />
-          )}
+          <Package className="w-5 h-5 text-gray-400" />
         </div>
         
         <div className="min-w-0 flex-1">
@@ -108,8 +102,7 @@ function DropdownRow({ product, onAdd, isHighlighted, rowRef }) {
           style={glassAddBtn}
           onClick={() => onAdd(product, qty)}
         >
-          <ShoppingCart className="w-3.5 h-3.5" />
-          Sepete Ekle
+          <ShoppingCart className="w-4 h-4" />
         </button>
       </div>
     </div>

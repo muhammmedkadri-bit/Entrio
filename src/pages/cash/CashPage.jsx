@@ -3,21 +3,27 @@ import toast from '../../components/ui/CustomToast';
 import { Wallet } from 'lucide-react';
 import { cashService } from '../../services/cashService';
 import { CashDashboardTab } from './tabs/CashDashboardTab';
+import { useGlobalLoader } from '../../hooks/useGlobalLoader';
 
 export const CashPage = () => {
   const [registers, setRegisters] = useState([]);
+  const [loading, setLoading] = useState(true);
+  useGlobalLoader(loading);
 
   useEffect(() => {
     loadRegisters();
   }, []);
 
   const loadRegisters = async () => {
+    setLoading(true);
     try {
       const data = await cashService.getRegisters();
       setRegisters(data);
     } catch(err) {
       console.error('[CashPage] Kasalar yüklenirken hata:', err);
       toast.error(err?.message || 'Kasalar yüklenemedi.');
+    } finally {
+      setLoading(false);
     }
   };
 

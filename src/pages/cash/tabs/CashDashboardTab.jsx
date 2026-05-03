@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { ArrowDownLeft, ArrowUpRight, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, Filter, MoreVertical, Edit2, Settings2, ArrowRightLeft, RotateCcw, History, Trash2, Archive, Wallet, CreditCard, Building2, Calculator, LayoutGrid, Download, FileText, Moon, Star } from 'lucide-react';
 import { db } from '../../../db';
+import { isSupabase } from '../../../config/database';
 import { StatCard } from '../../../components/ui/StatCard';
 import { EditRegisterModal } from '../modals/EditRegisterModal';
 import { ExportReportModal } from '../modals/ExportReportModal';
@@ -75,39 +76,82 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged }) => {
   const loadDashboard = async () => {
     try {
       const filteredRegisters = getFilteredRegisters();
-      
+      if (filteredRegisters.length === 0) {
+        setSummary({ totals: { sale_in: 0, customer_payment_in: 0, deposit_in: 0, return_in: 0, purchase_out: 0, supplier_payment_out: 0, expense_out: 0, withdrawal_out: 0, return_out: 0 } });
+        setMonthlySummary({ income: 0, expense: 0 });
+        setRecentTxs([]);
+        return;
+      }
+
+      // ── Parallel fetch: tüm kasaların özet + hareketleri aynı anda çek ────
+      const [summaryResults, txResults] = await Promise.all([
+        Promise.all(filteredRegisters.map(reg => cashService.getDailySummary(reg.id, new Date()))),
+        Promise.all(filteredRegisters.map(reg =>
+          cashService.getTransactions(reg.id).then(txs => {
+            txs.forEach(t => t.registerName = reg.name);
+            return txs;
+          })
+        ))
+      ]);
+
+      // Özetleri birleştir
       let combinedSum = {
         totals: {
           sale_in: 0, customer_payment_in: 0, deposit_in: 0, return_in: 0,
           purchase_out: 0, supplier_payment_out: 0, expense_out: 0, withdrawal_out: 0, return_out: 0
         }
       };
-      let allTxs = [];
-
-      for (const reg of filteredRegisters) {
-        const sum = await cashService.getDailySummary(reg.id, new Date());
+      summaryResults.forEach(sum => {
         for (const key in sum.totals) {
-           combinedSum.totals[key] += sum.totals[key] || 0;
+          combinedSum.totals[key] += sum.totals[key] || 0;
         }
+      });
 
-        const txs = await cashService.getTransactions(reg.id);
-        // append register name to tx
-        txs.forEach(t => t.registerName = reg.name);
-        allTxs = allTxs.concat(txs);
+      let allTxs = txResults.flat().sort((a, b) => b.created_at - a.created_at);
+
+      // ── Müşteri / Tedarikçi eşleştirme — sadece gerekli ID'leri çek ──────
+      // Tüm ilgili reference ID'leri topla
+      const customerTxTypes = new Set(['sale_in', 'customer_payment_in', 'return_out', 'return_in']);
+      const supplierTxTypes = new Set(['supplier_payment_out', 'purchase_out']);
+
+      let customerMap = {};
+      let supplierMap = {};
+      let saleMap = {};
+      let purchaseMap = {};
+
+      // Supabase'de lokale kıyasla daha verimli: sadece ilgili satışları çek
+      const refIds = [...new Set(allTxs.filter(t => t.reference_id).map(t => t.reference_id))];
+
+      if (isSupabase()) {
+        const { supabase } = await import('../../../lib/supabaseClient');
+
+        const [cusRes, supRes, salRes, purRes] = await Promise.all([
+          // Tüm müşterileri değil sadece ilgili tx'lerde geçenleri çek
+          supabase.from('customers').select('id, name'),
+          supabase.from('suppliers').select('id, name'),
+          refIds.length > 0
+            ? supabase.from('sales').select('id, customer_id, sale_number, original_sale_id').in('id', refIds)
+            : Promise.resolve({ data: [] }),
+          refIds.length > 0
+            ? supabase.from('purchases').select('id, supplier_id').in('id', refIds)
+            : Promise.resolve({ data: [] }),
+        ]);
+        customerMap = Object.fromEntries((cusRes.data || []).map(c => [c.id, c.name]));
+        supplierMap = Object.fromEntries((supRes.data || []).map(s => [s.id, s.name]));
+        saleMap = Object.fromEntries((salRes.data || []).map(s => [s.id, s]));
+        purchaseMap = Object.fromEntries((purRes.data || []).map(p => [p.id, p.supplier_id]));
+      } else {
+        const [customers, suppliers, sales, purchases] = await Promise.all([
+          db.customers.toArray(),
+          db.suppliers.toArray(),
+          db.sales.toArray(),
+          db.purchases.toArray(),
+        ]);
+        customerMap = Object.fromEntries(customers.map(c => [c.id, c.name]));
+        supplierMap = Object.fromEntries(suppliers.map(s => [s.id, s.name]));
+        saleMap = Object.fromEntries(sales.map(s => [s.id, s]));
+        purchaseMap = Object.fromEntries(purchases.map(p => [p.id, p.supplier_id]));
       }
-
-      // sort combined txs
-      allTxs.sort((a, b) => b.created_at - a.created_at);
-
-      // Müşteri / Tedarikçi eşleştirme
-      const customers = await db.customers.toArray();
-      const suppliers = await db.suppliers.toArray();
-      const sales = await db.sales.toArray();
-      const purchases = await db.purchases.toArray();
-      const customerMap = Object.fromEntries(customers.map(c => [c.id, c.name]));
-      const supplierMap = Object.fromEntries(suppliers.map(s => [s.id, s.name]));
-      const saleMap = Object.fromEntries(sales.map(s => [s.id, s.customer_id]));
-      const purchaseMap = Object.fromEntries(purchases.map(p => [p.id, p.supplier_id]));
 
       let mIncome = 0;
       let mExpense = 0;
@@ -118,27 +162,26 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged }) => {
       allTxs.forEach(t => {
         t.entityName = null;
         if (t.transaction_type === 'sale_in' || t.transaction_type === 'customer_payment_in') {
-          const custId = t.customer_id || (t.reference_id && saleMap[t.reference_id]) || (t.sale_id && saleMap[t.sale_id]);
+          const saleObj = saleMap[t.reference_id] || saleMap[t.sale_id];
+          const custId = t.customer_id || saleObj?.customer_id;
           if (custId && customerMap[custId]) t.entityName = customerMap[custId];
         } else if (t.transaction_type === 'supplier_payment_out' || t.transaction_type === 'purchase_out') {
-          const supId = t.supplier_id || (t.purchase_id && purchaseMap[t.purchase_id]);
+          const supId = t.supplier_id || purchaseMap[t.purchase_id];
           if (supId && supplierMap[supId]) t.entityName = supplierMap[supId];
         } else if (t.transaction_type === 'return_out' || t.transaction_type === 'return_in') {
-          // Find the return receipt sale, then from it get original_sale_id -> customer
-          const retSale = sales.find(s => s.id === t.reference_id);
-          const origSale = retSale?.original_sale_id ? sales.find(s => s.id === retSale.original_sale_id) : null;
+          const retSale = saleMap[t.reference_id];
+          const origSale = retSale?.original_sale_id ? saleMap[retSale.original_sale_id] : null;
           const custId = t.customer_id || retSale?.customer_id || origSale?.customer_id;
           if (custId && customerMap[custId]) t.entityName = customerMap[custId];
-          // Attach original sale number for desc usage
           t._origSaleNumber = origSale?.sale_number || retSale?.sale_number || null;
         }
 
-        // Aylık toplamlar — return_out is NOT counted as expense (it neutralises a prior income)
+        // Aylık toplamlar
         if (t.created_at >= currentMonthStart.getTime()) {
           if (t.transaction_type === 'return_out') {
             mIncome -= t.amount || 0;
           } else if (t.transaction_type === 'transfer_in' || t.transaction_type === 'transfer_out') {
-            // transferler gelir/gider tablosuna dahil edilmez
+            // transferler dahil edilmez
           } else if (t.transaction_type.includes('_in') || t.transaction_type === 'in') {
             mIncome += t.amount || 0;
           } else if (t.transaction_type.includes('_out') || t.transaction_type === 'out') {
@@ -146,8 +189,6 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged }) => {
           }
         }
       });
-
-
 
       let finalTxs = allTxs.filter(t => !(t.transaction_type === 'day_close' && t.amount === 0));
 
@@ -205,6 +246,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged }) => {
       toast.error(e?.message || 'Kasa özeti alınırken bir hata oluştu.');
     }
   };
+
 
   const handleSaved = () => {
     onRegisterChanged(); // this will trigger useEffect via registers prop update

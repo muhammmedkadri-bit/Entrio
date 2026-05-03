@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { db } from '../db';
 import { dayCloseService } from '../services/dayCloseService';
 import { useAuthStore } from '../store/authStore';
 
@@ -37,12 +36,12 @@ export const useDayCloseScheduler = () => {
       }, msUntilMidnight);
     };
 
-    // App Recovery: Uygulama kapanıp açıldıysa gün sonu kaçırılmış olabilir
     const checkMissedDayClose = async () => {
       try {
         const needed = await dayCloseService.needsDayClose();
         if (needed) {
-          const registers = await db.cash_registers.where('is_active').equals(1).toArray();
+          const { cashService } = await import('../services/cashService');
+          const registers = await cashService.getRegisters();
           const lastClose = registers
             .map(r => r.last_day_close_date)
             .filter(Boolean)
