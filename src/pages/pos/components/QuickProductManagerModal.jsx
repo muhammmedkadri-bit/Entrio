@@ -27,12 +27,6 @@ export const QuickProductManagerModal = ({
     if (_qpmCacheLoaded) {
       setAll(_qpmCache);
       setFiltered(_qpmCache);
-      // Background fetch
-      productService.getAll({}).then(res => {
-        _qpmCache = res;
-        setAll(res);
-        setFiltered(res);
-      }).catch(() => {});
       return;
     }
 
@@ -204,11 +198,16 @@ export const QuickProductManagerModal = ({
             searchQuery={query}
             initialBarcode={initialBarcode}
             hasEmptySlot={displayedProducts.length < 12}
-            onClose={() => { setShowQuickCreate(false); fetchProducts(); }}
+            onClose={() => { setShowQuickCreate(false); }}
             onAddProduct={(prod) => { 
               setShowQuickCreate(false); 
-              fetchProducts(); 
-              // Small delay to let fetchProducts settle, then add
+              // Cache'i anında güncelle
+              if (_qpmCacheLoaded) {
+                 _qpmCache = [..._qpmCache, prod].sort((a,b) => a.name.localeCompare(b.name));
+                 setAll(_qpmCache);
+                 setFiltered(_qpmCache);
+              }
+              // Hemen ekle
               setTimeout(() => handleAdd(prod), 50);
             }}
           />

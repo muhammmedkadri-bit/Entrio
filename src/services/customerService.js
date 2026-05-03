@@ -329,7 +329,42 @@ export const customerService = {
         let query = supabase.from('customer_transactions').select('*').eq('customer_id', customerId).order('created_at', { ascending: false });
         const { data, error } = await query;
         if (error) throw error;
-        let txs = data;
+        let txs = data || [];
+
+        // Perakende satışları ve peşin ödenen diğer satışları da hareketlere dahil et
+        const { data: salesData } = await supabase.from('sales').select('*').eq('customer_id', customerId);
+        if (salesData && salesData.length > 0) {
+            // Sadece veresiye (credit) OLMAYAN satışları veya perakende müşterisinin tüm satışlarını ekle
+            // Çünkü veresiyeler zaten customer_transactions'a insert ediliyor (create_sale içinde)
+            const cashSales = salesData.filter(s => 
+                (s.payment_method !== 'credit' && s.status !== 'pending' && s.status !== 'partial') || Number(customerId) === 1
+            );
+            
+            const salesTxs = cashSales.map(s => {
+                const isReturn = s.status === 'return';
+                return {
+                    id: 'sale_' + s.id,
+                    customer_id: s.customer_id,
+                    transaction_type: isReturn ? 'return' : 'sale',
+                    amount: s.total_amount,
+                    balance_after: 0,
+                    payment_method: s.payment_method,
+                    transaction_date: new Date(Number(s.created_at)).toISOString(),
+                    reference_id: s.id,
+                    sale_number: s.sale_number,
+                    notes: isReturn ? 'Peşin Satış İadesi' : 'Peşin Satış',
+                    created_at: s.created_at
+                };
+            });
+            
+            // Eğer aynı sale_number'a sahip customer_transactions varsa (örneğin partial payment), 
+            // duplicate olmaması için salesTxs'den ayıklayalım
+            const existingSaleNumbers = new Set(txs.map(t => t.sale_number).filter(Boolean));
+            const uniqueSalesTxs = salesTxs.filter(st => !existingSaleNumbers.has(st.sale_number));
+
+            txs = [...txs, ...uniqueSalesTxs].sort((a, b) => Number(b.created_at) - Number(a.created_at));
+        }
+
         if (filters.startDate && filters.endDate) {
           txs = txs.filter(t => isWithinInterval(Number(t.created_at), { start: filters.startDate, end: filters.endDate }));
         }
@@ -338,12 +373,39 @@ export const customerService = {
       }
 
       let txs = await db.customer_transactions.where('customer_id').equals(Number(customerId)).toArray();
+      
+      // Dexie fallback için aynısı
+      const allSales = await db.sales.where('customer_id').equals(Number(customerId)).toArray();
+      const cashSales = allSales.filter(s => 
+          (s.payment_method !== 'credit' && s.status !== 'pending' && s.status !== 'partial') || Number(customerId) === 1
+      );
+      const salesTxs = cashSales.map(s => {
+          const isReturn = s.status === 'return';
+          return {
+              id: 'sale_' + s.id,
+              customer_id: s.customer_id,
+              transaction_type: isReturn ? 'return' : 'sale',
+              amount: s.total_amount,
+              balance_after: 0,
+              payment_method: s.payment_method,
+              transaction_date: new Date(Number(s.created_at)).toISOString(),
+              reference_id: s.id,
+              sale_number: s.sale_number,
+              notes: isReturn ? 'Peşin Satış İadesi' : 'Peşin Satış',
+              created_at: s.created_at
+          };
+      });
+      const existingSaleNumbers = new Set(txs.map(t => t.sale_number).filter(Boolean));
+      const uniqueSalesTxs = salesTxs.filter(st => !existingSaleNumbers.has(st.sale_number));
+      txs = [...txs, ...uniqueSalesTxs];
+
       txs.sort((a, b) => {
         const dayA = new Date(a.created_at).setHours(0, 0, 0, 0);
         const dayB = new Date(b.created_at).setHours(0, 0, 0, 0);
-        if (dayA === dayB) return b.id - a.id;
-        return b.created_at - a.created_at;
+        if (dayA === dayB) return (b.id && a.id && typeof b.id === 'number' && typeof a.id === 'number') ? b.id - a.id : 0;
+        return Number(b.created_at) - Number(a.created_at);
       });
+      
       if (filters.startDate && filters.endDate) txs = txs.filter(t => isWithinInterval(t.created_at, { start: filters.startDate, end: filters.endDate }));
       if (filters.type && filters.type !== 'all') txs = txs.filter(t => t.transaction_type === filters.type);
       return txs;

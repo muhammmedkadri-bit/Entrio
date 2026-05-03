@@ -83,13 +83,17 @@ BEGIN
     );
 
     SELECT * INTO v_product FROM public.products WHERE id = (v_item->>'product_id')::BIGINT;
-    IF FOUND AND v_product.track_stock IS NOT FALSE THEN
-      v_new_qty := ROUND((COALESCE(v_product.stock_quantity, 0) - (v_item->>'quantity')::DECIMAL)::NUMERIC, 3);
-      UPDATE public.products SET stock_quantity = v_new_qty WHERE id = v_product.id;
-      INSERT INTO public.stock_movements (product_id, movement_type, quantity, unit_price, item_discount, reference, created_at)
+    IF FOUND THEN
+      IF v_product.track_stock IS NOT FALSE THEN
+        v_new_qty := ROUND((COALESCE(v_product.stock_quantity, 0) - (v_item->>'quantity')::DECIMAL)::NUMERIC, 3);
+        UPDATE public.products SET stock_quantity = v_new_qty WHERE id = v_product.id;
+      END IF;
+      
+      INSERT INTO public.stock_movements (product_id, movement_type, quantity, unit_price, item_discount, reference_id, reference, created_at)
       VALUES (v_product.id, 'sale', (v_item->>'quantity')::DECIMAL,
               (v_item->>'unit_price')::DECIMAL,
               COALESCE((v_item->>'discount')::DECIMAL, 0),
+              v_sale_id,
               v_sale_number, v_now);
     END IF;
   END LOOP;
@@ -198,12 +202,15 @@ BEGIN
     );
 
     SELECT * INTO v_product FROM public.products WHERE id = (v_item->>'product_id')::BIGINT;
-    IF FOUND AND v_product.track_stock IS NOT FALSE THEN
-      v_new_qty := ROUND((COALESCE(v_product.stock_quantity, 0) + (v_item->>'quantity')::DECIMAL)::NUMERIC, 3);
-      UPDATE public.products SET stock_quantity = v_new_qty WHERE id = v_product.id;
-      INSERT INTO public.stock_movements (product_id, movement_type, quantity, unit_price, reference, created_at)
+    IF FOUND THEN
+      IF v_product.track_stock IS NOT FALSE THEN
+        v_new_qty := ROUND((COALESCE(v_product.stock_quantity, 0) + (v_item->>'quantity')::DECIMAL)::NUMERIC, 3);
+        UPDATE public.products SET stock_quantity = v_new_qty WHERE id = v_product.id;
+      END IF;
+      
+      INSERT INTO public.stock_movements (product_id, movement_type, quantity, unit_price, reference_id, reference, created_at)
       VALUES (v_product.id, 'return_in', (v_item->>'quantity')::DECIMAL,
-              (v_item->>'unit_price')::DECIMAL, v_return_number, v_now);
+              (v_item->>'unit_price')::DECIMAL, v_return_id, v_return_number, v_now);
     END IF;
   END LOOP;
 

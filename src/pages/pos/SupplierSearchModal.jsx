@@ -30,12 +30,6 @@ export const SupplierSearchModal = ({ isOpen, onClose, onSelect }) => {
     if (_supplierCacheLoaded) {
       allRef.current = _supplierCache;
       setSuppliers(_supplierCache.slice(0, 10));
-      // Background refresh
-      supplierService.getAll().then(all => {
-        _supplierCache = all;
-        allRef.current = all;
-        setSuppliers(all.slice(0, 10));
-      }).catch(() => {});
       return;
     }
 
@@ -78,6 +72,11 @@ export const SupplierSearchModal = ({ isOpen, onClose, onSelect }) => {
         balance: 0,
         is_active: true
       });
+      if (_supplierCacheLoaded) {
+          _supplierCache = [..._supplierCache, newSupplier].sort((a,b) => a.name.localeCompare(b.name));
+          allRef.current = _supplierCache;
+          setSuppliers(_supplierCache.slice(0, 10));
+      }
       toast.success('Tedarikçi eklendi!');
       onSelect(newSupplier);
       onClose();

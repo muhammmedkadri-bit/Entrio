@@ -28,21 +28,16 @@ export const CustomerSearchModal = ({ isOpen, onClose, onSelect }) => {
     setShowForm(false);
     setFormData({ name: '', phone: '' });
 
-    // If already cached, show instantly
+    // If already cached, show instantly and DO NOT refresh in background unless explicitly told
     if (_customerCacheLoaded) {
       allRef.current = _customerCache;
       setCustomers(_customerCache.slice(0, 10));
-      // Background refresh
-      customerService.getAll().then(all => {
-        _customerCache = all;
-        allRef.current = all;
-        setCustomers(all.slice(0, 10));
-      }).catch(() => {});
       return;
     }
 
     customerService.getAll().then(all => {
       _customerCache = all;
+      _customerCacheLoaded = true;
       _customerCacheLoaded = true;
       allRef.current = all;
       setCustomers(all.slice(0, 10));
@@ -81,6 +76,12 @@ export const CustomerSearchModal = ({ isOpen, onClose, onSelect }) => {
         balance: 0,
         is_active: true
       });
+      // Yeni müşteriyi cache'e dahil et
+      if (_customerCacheLoaded) {
+          _customerCache = [..._customerCache, newCustomer].sort((a,b) => a.name.localeCompare(b.name));
+          allRef.current = _customerCache;
+          setCustomers(_customerCache.slice(0, 10));
+      }
       toast.success('Müşteri eklendi!');
       onSelect(newCustomer);
       onClose();
