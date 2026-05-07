@@ -5,6 +5,8 @@ import toast from '../../components/ui/CustomToast';
 import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
 import { useProducts } from '../../hooks/useProducts';
+import { useCashRegisters } from '../../hooks/useCashRegisters';
+import { useCacheStore } from '../../store/cacheStore';
 import { productService } from '../../services/productService';
 import { saleService } from '../../services/saleService';
 import { purchaseService } from '../../services/purchaseService';
@@ -201,13 +203,28 @@ export const POSPage = () => {
 
   // ── Product grid state — powered by cache-aware hook ─────────────────────
   const { products: allProducts, loading, applyStockDeduction } = useProducts();
-  const [displayedProducts, setDisplayedProducts] = useState([]);
-  const isInitializedRef = useRef(false);
 
-  // Restore displayed products from localStorage once allProducts are available
+  // Initialize displayedProducts SYNCHRONOUSLY from cache → zero flash on 2nd visit
+  const [displayedProducts, setDisplayedProducts] = useState(() => {
+    const cached = useCacheStore.getState().getCache('products');
+    if (!cached || cached.length === 0) return [];
+    let savedIds = [];
+    try { savedIds = JSON.parse(localStorage.getItem('pos_displayed_product_ids') || '[]'); } catch { savedIds = []; }
+    if (savedIds.length > 0) {
+      const idMap = new Map(cached.map(p => [p.id, p]));
+      const restored = savedIds.map(id => idMap.get(id)).filter(Boolean);
+      return restored.length > 0 ? restored : cached.slice(0, 12);
+    }
+    return cached.slice(0, 12);
+  });
+
+  // Already initialized if displayedProducts is non-empty (came from cache)
+  const isInitializedRef = useRef(displayedProducts.length > 0);
+
+  // Restore displayed products from localStorage on first fetch (only when cache was empty)
   useEffect(() => {
     if (!allProducts || allProducts.length === 0) return;
-    if (isInitializedRef.current) return; // only on first load
+    if (isInitializedRef.current) return; // skip — already populated from cache
     isInitializedRef.current = true;
 
     let savedIds = [];
@@ -224,23 +241,24 @@ export const POSPage = () => {
     }
   }, [allProducts]);
 
-  // ── Initial load: registers only (products come from useProducts hook) ─────
+  // ── Cash registers — via useCashRegisters hook (cache-aware) ─────────────
+  const { registers: hookRegisters } = useCashRegisters();
   useEffect(() => {
-    cashService.getRegisters().then(regs => {
-      setCashRegisters(regs || []);
-      const cashDefault = regs.find(r => r.type === 'cash' && r.is_active !== false)?.id || '';
-      const cardDefault = regs.find(r => r.type === 'pos' && r.is_active !== false)?.id || '';
-      const transferDefault = regs.find(r => r.type === 'bank' && r.is_active !== false)?.id || '';
-      setSelectedRegisters({ cash: cashDefault, card: cardDefault, transfer: transferDefault });
-    }).catch(e => console.error('[POS] Kasa listesi yüklenemedi:', e));
-  }, []);
-
+    if (!hookRegisters || hookRegisters.length === 0) return;
+    setCashRegisters(hookRegisters);
+    setSelectedRegisters(prev => ({
+      cash:     prev.cash     || hookRegisters.find(r => r.type === 'cash' && r.is_active !== false)?.id || '',
+      card:     prev.card     || hookRegisters.find(r => r.type === 'pos'  && r.is_active !== false)?.id || '',
+      transfer: prev.transfer || hookRegisters.find(r => r.type === 'bank' && r.is_active !== false)?.id || '',
+    }));
+  }, [hookRegisters]);
 
   // Persist displayed product IDs to localStorage — only after init to avoid overwriting saved data
   useEffect(() => {
     if (!isInitializedRef.current) return;
     localStorage.setItem(LS_KEY, JSON.stringify(displayedProducts.map(p => p.id)));
   }, [displayedProducts]);
+
 
   // ── Smart search debounce ──────────────────────────────────────────────────
   useEffect(() => {
