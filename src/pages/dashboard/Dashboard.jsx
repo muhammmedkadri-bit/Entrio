@@ -14,7 +14,6 @@ import { QuickBarcodesModal } from './modals/QuickBarcodesModal';
 import { TransactionDetailModal } from '../cash/modals/TransactionDetailModal';
 import { reportService } from '../../services/reportService';
 import { quickNotesService } from '../../services/quickNotesService';
-import { stockService } from '../../services/stockService';
 import { settingsService } from '../../services/settingsService';
 import { cashService } from '../../services/cashService';
 import { isSupabase } from '../../config/database';
@@ -347,10 +346,6 @@ export const Dashboard = () => {
       }
 
       setRecentTransactions(uniqueTxs);
-
-      // ── 3. Kritik Stok ──────────────────────────────────────
-      const allCritical = await stockService.getLowStockProducts();
-      setUrgentStock(allCritical.slice(0, 5));
 
     } catch (e) {
       console.error('[Dashboard] Yükleme hatası:', e);
