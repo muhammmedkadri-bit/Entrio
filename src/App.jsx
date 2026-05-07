@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
+import { useRealtimeSync } from './hooks/useRealtimeSync';
+import { useCacheStore } from './store/cacheStore';
 import { Layout } from './components/layout/Layout';
 import { Login } from './pages/auth/Login';
 import { Dashboard } from './pages/dashboard/Dashboard';
@@ -33,10 +35,23 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   const { initAuth } = useAuthStore();
+  const clearCache = useCacheStore(s => s.clearAll);
+
+  // Start Supabase Realtime — single WebSocket for all table changes
+  useRealtimeSync();
 
   useEffect(() => {
     initAuth();
   }, [initAuth]);
+
+  // Clear in-memory cache when user logs out
+  useEffect(() => {
+    const unsub = useAuthStore.subscribe(
+      (state) => state.isAuthenticated,
+      (isAuth) => { if (!isAuth) clearCache(); }
+    );
+    return unsub;
+  }, [clearCache]);
 
   return (
     <Routes>

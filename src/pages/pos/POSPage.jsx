@@ -4,6 +4,7 @@ import { CheckCircle2, ShoppingCart, User as UserIcon, Banknote, CreditCard, Bui
 import toast from '../../components/ui/CustomToast';
 import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
+import { useProducts } from '../../hooks/useProducts';
 import { productService } from '../../services/productService';
 import { saleService } from '../../services/saleService';
 import { purchaseService } from '../../services/purchaseService';
@@ -152,11 +153,6 @@ export const POSPage = () => {
     };
   }, [items, discountType, discountValue, discountEnabled]);
 
-  // ── Product grid state ─────────────────────────────────────────────────────
-  const [displayedProducts, setDisplayedProducts] = useState([]);
-  const [allProducts, setAllProducts] = useState([]);          // for search dropdown
-  const [loading, setLoading] = useState(true);
-
   // ── Smart search state ─────────────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState('');
   const [dropdownResults, setDropdownResults] = useState([]);
@@ -199,46 +195,37 @@ export const POSPage = () => {
   // ── Refs ───────────────────────────────────────────────────────────────────
   const barcodeWrapperRef = useRef(null);
   const searchInputRef = useRef(null);
-  const isInitializedRef = useRef(false); // prevents overwriting LS before initLoad reads it
 
-  // YENİ: Barkod çift okuma (debounce) koruması için hafıza referansı
+  // Barkod çift okuma (debounce) koruması için hafıza referansı
   const lastScanRef = useRef({ code: '', time: 0 });
 
-  // ── initLoad — useEffect'ten ÖNCE tanımlanmalı (TDZ kuralı: const hoist edilmez)
-  const initLoad = useCallback(async () => {
-    setLoading(true);
-    try {
-      const all = await productService.getAll({});
-      setAllProducts(all);
+  // ── Product grid state — powered by cache-aware hook ─────────────────────
+  const { products: allProducts, loading, applyStockDeduction } = useProducts();
+  const [displayedProducts, setDisplayedProducts] = useState([]);
+  const isInitializedRef = useRef(false);
 
-      // Restore from localStorage (try-catch koruması eklendi)
-      let savedIds = [];
-      try {
-        savedIds = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
-      } catch (error) {
-        console.error('[POS] localStorage okuma hatası:', error);
-        savedIds = [];
-      }
-
-      if (savedIds.length > 0) {
-        const idSet = new Map(all.map(p => [p.id, p]));
-        const restored = savedIds.map(id => idSet.get(id)).filter(Boolean);
-        setDisplayedProducts(restored.length > 0 ? restored : all.slice(0, 12));
-      } else {
-        setDisplayedProducts(all.slice(0, 12));
-      }
-      isInitializedRef.current = true;
-    } catch (e) {
-      console.error('[POS] initLoad Hatası:', e);
-      toast.error(e?.message || 'Ürünler yüklenemedi.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // ── Initial load ───────────────────────────────────────────────────────────
+  // Restore displayed products from localStorage once allProducts are available
   useEffect(() => {
-    initLoad();
+    if (!allProducts || allProducts.length === 0) return;
+    if (isInitializedRef.current) return; // only on first load
+    isInitializedRef.current = true;
+
+    let savedIds = [];
+    try {
+      savedIds = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+    } catch { savedIds = []; }
+
+    if (savedIds.length > 0) {
+      const idMap = new Map(allProducts.map(p => [p.id, p]));
+      const restored = savedIds.map(id => idMap.get(id)).filter(Boolean);
+      setDisplayedProducts(restored.length > 0 ? restored : allProducts.slice(0, 12));
+    } else {
+      setDisplayedProducts(allProducts.slice(0, 12));
+    }
+  }, [allProducts]);
+
+  // ── Initial load: registers only (products come from useProducts hook) ─────
+  useEffect(() => {
     cashService.getRegisters().then(regs => {
       setCashRegisters(regs || []);
       const cashDefault = regs.find(r => r.type === 'cash' && r.is_active !== false)?.id || '';
@@ -246,14 +233,8 @@ export const POSPage = () => {
       const transferDefault = regs.find(r => r.type === 'bank' && r.is_active !== false)?.id || '';
       setSelectedRegisters({ cash: cashDefault, card: cardDefault, transfer: transferDefault });
     }).catch(e => console.error('[POS] Kasa listesi yüklenemedi:', e));
-  }, [initLoad]);
+  }, []);
 
-  // Set default customer if none selected
-  useEffect(() => {
-    if (!selectedCustomer) {
-      db.customers.get(1).then(c => { if (c) setCustomer(c); });
-    }
-  }, [selectedCustomer, setCustomer]);
 
   // Persist displayed product IDs to localStorage — only after init to avoid overwriting saved data
   useEffect(() => {
@@ -570,31 +551,8 @@ export const POSPage = () => {
         toast.success('Satış başarıyla tamamlandı!');
       }
 
-      // Refresh displayed products to update stock pills instantly
-      const refreshDisplayedProducts = async () => {
-        try {
-          const ids = displayedProducts.map(p => p.id);
-          if (ids.length === 0) return;
-          if (isSupabase()) {
-            const { data } = await supabase
-              .from('products')
-              .select('id, name, barcode, sale_price, purchase_price, stock_quantity, min_stock_level, category_id, supplier_id, unit, tax_rate, track_stock, is_active')
-              .in('id', ids);
-            if (data) {
-              const map = Object.fromEntries(data.map(p => [p.id, p]));
-              setDisplayedProducts(prev => prev.map(p => map[p.id] || p));
-            }
-          } else {
-            const updated = await Promise.all(ids.map(id => db.products.get(Number(id))));
-            const map = Object.fromEntries(updated.filter(Boolean).map(p => [p.id, p]));
-            setDisplayedProducts(prev => prev.map(p => map[p.id] || p));
-          }
-        } catch (e) {
-          console.error('[POS] Hızlı ürünler yenilenemedi', e);
-        }
-      };
-
-      refreshDisplayedProducts();
+      // Optimistic stock deduction — instantly update POS grid without waiting for Realtime
+      applyStockDeduction(saleItemsData.map(i => ({ product_id: i.product_id, quantity: i.quantity })));
 
       clearCart(true); setCashAmount(''); setCardAmount(''); setTransferAmount('');
       if (posMode !== 'sale') {
@@ -641,24 +599,8 @@ export const POSPage = () => {
       });
       setReceiptModalOpen(true);
       
-      // Refresh displayed products to update stock pills instantly
-      const refreshDisplayedProducts = async () => {
-        try {
-          const ids = displayedProducts.map(p => p.id);
-          if (ids.length === 0) return;
-          const { data } = await supabase
-            .from('products')
-            .select('id, name, barcode, sale_price, purchase_price, stock_quantity, min_stock_level, category_id, supplier_id, unit, tax_rate, track_stock, is_active')
-            .in('id', ids);
-          if (data) {
-            const map = Object.fromEntries(data.map(p => [p.id, p]));
-            setDisplayedProducts(prev => prev.map(p => map[p.id] || p));
-          }
-        } catch (e) {
-          console.error('[POS] Hızlı ürünler yenilenemedi', e);
-        }
-      };
-      refreshDisplayedProducts();
+      // Optimistic stock deduction for supplier payment sale
+      applyStockDeduction(saleItemsData.map(i => ({ product_id: i.product_id, quantity: i.quantity })));
 
       clearCart(true); setCashAmount(''); setCardAmount(''); setTransferAmount('');
       toast.success('Tedarikçi ödemeli satış tamamlandı!');
