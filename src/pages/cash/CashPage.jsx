@@ -1,32 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import toast from '../../components/ui/CustomToast';
+import React from 'react';
 import { Wallet } from 'lucide-react';
-import { cashService } from '../../services/cashService';
+import { useCashRegisters } from '../../hooks/useCashRegisters';
 import { CashDashboardTab } from './tabs/CashDashboardTab';
 import { useGlobalLoader } from '../../hooks/useGlobalLoader';
 
 export const CashPage = () => {
-  const [registers, setRegisters] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [dashboardLoading, setDashboardLoading] = useState(true);
-  useGlobalLoader(loading || dashboardLoading);
-
-  useEffect(() => {
-    loadRegisters();
-  }, []);
-
-  const loadRegisters = async () => {
-    setLoading(true);
-    try {
-      const data = await cashService.getRegisters();
-      setRegisters(data);
-    } catch(err) {
-      console.error('[CashPage] Kasalar yüklenirken hata:', err);
-      toast.error(err?.message || 'Kasalar yüklenemedi.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { registers, loading, refetch } = useCashRegisters();
+  useGlobalLoader(loading);
 
   return (
     <div className="flex flex-col h-full gap-4">
@@ -43,7 +23,7 @@ export const CashPage = () => {
       </div>
 
       <div className="flex-1 mt-2">
-        <CashDashboardTab registers={registers} onRegisterChanged={loadRegisters} onLoadingChange={setDashboardLoading} />
+        <CashDashboardTab registers={registers} onRegisterChanged={refetch} onLoadingChange={() => {}} />
       </div>
     </div>
   );

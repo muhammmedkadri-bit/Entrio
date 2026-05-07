@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tag, AlertCircle, Package, ChevronLeft, ChevronRight, ChevronRight as Arrow, PackageX } from 'lucide-react';
 import toast from '../../../components/ui/CustomToast';
+import { useProducts } from '../../../hooks/useProducts';
+import { useCategories } from '../../../hooks/useCategories';
 import { productService } from '../../../services/productService';
-import { categoryService } from '../../../services/categoryService';
 import { useAppStore } from '../../../store/appStore';
 
 const fmt = (v) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(v || 0);
@@ -13,12 +14,20 @@ const ITEMS_PER_PAGE = 10;
 export const ProductsTab = ({ search, categoryFilter, stockStatus, onEditProduct, onStockMovement }) => {
   const navigate = useNavigate();
   const { startNavigation } = useAppStore();
-  const [allProducts, setAllProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => { fetchData(); }, []);
+  // Cache-aware data hooks — instant on 2nd+ visit
+  const { products: rawProducts, loading } = useProducts();
+  const { categories } = useCategories();
 
+  // Enrich products with categoryName
+  const allProducts = React.useMemo(() => {
+    if (!rawProducts.length) return [];
+    const catMap = Object.fromEntries(categories.map(c => [c.id, c.name]));
+    return rawProducts.map(p => ({ ...p, categoryName: catMap[p.category_id] || 'Kategorisiz' }));
+  }, [rawProducts, categories]);
+
+  // Client-side filtering — no extra DB calls
   const products = React.useMemo(() => {
     let res = [...allProducts];
     if (search) {
@@ -42,20 +51,6 @@ export const ProductsTab = ({ search, categoryFilter, stockStatus, onEditProduct
   }, [allProducts, search, categoryFilter, stockStatus]);
 
   useEffect(() => { setCurrentPage(1); }, [search, categoryFilter, stockStatus]);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [cats, prods] = await Promise.all([categoryService.getAll(), productService.getAll({})]);
-      const catMap = Object.fromEntries(cats.map(c => [c.id, c.name]));
-      setAllProducts(prods.map(p => ({ ...p, categoryName: catMap[p.category_id] || 'Kategorisiz' })));
-    } catch (e) {
-      console.error('[ProductsTab] Veri yükleme hatası:', e);
-      toast.error(e?.message || 'Ürünler yüklenemedi.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const totalPages = Math.max(1, Math.ceil(products.length / ITEMS_PER_PAGE));
   const paginatedProducts = products.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
