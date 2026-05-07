@@ -16,6 +16,7 @@ import { reportService } from '../../services/reportService';
 import { quickNotesService } from '../../services/quickNotesService';
 import { settingsService } from '../../services/settingsService';
 import { cashService } from '../../services/cashService';
+import { useDashboardData } from '../../hooks/useDashboardData';
 import { isSupabase } from '../../config/database';
 import { db } from '../../db';
 import { supabase } from '../../lib/supabaseClient';
@@ -100,20 +101,24 @@ export const Dashboard = () => {
   const navigate = useNavigate();
   const startNavigation = useAppStore(state => state.startNavigation);
   const [recentTransactions, setRecentTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  useGlobalLoader(loading);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
-  const [allRegisters, setAllRegisters] = useState([]);
   const [companyName, setCompanyName] = useState(() => localStorage.getItem('entrio_company_name') || 'İşletme Özeti');
   const [companyLogo, setCompanyLogo] = useState(() => localStorage.getItem('entrio_company_logo') || null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showCalculator, setShowCalculator] = useState(false);
   const [showQuickBarcodes, setShowQuickBarcodes] = useState(false);
 
-  const [charts, setCharts] = useState({
-    dailyIncomeExpense: [],
-    todayPie: []
-  });
+  const [charts, setCharts] = useState({ dailyIncomeExpense: [], todayPie: [] });
+
+  // ── Cache-aware dashboard data hook ─────────────────────────────────
+  const { cashReport, salesSummary, allTxs, registers: hookRegisters, loading } = useDashboardData();
+  useGlobalLoader(loading);
+
+  // Keep allRegisters in sync with hook
+  const [allRegisters, setAllRegisters] = useState([]);
+  useEffect(() => {
+    if (hookRegisters.length > 0) setAllRegisters(hookRegisters);
+  }, [hookRegisters]);
 
 
   const [quickNotes, setQuickNotes] = useState([]);
@@ -167,101 +172,61 @@ export const Dashboard = () => {
     }
   };
 
+  // ── Derive charts whenever cashReport / salesSummary change ─────────
   useEffect(() => {
-    loadDashboard();
-    
-    // Live clock timer
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
+    if (!cashReport || !salesSummary) return;
 
-  const loadDashboard = useCallback(async () => {
-    setLoading(true);
-    try {
-      // ── Şirket Bilgisi ──────────────────────────────────────
-      const cInfo = await settingsService.get('company_info');
-      if (cInfo?.value?.name) {
-        setCompanyName(cInfo.value.name);
-        localStorage.setItem('entrio_company_name', cInfo.value.name);
+    const pieData = Object.keys(salesSummary.byPaymentMethod)
+      .filter(k => (salesSummary.byPaymentMethod[k].count || 0) > 0)
+      .map(k => ({
+        name:   PIE_NAMES[k]  || k,
+        value:  salesSummary.byPaymentMethod[k].count  || 0,
+        amount: salesSummary.byPaymentMethod[k].amount || 0,
+        color:  PIE_COLORS[k] || '#94a3b8',
+      }));
+
+    setCharts({
+      dailyIncomeExpense: cashReport.dailySeries.map(d => ({
+        ...d,
+        income: Math.max(0, d.income - d.returns)
+      })),
+      todayPie: pieData
+    });
+  }, [cashReport, salesSummary]);
+
+  // ── Enrich recent transactions whenever allTxs changes ──────────────
+  useEffect(() => {
+    if (!allTxs || allTxs.length === 0) return;
+
+    const allowedTypes = ['sale_in','purchase_out','return_in','return_out','expense_out','supplier_payment_out','withdrawal_out','customer_payment_in','deposit_in'];
+    const rawFiltered = allTxs.filter(t => allowedTypes.includes(t.transaction_type));
+
+    const saleIds = new Set();
+    const purchaseIds = new Set();
+    const customerIds = new Set();
+    const supplierIds = new Set();
+
+    for (const t of rawFiltered) {
+      if (t.sale_id)     saleIds.add(t.sale_id);
+      if (t.reference_id) {
+        if (t.transaction_type === 'sale_in' || t.transaction_type.startsWith('return')) saleIds.add(t.reference_id);
+        if (t.transaction_type === 'purchase_out') purchaseIds.add(t.reference_id);
       }
-      if (cInfo?.value?.logo !== undefined) {
-        setCompanyLogo(cInfo.value.logo);
-        localStorage.setItem('entrio_company_logo', cInfo.value.logo || '');
+      if (t.purchase_id) purchaseIds.add(t.purchase_id);
+      if (t.customer_id) customerIds.add(t.customer_id);
+      if (t.supplier_id) supplierIds.add(t.supplier_id);
+    }
+
+    const fetchBulk = async (table, ids) => {
+      if (ids.length === 0) return [];
+      if (isSupabase()) {
+        const { data } = await supabase.from(table).select('*').in('id', ids);
+        return data || [];
       }
+      return await db[table].bulkGet(ids);
+    };
 
-      // ── 1. Core Stats + Grafikler + Son İşlemler (tamamen paralel) ─────────
-      const now = new Date();
-      
-      const fetchRecentTxs = async () => {
-        if (isSupabase()) {
-          const { data } = await supabase.from('cash_transactions')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(50);
-          return data || [];
-        } else {
-          return await db.cash_transactions.orderBy('created_at').reverse().limit(50).toArray();
-        }
-      };
-
-      const [cashReport, textDaySummary, registers, allTxs] = await Promise.all([
-        reportService.getCashReport(startOfDay(subDays(now, 6)), endOfDay(now)),
-        reportService.getSalesSummary(startOfDay(now), endOfDay(now)),
-        cashService.getRegisters(),
-        fetchRecentTxs()
-      ]);
-
-      setAllRegisters(registers.filter(r => r.is_active !== false));
-
-      const pieData = Object.keys(textDaySummary.byPaymentMethod)
-        .filter(k => (textDaySummary.byPaymentMethod[k].count || 0) > 0)
-        .map(k => ({
-          name:   PIE_NAMES[k]  || k,
-          value:  textDaySummary.byPaymentMethod[k].count  || 0,
-          amount: textDaySummary.byPaymentMethod[k].amount || 0,
-          color:  PIE_COLORS[k] || '#94a3b8',
-        }));
-
-      setCharts({ 
-        dailyIncomeExpense: cashReport.dailySeries.map(d => ({
-          ...d,
-          income: Math.max(0, d.income - d.returns)
-        })), 
-        todayPie: pieData 
-      });
-
-      // ── 2. Son İşlemler İlişkileri — ID bazlı hedefli sorgular ─────────
-      const allowedTypes = ['sale_in','purchase_out','return_in','return_out','expense_out','supplier_payment_out','withdrawal_out','customer_payment_in','deposit_in'];
-      
-      const rawFiltered = allTxs.filter(t => allowedTypes.includes(t.transaction_type));
-
-      // Sadece kullanılacak ID'leri topla
-      const saleIds = new Set();
-      const purchaseIds = new Set();
-      const customerIds = new Set();
-      const supplierIds = new Set();
-
-      for (const t of rawFiltered) {
-        if (t.sale_id)     saleIds.add(t.sale_id);
-        if (t.reference_id) {
-          if (t.transaction_type === 'sale_in' || t.transaction_type.startsWith('return')) saleIds.add(t.reference_id);
-          if (t.transaction_type === 'purchase_out') purchaseIds.add(t.reference_id);
-        }
-        if (t.purchase_id) purchaseIds.add(t.purchase_id);
-        if (t.customer_id) customerIds.add(t.customer_id);
-        if (t.supplier_id) supplierIds.add(t.supplier_id);
-      }
-
-      // Tüm tabloyu çekmek yerine sadece ihtiyaç duyulan kayıtları getir
-      const fetchBulk = async (table, ids) => {
-        if (ids.length === 0) return [];
-        if (isSupabase()) {
-          const { data } = await supabase.from(table).select('*').in('id', ids);
-          return data || [];
-        }
-        return await db[table].bulkGet(ids);
-      };
-
+    const enrichTxs = async () => {
       const [salesArr, purchasesArr, customersArr, suppliersArr] = await Promise.all([
         fetchBulk('sales', [...saleIds]),
         fetchBulk('purchases', [...purchaseIds]),
@@ -269,7 +234,6 @@ export const Dashboard = () => {
         fetchBulk('suppliers', [...supplierIds]),
       ]);
 
-      // null dönen bulkGet sonuçlarını temizle
       const salesMap     = Object.fromEntries(salesArr.filter(Boolean).map(s => [s.id, s]));
       const purchasesMap = Object.fromEntries(purchasesArr.filter(Boolean).map(p => [p.id, p]));
       const custMap      = Object.fromEntries(customersArr.filter(Boolean).map(c => [c.id, c.name]));
@@ -280,11 +244,7 @@ export const Dashboard = () => {
 
       for (const t of rawFiltered) {
         if (uniqueTxs.length >= 5) break;
-
-        let parentKey = '';
-        let parentRecord = null;
-        let originalSaleRecord = null;
-        let pMethodLabel = '';
+        let parentKey = '', parentRecord = null, originalSaleRecord = null, pMethodLabel = '';
 
         if (t.transaction_type === 'sale_in') {
           const sId = t.sale_id || t.reference_id;
@@ -328,39 +288,37 @@ export const Dashboard = () => {
           eName = cId ? (custMap[cId] || '') : (t.supplier_id ? (supMap[t.supplier_id] || '') : '');
         }
 
-        uniqueTxs.push({
-          ...t,
-          displayAmount,
-          paymentMethodLabel: pMethodLabel,
-          entityName: eName,
+        uniqueTxs.push({ ...t, displayAmount, paymentMethodLabel: pMethodLabel, entityName: eName,
           originalSaleId: originalSaleRecord?.id || null,
           originalSaleNumber: originalSaleRecord?.sale_number || null,
         });
       }
 
-      while (uniqueTxs.length < 5) {
-        uniqueTxs.push({
-          id: `empty_${uniqueTxs.length}`,
-          isEmpty: true
-        });
-      }
-
+      while (uniqueTxs.length < 5) uniqueTxs.push({ id: `empty_${uniqueTxs.length}`, isEmpty: true });
       setRecentTransactions(uniqueTxs);
+    };
 
-    } catch (e) {
-      console.error('[Dashboard] Yükleme hatası:', e);
-      toast.error(e?.message || 'Dashboard yüklenirken bir hata oluştu.');
-    } finally {
-      setLoading(false);
-    }
+    enrichTxs().catch(console.error);
+  }, [allTxs]);
+
+  // ── Company info + clock (one-time mount) ────────────────────────────
+  useEffect(() => {
+    settingsService.get('company_info').then(cInfo => {
+      if (cInfo?.value?.name) {
+        setCompanyName(cInfo.value.name);
+        localStorage.setItem('entrio_company_name', cInfo.value.name);
+      }
+      if (cInfo?.value?.logo !== undefined) {
+        setCompanyLogo(cInfo.value.logo);
+        localStorage.setItem('entrio_company_logo', cInfo.value.logo || '');
+      }
+    }).catch(() => {});
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
   }, []);
 
   // formatCurrency bileşen içi alias (render'da kullanım için)
   const formatCurrency = formatCurrencyStatic;
-
-  // Tooltip bileşenleri component dışında tanımlı (performans — her render'da yeniden oluşturulmuyor)
-
-  // Yükleme ekranı iptal edildi, sayfa direkt açılıp verileri arkaplanda çekecek.
 
   return (
     <div className="-mt-3 pb-[46px] flex flex-col h-full relative">
