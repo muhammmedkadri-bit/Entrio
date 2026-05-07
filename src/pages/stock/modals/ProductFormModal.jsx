@@ -212,10 +212,13 @@ export const ProductFormModal = ({ isOpen, onClose, productToEdit, onSaved }) =>
     return () => { document.body.style.overflow = 'unset'; };
   }, [isOpen]);
 
-  // Category add
+  // Category add — optimistically update local state so the new category shows as selected immediately
   const handleAddCategory = async (name) => {
     const id = await categoryService.create({ name, parent_id: null });
-    await loadCategories();
+    // Optimistic: add to local list right away before the async refetch
+    setCategories(prev => [...prev, { id, name }]);
+    // Refetch in background to get server-confirmed data
+    loadCategories();
     toast.success(`"${name}" kategorisi eklendi.`);
     return { id: String(id), label: name };
   };

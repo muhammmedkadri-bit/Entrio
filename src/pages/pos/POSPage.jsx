@@ -558,6 +558,9 @@ export const POSPage = () => {
         });
         const result = await saleService.create(saleData, saleItemsData, paymentData);
 
+        // Optimistic stock deduction — instantly update POS grid without waiting for Realtime
+        applyStockDeduction(saleItemsData.map(i => ({ product_id: i.product_id, quantity: i.quantity })));
+
         setSaleResult({
           id: result.saleId,
           sale_number: result.saleNumber,
@@ -569,9 +572,7 @@ export const POSPage = () => {
         toast.success('Satış başarıyla tamamlandı!');
       }
 
-      // Optimistic stock deduction — instantly update POS grid without waiting for Realtime
-      applyStockDeduction(saleItemsData.map(i => ({ product_id: i.product_id, quantity: i.quantity })));
-
+      // Always clear cart after any successful operation (sale, return, purchase)
       clearCart(true); setCashAmount(''); setCardAmount(''); setTransferAmount('');
       if (posMode !== 'sale') {
         useCartStore.getState().setPosMode('sale');

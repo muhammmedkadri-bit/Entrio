@@ -6,6 +6,8 @@ import { Button } from '../../components/ui/Button';
 import { PremiumLoader } from '../../components/ui/PremiumLoader';
 import { db } from '../../db';
 import { useCartStore } from '../../store/cartStore';
+import { saleService } from '../../services/saleService';
+import { isSupabase } from '../../config/database';
 import toast from '../../components/ui/CustomToast';
 
 export const ReturnSaleSelectionModal = ({ isOpen, onClose, customerId }) => {
@@ -28,14 +30,19 @@ export const ReturnSaleSelectionModal = ({ isOpen, onClose, customerId }) => {
   const fetchCustomerSales = async () => {
     setLoading(true);
     try {
-      const allSales = await db.sales
-        .where('customer_id')
-        .equals(customerId)
-        .reverse()
-        .sortBy('created_at');
-        
-      // Exclude already returned sales
-      const validSales = allSales.filter(s => s.status !== 'returned');
+      let allSales;
+      if (isSupabase()) {
+        // Fetch from Supabase via saleService
+        allSales = await saleService.getAll({ customer_id: customerId });
+      } else {
+        allSales = await db.sales
+          .where('customer_id')
+          .equals(customerId)
+          .reverse()
+          .sortBy('created_at');
+      }
+      // Exclude already returned/cancelled sales
+      const validSales = allSales.filter(s => s.status !== 'returned' && s.status !== 'cancelled' && s.status !== 'return');
       setSales(validSales.slice(0, 50));
     } catch (error) {
       console.error('[ReturnSaleSelectionModal] Geçmiş Satışları Yükleme Hatası:', error);
@@ -47,22 +54,37 @@ export const ReturnSaleSelectionModal = ({ isOpen, onClose, customerId }) => {
 
   const handleSelectSale = async (sale) => {
     try {
-      const items = await db.sale_items.where('sale_id').equals(sale.id).toArray();
+      let items;
+      if (isSupabase()) {
+        // saleService.getById returns { ...sale, items: [...] }
+        const fullSale = await saleService.getById(sale.id);
+        items = fullSale?.items || [];
+      } else {
+        items = await db.sale_items.where('sale_id').equals(sale.id).toArray();
+      }
+
       if (!items || items.length === 0) {
         toast.error('Bu fişte iade edilecek ürün bulunamadı.');
         return;
       }
       clearCart(true);
-      setReturnSaleId(sale.id);
-      
+      setReturnSaleId(sale.id); // UUID on Supabase, integer on Dexie — both correct now
+
       for (const item of items) {
-        const product = await db.products.get(item.product_id);
+        let product;
+        if (isSupabase()) {
+          const { supabase } = await import('../../lib/supabaseClient');
+          const { data } = await supabase.from('products').select('*').eq('id', item.product_id).single();
+          product = data;
+        } else {
+          product = await db.products.get(item.product_id);
+        }
         if (product) {
           addItem(product, item.quantity);
           useCartStore.getState().updateItemPrice(product.id, item.unit_price);
         }
       }
-      
+
       toast.success(`${sale.sale_number} numaralı fiş iade için sepete eklendi.`);
       onClose();
     } catch (e) {
