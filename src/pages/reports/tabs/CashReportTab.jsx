@@ -72,9 +72,9 @@ const CashReportSkeleton = () => (
 const fmtCur = (val) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val || 0);
 
 const PIE_PALETTE = {
-  'Tedarikçiye Ödemeler': { color: '#3b82f6', bg: '#dbeafe' },
-  'Gider':                 { color: '#ef4444', bg: '#fee2e2' },
-  'İade Ödemeleri':       { color: '#f97316', bg: '#ffedd5' },
+  'Tedarikçiye Ödemeler': { color: '#8b5cf6', bg: '#ede9fe' },
+  'Gider':                 { color: '#f43f5e', bg: '#ffe4e6' },
+  'İade Ödemeleri':       { color: '#3b82f6', bg: '#dbeafe' },
 };
 
 const PieTooltip = ({ active, payload }) => {
@@ -83,7 +83,6 @@ const PieTooltip = ({ active, payload }) => {
   const name = entry.name;
   const val  = entry.value;
   const style = PIE_PALETTE[name] || { color: '#64748b', bg: '#f1f5f9' };
-  const total = payload[0]?.payload?.payload ? undefined : undefined; // not needed
   return (
     <div className="bg-white border border-slate-100 rounded-2xl shadow-xl shadow-slate-200/50 p-4 min-w-[180px]">
       <div
@@ -102,8 +101,8 @@ const PieTooltip = ({ active, payload }) => {
 const fmt = (val) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val || 0);
 
 const PILL_STYLES = {
-  income:  { label: 'Giriş',           bg: '#d1fae5', color: '#059669' },
-  expense: { label: 'Çıkış',           bg: '#ffe4e6', color: '#f43f5e' },
+  income:  { label: 'Giriş',           bg: '#dcfce7', color: '#16a34a' },
+  expense: { label: 'Çıkış',           bg: '#ffe4e6', color: '#e11d48' },
   returns: { label: 'İade Ödemeleri',   bg: '#dbeafe', color: '#3b82f6' },
   balance: { label: 'Net Bakiye',      bg: '#dcfce7', color: '#16a34a' },
 };
@@ -195,10 +194,10 @@ export const CashReportTab = ({ startDate, endDate }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Dönem İçi Giriş" value={formatCurrency(data.totalIncome)} icon={ArrowDownLeft} color="emerald" />
-        <StatCard title="Dönem İçi Çıkış" value={formatCurrency(data.totalExpense)} icon={ArrowUpRight} color="red" />
-        <StatCard title="İade Ödemeleri" value={formatCurrency(data.totalReturns || 0)} icon={ArrowUpRight} color="orange" />
-        <StatCard title="Aralık Net Akışı" value={formatCurrency(data.netFlow)} icon={TrendingUp} color={data.netFlow >= 0 ? 'emerald' : 'orange'} />
+        <StatCard title="Dönem İçi Giriş" value={formatCurrency(data.totalIncome)} icon={ArrowDownLeft} color="grass" />
+        <StatCard title="Dönem İçi Çıkış" value={formatCurrency(data.totalExpense)} icon={ArrowUpRight} color="rose" />
+        <StatCard title="İade Ödemeleri" value={formatCurrency(data.totalReturns || 0)} icon={ArrowUpRight} color="blue" />
+        <StatCard title="Aralık Net Akışı" value={formatCurrency(data.netFlow)} icon={TrendingUp} color={data.netFlow >= 0 ? 'grass' : 'orange'} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
