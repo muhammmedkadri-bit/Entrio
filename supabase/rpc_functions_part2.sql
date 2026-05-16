@@ -343,3 +343,148 @@ BEGIN
   RETURN v_close_data;
 END;
 $$;
+
+-- --- Z RAPORU VERİ TOPLAMA (Preview için) ---
+CREATE OR REPLACE FUNCTION public.get_z_report_data(
+  p_from_ms BIGINT DEFAULT NULL
+) RETURNS JSONB
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+DECLARE
+  v_from_ms      BIGINT;
+  v_now_ms       BIGINT;
+  v_ciro         DECIMAL(15,2) := 0;
+  v_tahsilat     DECIMAL(15,2) := 0;
+  v_veresiye     DECIMAL(15,2) := 0;
+  v_gider        DECIMAL(15,2) := 0;
+  v_iade_sayi    INT := 0;
+  v_iade_tutar   DECIMAL(15,2) := 0;
+  v_satis_sayi   INT := 0;
+  v_nakit_kar    DECIMAL(15,2) := 0;
+  v_veresiye_kar DECIMAL(15,2) := 0;
+  v_top5         JSONB;
+  v_saatlik      JSONB;
+  v_gider_cats   JSONB;
+  v_odeme_dag    JSONB;
+  v_kasa_durum   JSONB;
+BEGIN
+  v_now_ms  := FLOOR(EXTRACT(EPOCH FROM NOW()) * 1000);
+  v_from_ms := COALESCE(p_from_ms,
+    FLOOR(EXTRACT(EPOCH FROM (CURRENT_DATE::TIMESTAMP)) * 1000));
+
+  -- Ciro: aktif satislar (iade ve iptal haric)
+  SELECT
+    COALESCE(COUNT(*), 0),
+    COALESCE(SUM(total_amount), 0),
+    COALESCE(SUM(CASE WHEN payment_method != 'credit' THEN total_amount ELSE 0 END), 0),
+    COALESCE(SUM(CASE WHEN payment_method = 'credit' THEN total_amount ELSE 0 END), 0)
+  INTO v_satis_sayi, v_ciro, v_tahsilat, v_veresiye
+  FROM public.sales
+  WHERE created_at >= v_from_ms AND created_at <= v_now_ms
+    AND (status IS NULL OR status NOT IN ('return', 'cancelled'));
+
+  -- Iadeler
+  SELECT COALESCE(COUNT(*), 0), COALESCE(SUM(total_amount), 0)
+  INTO v_iade_sayi, v_iade_tutar
+  FROM public.sales
+  WHERE created_at >= v_from_ms AND created_at <= v_now_ms
+    AND status = 'return';
+
+  -- Gider (kasa hareketleri)
+  SELECT COALESCE(SUM(amount), 0) INTO v_gider
+  FROM public.cash_transactions
+  WHERE created_at >= v_from_ms AND created_at <= v_now_ms
+    AND is_day_close IS NOT TRUE
+    AND transaction_type IN ('purchase_out','supplier_payment_out','expense_out','withdrawal_out','return_out');
+
+  -- Kar (AOM = purchase_price)
+  SELECT
+    COALESCE(SUM(CASE WHEN s.payment_method != 'credit'
+      THEN si.line_total - (COALESCE(p.purchase_price, 0) * si.quantity) ELSE 0 END), 0),
+    COALESCE(SUM(CASE WHEN s.payment_method = 'credit'
+      THEN si.line_total - (COALESCE(p.purchase_price, 0) * si.quantity) ELSE 0 END), 0)
+  INTO v_nakit_kar, v_veresiye_kar
+  FROM public.sale_items si
+  JOIN public.sales s ON s.id = si.sale_id
+  LEFT JOIN public.products p ON p.id = si.product_id
+  WHERE s.created_at >= v_from_ms AND s.created_at <= v_now_ms
+    AND (s.status IS NULL OR s.status NOT IN ('return', 'cancelled'));
+
+  -- Top 5 Urun
+  SELECT COALESCE(jsonb_agg(t ORDER BY t.adet DESC), '[]'::JSONB) INTO v_top5 FROM (
+    SELECT p.name, SUM(si.quantity) AS adet, ROUND(SUM(si.line_total)::NUMERIC,2) AS ciro,
+      ROUND(SUM(si.line_total - COALESCE(p.purchase_price,0)*si.quantity)::NUMERIC,2) AS kar
+    FROM public.sale_items si
+    JOIN public.sales s ON s.id = si.sale_id
+    LEFT JOIN public.products p ON p.id = si.product_id
+    WHERE s.created_at >= v_from_ms AND s.created_at <= v_now_ms
+      AND (s.status IS NULL OR s.status NOT IN ('return','cancelled'))
+    GROUP BY p.name ORDER BY adet DESC LIMIT 5
+  ) t;
+
+  -- Saatlik (08-20)
+  SELECT COALESCE(jsonb_agg(h ORDER BY h.saat), '[]'::JSONB) INTO v_saatlik FROM (
+    SELECT EXTRACT(HOUR FROM TO_TIMESTAMP(created_at::FLOAT/1000) AT TIME ZONE 'Europe/Istanbul')::INT AS saat,
+      COUNT(*) AS satis, ROUND(SUM(total_amount)::NUMERIC,2) AS tutar
+    FROM public.sales
+    WHERE created_at >= v_from_ms AND created_at <= v_now_ms
+      AND (status IS NULL OR status NOT IN ('return','cancelled'))
+    GROUP BY saat ORDER BY saat
+  ) h;
+
+  -- Gider Kategorileri
+  SELECT COALESCE(jsonb_agg(g ORDER BY g.tutar DESC), '[]'::JSONB) INTO v_gider_cats FROM (
+    SELECT CASE transaction_type
+        WHEN 'purchase_out' THEN 'Mal Alimi'
+        WHEN 'supplier_payment_out' THEN 'Tedarikci Odemesi'
+        WHEN 'expense_out' THEN 'Genel Gider'
+        WHEN 'withdrawal_out' THEN 'Para Cikisi'
+        WHEN 'return_out' THEN 'Iade Odemesi'
+        ELSE 'Diger' END AS kategori,
+      ROUND(SUM(amount)::NUMERIC,2) AS tutar
+    FROM public.cash_transactions
+    WHERE created_at >= v_from_ms AND created_at <= v_now_ms
+      AND is_day_close IS NOT TRUE
+      AND transaction_type IN ('purchase_out','supplier_payment_out','expense_out','withdrawal_out','return_out')
+    GROUP BY transaction_type ORDER BY tutar DESC
+  ) g;
+
+  -- Odeme Yontemi Dagilimi
+  SELECT COALESCE(jsonb_agg(pm ORDER BY pm.tutar DESC), '[]'::JSONB) INTO v_odeme_dag FROM (
+    SELECT payment_method AS yontem, COUNT(*) AS adet, ROUND(SUM(total_amount)::NUMERIC,2) AS tutar
+    FROM public.sales
+    WHERE created_at >= v_from_ms AND created_at <= v_now_ms
+      AND (status IS NULL OR status NOT IN ('return','cancelled'))
+    GROUP BY payment_method ORDER BY tutar DESC
+  ) pm;
+
+  -- Kasa Durumu
+  SELECT COALESCE(jsonb_agg(k ORDER BY k.tur, k.ad), '[]'::JSONB) INTO v_kasa_durum FROM (
+    SELECT id, name AS ad, type AS tur,
+      COALESCE(general_balance, 0) AS acilis,
+      COALESCE(current_balance, 0) AS kapanis,
+      ROUND((COALESCE(current_balance,0) - COALESCE(general_balance,0))::NUMERIC,2) AS net
+    FROM public.cash_registers WHERE is_active = true
+  ) k;
+
+  RETURN jsonb_build_object(
+    'ciro',       ROUND(v_ciro::NUMERIC,2),
+    'tahsilat',   ROUND(v_tahsilat::NUMERIC,2),
+    'veresiye',   ROUND(v_veresiye::NUMERIC,2),
+    'gider',      ROUND(v_gider::NUMERIC,2),
+    'net',        ROUND((v_tahsilat - v_gider)::NUMERIC,2),
+    'satis_sayi', v_satis_sayi,
+    'iade_sayi',  v_iade_sayi,
+    'iade_tutar', ROUND(v_iade_tutar::NUMERIC,2),
+    'nakit_kar',  ROUND(v_nakit_kar::NUMERIC,2),
+    'veresiye_kar', ROUND(v_veresiye_kar::NUMERIC,2),
+    'toplam_kar', ROUND((v_nakit_kar + v_veresiye_kar)::NUMERIC,2),
+    'top5',       v_top5,
+    'saatlik',    v_saatlik,
+    'gider_cats', v_gider_cats,
+    'odeme_dag',  v_odeme_dag,
+    'kasalar',    v_kasa_durum,
+    'from_ms',    v_from_ms
+  );
+END;
+$$;
