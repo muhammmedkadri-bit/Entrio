@@ -177,6 +177,10 @@ export const Dashboard = () => {
   const [isTxReady, setIsTxReady] = useState(false);
   const [isNotesReady, setIsNotesReady] = useState(false);
 
+  // Once data has been shown once, never go back to skeleton state (prevents double-loader on Realtime refresh)
+  const hasShownChartsRef = useRef(false);
+  const hasShownTxRef = useRef(false);
+
   // Keep allRegisters in sync with hook
   const [allRegisters, setAllRegisters] = useState([]);
   useEffect(() => {
@@ -241,7 +245,8 @@ export const Dashboard = () => {
   // ── Derive charts whenever cashReport / salesSummary change ─────────
   useEffect(() => {
     if (!cashReport || !salesSummary) return;
-    setIsChartsReady(false);
+    // Only show skeleton if this is the very first load
+    if (!hasShownChartsRef.current) setIsChartsReady(false);
 
     const pieData = Object.keys(salesSummary.byPaymentMethod)
       .filter(k => (salesSummary.byPaymentMethod[k].count || 0) > 0)
@@ -259,13 +264,15 @@ export const Dashboard = () => {
       })),
       todayPie: pieData
     });
+    hasShownChartsRef.current = true;
     setIsChartsReady(true);
   }, [cashReport, salesSummary]);
 
   // ── Enrich recent transactions whenever allTxs changes ──────────────
   useEffect(() => {
     if (!allTxs || allTxs.length === 0) return;
-    setIsTxReady(false);
+    // Only show skeleton if this is the very first load
+    if (!hasShownTxRef.current) setIsTxReady(false);
 
     const allowedTypes = ['sale_in','purchase_out','return_in','return_out','expense_out','supplier_payment_out','withdrawal_out','customer_payment_in','deposit_in'];
     const rawFiltered = allTxs.filter(t => allowedTypes.includes(t.transaction_type));
@@ -365,6 +372,7 @@ export const Dashboard = () => {
 
       while (uniqueTxs.length < 5) uniqueTxs.push({ id: `empty_${uniqueTxs.length}`, isEmpty: true });
       setRecentTransactions(uniqueTxs);
+      hasShownTxRef.current = true;
       setIsTxReady(true);
     };
 
