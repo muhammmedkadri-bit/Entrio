@@ -9,6 +9,74 @@ import { reportService } from '../../../services/reportService';
 import { PremiumLoader } from '../../../components/ui/PremiumLoader';
 import { format } from 'date-fns';
 
+const StatCardSkeleton = () => (
+  <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-center animate-pulse">
+    <div className="flex items-center justify-between mb-2">
+      <div className="w-16 h-3 bg-slate-200/60 rounded"></div>
+      <div className="w-8 h-8 rounded-lg bg-slate-100"></div>
+    </div>
+    <div className="w-20 h-5 bg-slate-200/80 rounded mt-1"></div>
+  </div>
+);
+
+const BarChartSkeleton = () => (
+  <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 h-full animate-pulse">
+    <div className="w-48 h-4 bg-slate-200/60 rounded mb-4"></div>
+    <div className="h-72 flex items-end justify-around gap-2 pb-6 px-2 border-b border-slate-100/50">
+      {[40, 70, 45, 90, 65, 80, 55, 30].map((h, i) => (
+        <div key={i} className="flex-1 flex gap-1 items-end h-full">
+          <div className="w-full bg-blue-200/40 rounded-t" style={{ height: `${h}%` }}></div>
+          <div className="w-full bg-green-200/40 rounded-t" style={{ height: `${Math.max(10, h - 20)}%` }}></div>
+        </div>
+      ))}
+    </div>
+    <div className="flex justify-center gap-4 mt-4">
+      <div className="w-24 h-4 bg-slate-200/60 rounded-full"></div>
+      <div className="w-24 h-4 bg-slate-200/60 rounded-full"></div>
+    </div>
+  </div>
+);
+
+const CriticalListSkeleton = () => (
+  <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full animate-pulse">
+    <div className="p-4 border-b border-orange-100/50 bg-orange-50/30">
+      <div className="w-32 h-5 bg-orange-200/60 rounded"></div>
+    </div>
+    <div className="flex-1 overflow-y-auto p-0">
+      <ul className="divide-y divide-slate-100 px-4">
+        {[...Array(5)].map((_, i) => (
+          <li key={i} className="py-3 flex justify-between items-center">
+            <div>
+              <div className="w-32 h-4 bg-slate-200/60 rounded mb-1.5"></div>
+              <div className="w-20 h-3 bg-slate-200/60 rounded"></div>
+            </div>
+            <div className="text-right flex flex-col items-end">
+              <div className="w-8 h-5 bg-orange-200/60 rounded mb-1"></div>
+              <div className="w-10 h-2.5 bg-slate-200/60 rounded"></div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+);
+
+const StockReportSkeleton = () => (
+  <div className="space-y-6">
+    <div className="flex justify-between items-center">
+      <div className="w-48 h-6 bg-slate-200/60 rounded animate-pulse"></div>
+      <div className="w-24 h-8 bg-slate-200/60 rounded-lg animate-pulse"></div>
+    </div>
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      {[...Array(6)].map((_, i) => <StatCardSkeleton key={`stat-${i}`} />)}
+    </div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2"><BarChartSkeleton /></div>
+      <div><CriticalListSkeleton /></div>
+    </div>
+  </div>
+);
+
 const StockBarTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     const fmt = (v) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(v);
@@ -86,7 +154,7 @@ export const StockReportTab = () => {
 
   const formatCurrency = (val) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
 
-  if (loading) return <div className="relative h-96 flex items-center justify-center"><PremiumLoader message="Stok ve depo verileri derleniyor..." /></div>;
+  if (loading) return <StockReportSkeleton />;
   if (!data || data.totalProducts === 0) return <EmptyReport message="Sistemde listelenecek ürün / stok kaydı bulunamadı." />;
 
   return (

@@ -8,6 +8,95 @@ import { reportService } from '../../../services/reportService';
 import { PremiumLoader } from '../../../components/ui/PremiumLoader';
 import { format } from 'date-fns';
 
+const StatCardSkeleton = () => (
+  <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-center animate-pulse">
+    <div className="flex items-center justify-between mb-2">
+      <div className="w-24 h-3 bg-slate-200/60 rounded"></div>
+      <div className="w-8 h-8 rounded-lg bg-slate-100"></div>
+    </div>
+    <div className="w-32 h-6 bg-slate-200/80 rounded mt-1"></div>
+  </div>
+);
+
+const TopDebtorsSkeleton = () => (
+  <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-pulse">
+    <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
+      <div className="w-4 h-4 rounded-full bg-slate-200/60"></div>
+      <div className="w-40 h-4 bg-slate-200/60 rounded"></div>
+    </div>
+    <ul className="divide-y divide-slate-50">
+      {[...Array(5)].map((_, i) => (
+        <li key={i} className="flex items-center gap-3 px-4 py-3">
+          <div className="w-7 h-7 rounded-full bg-slate-200/60 shrink-0"></div>
+          <div className="flex-1">
+            <div className="w-32 h-4 bg-slate-200/60 rounded mb-2"></div>
+            <div className="w-full h-1.5 bg-slate-100 rounded-full"></div>
+          </div>
+          <div className="text-right flex flex-col items-end">
+            <div className="w-16 h-4 bg-red-200/60 rounded mb-1"></div>
+            <div className="w-10 h-2.5 bg-slate-200/60 rounded"></div>
+          </div>
+        </li>
+      ))}
+    </ul>
+  </div>
+);
+
+const InsightsSkeleton = () => (
+  <div className="space-y-4 animate-pulse">
+    <div className="rounded-xl p-4 border flex items-center gap-4 bg-slate-50 border-slate-100">
+      <div className="w-12 h-12 rounded-full bg-slate-200/60 shrink-0"></div>
+      <div className="flex-1">
+        <div className="w-32 h-3 bg-slate-200/60 rounded mb-1.5"></div>
+        <div className="w-48 h-5 bg-slate-200/80 rounded mb-1"></div>
+        <div className="w-24 h-6 bg-red-200/60 rounded"></div>
+      </div>
+    </div>
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
+      <div className="w-32 h-4 bg-slate-200/60 rounded mb-4"></div>
+      <div>
+        <div className="flex justify-between mb-1.5">
+          <div className="w-24 h-3 bg-slate-200/60 rounded"></div>
+          <div className="w-8 h-3 bg-slate-200/60 rounded"></div>
+        </div>
+        <div className="w-full h-2 bg-slate-100 rounded-full"></div>
+      </div>
+      <div className="pt-2 grid grid-cols-2 gap-3">
+        <div className="bg-slate-50 rounded-xl p-3 flex flex-col items-center">
+          <div className="w-5 h-5 rounded-full bg-slate-200/60 mb-2"></div>
+          <div className="w-12 h-6 bg-slate-200/80 rounded mb-1"></div>
+          <div className="w-20 h-3 bg-slate-200/60 rounded"></div>
+        </div>
+        <div className="bg-slate-50 rounded-xl p-3 flex flex-col items-center">
+          <div className="w-5 h-5 rounded-full bg-slate-200/60 mb-2"></div>
+          <div className="w-12 h-6 bg-slate-200/80 rounded mb-1"></div>
+          <div className="w-20 h-3 bg-slate-200/60 rounded"></div>
+        </div>
+      </div>
+      <div className="border-t border-slate-100 pt-3 flex justify-between items-center">
+        <div className="w-24 h-3 bg-slate-200/60 rounded"></div>
+        <div className="w-16 h-4 bg-slate-200/80 rounded"></div>
+      </div>
+    </div>
+  </div>
+);
+
+const CariReportSkeleton = () => (
+  <div className="space-y-6">
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="w-64 h-10 bg-slate-200/60 rounded-xl animate-pulse"></div>
+      <div className="w-24 h-8 bg-slate-200/60 rounded-lg animate-pulse"></div>
+    </div>
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      {[...Array(3)].map((_, i) => <StatCardSkeleton key={`stat-${i}`} />)}
+    </div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <TopDebtorsSkeleton />
+      <InsightsSkeleton />
+    </div>
+  </div>
+);
+
 export const CariReportTab = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -49,7 +138,7 @@ export const CariReportTab = () => {
 
   const fmt = (val) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val || 0);
 
-  if (loading) return <div className="relative h-96 flex items-center justify-center"><PremiumLoader message="Cari veriler derleniyor..." /></div>;
+  if (loading) return <CariReportSkeleton />;
   if (!data) return <EmptyReport message="Beklenmedik bir hata hesaplamayı durdurdu." />;
 
   const isCust = mode === 'customer';

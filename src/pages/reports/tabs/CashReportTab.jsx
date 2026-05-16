@@ -9,6 +9,66 @@ import { reportService } from '../../../services/reportService';
 import { PremiumLoader } from '../../../components/ui/PremiumLoader';
 import { format } from 'date-fns';
 
+const StatCardSkeleton = () => (
+  <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-center animate-pulse">
+    <div className="flex items-center justify-between mb-2">
+      <div className="w-20 h-3 bg-slate-200/60 rounded"></div>
+      <div className="w-8 h-8 rounded-lg bg-slate-100"></div>
+    </div>
+    <div className="w-28 h-6 bg-slate-200/80 rounded mt-1"></div>
+  </div>
+);
+
+const ComposedChartSkeleton = () => (
+  <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 h-full animate-pulse">
+    <div className="w-32 h-4 bg-slate-200/60 rounded mb-1"></div>
+    <div className="w-64 h-2 bg-slate-200/40 rounded mb-4"></div>
+    <div className="h-72 flex items-end justify-around gap-2 pb-6 px-2 border-b border-slate-100/50 relative">
+      <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-slate-200/40"></div>
+      {[40, 70, 45, 90, 65, 80, 55].map((h, i) => (
+        <div key={i} className="flex-1 flex justify-center gap-1 items-end h-full relative z-10">
+          <div className="w-4 bg-emerald-200/40 rounded-t" style={{ height: `${h}%` }}></div>
+          <div className="w-4 bg-blue-200/40 rounded-t" style={{ height: `${Math.max(10, h - 20)}%` }}></div>
+          <div className="w-4 bg-rose-200/40 rounded-t" style={{ height: `${Math.max(15, h - 30)}%` }}></div>
+        </div>
+      ))}
+    </div>
+    <div className="flex justify-center gap-4 mt-4">
+      <div className="w-20 h-3 bg-slate-200/60 rounded-full"></div>
+      <div className="w-20 h-3 bg-slate-200/60 rounded-full"></div>
+      <div className="w-20 h-3 bg-slate-200/60 rounded-full"></div>
+      <div className="w-20 h-3 bg-slate-200/60 rounded-full"></div>
+    </div>
+  </div>
+);
+
+const PieChartSkeleton = () => (
+  <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 h-full animate-pulse flex flex-col items-center">
+    <div className="w-32 h-4 bg-slate-200/60 rounded mb-8 self-start"></div>
+    <div className="w-40 h-40 rounded-full bg-slate-200/60 mb-6"></div>
+    <div className="flex gap-4">
+      <div className="w-16 h-3 bg-slate-200/60 rounded-full"></div>
+      <div className="w-16 h-3 bg-slate-200/60 rounded-full"></div>
+    </div>
+  </div>
+);
+
+const CashReportSkeleton = () => (
+  <div className="space-y-6">
+    <div className="flex justify-between items-center">
+      <div className="w-56 h-6 bg-slate-200/60 rounded animate-pulse"></div>
+      <div className="w-24 h-8 bg-slate-200/60 rounded-lg animate-pulse"></div>
+    </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {[...Array(4)].map((_, i) => <StatCardSkeleton key={`stat-${i}`} />)}
+    </div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2"><ComposedChartSkeleton /></div>
+      <div><PieChartSkeleton /></div>
+    </div>
+  </div>
+);
+
 const fmtCur = (val) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val || 0);
 
 const PIE_PALETTE = {
@@ -117,7 +177,7 @@ export const CashReportTab = ({ startDate, endDate }) => {
 
   const formatCurrency = (val) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
 
-  if (loading) return <div className="relative h-96 flex items-center justify-center"><PremiumLoader message="Kasa ve nakit akışı verileri derleniyor..." /></div>;
+  if (loading) return <CashReportSkeleton />;
   if (!data) return <EmptyReport message="Hata." />;
 
   const getColor = (name) => (PIE_PALETTE[name]?.color || '#94a3b8');

@@ -10,6 +10,89 @@ import { PremiumLoader } from '../../../components/ui/PremiumLoader';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
+const StatCardSkeleton = () => (
+  <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-center animate-pulse">
+    <div className="flex items-center justify-between mb-2">
+      <div className="w-20 h-3 bg-slate-200/60 rounded"></div>
+      <div className="w-8 h-8 rounded-lg bg-slate-100"></div>
+    </div>
+    <div className="w-24 h-6 bg-slate-200/80 rounded mt-1"></div>
+  </div>
+);
+
+const BarChartSkeleton = () => (
+  <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 h-full animate-pulse">
+    <div className="w-32 h-4 bg-slate-200/60 rounded mb-4"></div>
+    <div className="h-72 flex items-end justify-around gap-2 pb-6 px-2 border-b border-slate-100/50">
+      {[40, 70, 45, 90, 65, 80, 55].map((h, i) => (
+        <div key={i} className="w-full bg-green-200/40 rounded-t" style={{ height: `${h}%` }}></div>
+      ))}
+    </div>
+  </div>
+);
+
+const PieChartSkeleton = () => (
+  <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 h-full animate-pulse flex flex-col items-center">
+    <div className="w-full h-4 bg-slate-200/60 rounded mb-8 self-start max-w-[150px]"></div>
+    <div className="w-40 h-40 rounded-full bg-slate-200/60 mb-6"></div>
+    <div className="flex gap-4">
+      <div className="w-12 h-3 bg-slate-200/60 rounded-full"></div>
+      <div className="w-12 h-3 bg-slate-200/60 rounded-full"></div>
+      <div className="w-12 h-3 bg-slate-200/60 rounded-full"></div>
+    </div>
+  </div>
+);
+
+const TableRowSkeleton = () => (
+  <tr className="border-b border-slate-100 animate-pulse h-[52px]">
+    <td className="p-3"><div className="w-6 h-4 bg-slate-200/60 rounded"></div></td>
+    <td className="p-3">
+      <div className="flex items-center gap-2.5">
+        <div className="w-8 h-8 rounded-lg bg-slate-100"></div>
+        <div className="w-32 h-4 bg-slate-200/60 rounded"></div>
+      </div>
+    </td>
+    <td className="p-3"><div className="w-10 h-4 bg-slate-200/60 rounded"></div></td>
+    <td className="p-3 text-right"><div className="w-20 h-4 bg-slate-200/60 rounded ml-auto"></div></td>
+    <td className="p-3 text-right"><div className="w-24 h-4 bg-slate-200/60 rounded ml-auto"></div></td>
+  </tr>
+);
+
+const SalesReportSkeleton = () => (
+  <div className="space-y-6">
+    <div className="flex justify-between items-center">
+      <div className="w-32 h-6 bg-slate-200/60 rounded animate-pulse"></div>
+      <div className="w-24 h-8 bg-slate-200/60 rounded-lg animate-pulse"></div>
+    </div>
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      {[...Array(5)].map((_, i) => <StatCardSkeleton key={`stat-${i}`} />)}
+    </div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2"><BarChartSkeleton /></div>
+      <div><PieChartSkeleton /></div>
+    </div>
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="p-4 border-b border-slate-100 bg-slate-50">
+        <div className="w-40 h-5 bg-slate-200/60 rounded animate-pulse"></div>
+      </div>
+      <table className="w-full text-left text-sm">
+        <thead className="text-slate-500 border-b border-slate-100">
+          <tr>
+            <th className="p-3"><div className="w-10 h-3 bg-slate-200/60 rounded"></div></th>
+            <th className="p-3"><div className="w-20 h-3 bg-slate-200/60 rounded"></div></th>
+            <th className="p-3"><div className="w-24 h-3 bg-slate-200/60 rounded"></div></th>
+            <th className="p-3"><div className="w-20 h-3 bg-slate-200/60 rounded ml-auto"></div></th>
+            <th className="p-3"><div className="w-24 h-3 bg-slate-200/60 rounded ml-auto"></div></th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {[...Array(10)].map((_, i) => <TableRowSkeleton key={`row-${i}`} />)}
+        </tbody>
+      </table>
+    </div>
+  </div>
+);
+
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
@@ -67,7 +150,7 @@ export const SalesReportTab = ({ startDate, endDate }) => {
 
   const formatCurrency = (val) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
 
-  if (loading) return <div className="relative h-96 flex items-center justify-center"><PremiumLoader message="Satış verileri derleniyor..." /></div>;
+  if (loading) return <SalesReportSkeleton />;
   if (!data || data.totalCount === 0) return <EmptyReport message="Bu dönemde tamamlanmış herhangi bir satış bulunamadı." />;
 
   const PIE_COLORS = { cash: '#22c55e', card: '#3b82f6', credit: '#ef4444', mixed: '#f59e0b' };
