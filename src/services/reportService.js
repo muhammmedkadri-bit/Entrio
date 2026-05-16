@@ -48,7 +48,7 @@ export const reportService = {
         },
         dailySeries: [], // { date, total, count }
         topProducts: [],
-        rawSales: completedSales
+        rawSales: [] // populated below
       };
 
       const dailyMap = new Map();
