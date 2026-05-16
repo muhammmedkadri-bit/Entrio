@@ -1,5 +1,5 @@
 import { useGlobalLoader } from "../../hooks/useGlobalLoader";
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import toast from '../../components/ui/CustomToast';
 import { Banknote, ShoppingCart, AlertTriangle, TrendingUp, Users, ChevronRight, ArrowDownLeft, ArrowUpRight, ArrowRightLeft, Settings2, Moon, Plus, Trash2, ListChecks, Calendar, Clock, Calculator, Building2, TrendingDown, PieChart as PieChartIcon, Activity, ScanBarcode, Edit2 } from 'lucide-react';
