@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db, hashPassword } from '../../../db';
+import { isSupabase } from '../../../config/database';
+import { supabase } from '../../../lib/supabaseClient';
 import { useAuthStore } from '../../../store/authStore';
 import toast from '../../../components/ui/CustomToast';
 import { Edit2, Save, X, User, UserPlus, Mail, Lock, ChevronDown } from 'lucide-react';
@@ -36,7 +38,14 @@ export const AuthOpsTab = () => {
 
   const loadUsers = async () => {
     try {
-      const allUsers = await db.users.toArray();
+      let allUsers;
+      if (isSupabase()) {
+        const { data, error } = await supabase.from('users').select('*').order('id', { ascending: true });
+        if (error) throw error;
+        allUsers = data || [];
+      } else {
+        allUsers = await db.users.toArray();
+      }
       setUsers(allUsers);
     } catch (e) {
       console.error('[AuthOps] Yükleme Hatası:', e);
@@ -60,7 +69,12 @@ export const AuthOpsTab = () => {
       if (editForm.password && editForm.password.trim().length > 0) {
         updateData.password = await hashPassword(editForm.password.trim());
       }
-      await db.users.update(id, updateData);
+      if (isSupabase()) {
+        const { error } = await supabase.from('users').update(updateData).eq('id', id);
+        if (error) throw error;
+      } else {
+        await db.users.update(id, updateData);
+      }
       if (currentUser?.id === id) {
         updateUserSession({ email: editForm.email, fullName: editForm.full_name, role: editForm.role });
       }
@@ -78,17 +92,32 @@ export const AuthOpsTab = () => {
     if (!newForm.email.trim()) return toast.error('E-posta zorunludur.');
     if (!newForm.password.trim() || newForm.password.length < 4) return toast.error('Şifre en az 4 karakter olmalıdır.');
     try {
-      const existing = await db.users.where('email').equals(newForm.email.trim().toLowerCase()).first();
+      let existing;
+      if (isSupabase()) {
+        const { data } = await supabase.from('users').select('id').eq('email', newForm.email.trim().toLowerCase()).maybeSingle();
+        existing = !!data;
+      } else {
+        existing = await db.users.where('email').equals(newForm.email.trim().toLowerCase()).first();
+      }
+      
       if (existing) return toast.error('Bu e-posta adresi zaten kullanımda.');
       const hashedPassword = await hashPassword(newForm.password.trim());
-      await db.users.add({
+      
+      const newUser = {
         email: newForm.email.trim().toLowerCase(),
         full_name: newForm.full_name.trim(),
         password: hashedPassword,
         role: newForm.role,
         branch_id: 1,
         is_active: true
-      });
+      };
+
+      if (isSupabase()) {
+        const { error } = await supabase.from('users').insert([newUser]);
+        if (error) throw error;
+      } else {
+        await db.users.add(newUser);
+      }
       toast.success('Yeni kullanıcı eklendi.');
       setAddingNew(false);
       setNewForm({ full_name: '', email: '', password: '', role: 'cashier' });
