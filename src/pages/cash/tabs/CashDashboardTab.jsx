@@ -25,6 +25,19 @@ import { DayCloseDetailModal } from '../modals/DayCloseDetailModal';
 const ITEMS_PER_PAGE = 10;
 const CARDS_PER_PAGE = 5;
 
+const tableVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.05 }
+  }
+};
+
+const rowVariants = {
+  hidden: { opacity: 0, x: -15 },
+  show: { opacity: 1, x: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
+};
+
 export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingChange }) => {
   const [activeCategory, setActiveCategory] = useState('all');
   const [summary, setSummary] = useState(null);
@@ -744,7 +757,12 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
               <th className="p-3 text-right">Tutar</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <motion.tbody 
+            variants={tableVariants}
+            initial="hidden"
+            animate="show"
+            className="divide-y divide-slate-100"
+          >
             {paginatedTxs.map(tx => {
               const isOut = ['purchase_out', 'supplier_payment_out', 'expense_out', 'withdrawal_out'].includes(tx.transaction_type);
               const isReturn = tx.transaction_type === 'return_out';
@@ -803,7 +821,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
               }
 
               return (
-                <tr key={tx.id} onClick={() => {
+                <motion.tr variants={rowVariants} key={tx.id} onClick={() => {
                   if (tx.transaction_type === 'day_close') {
                     setDayCloseDetailTx(tx);
                   } else {
@@ -833,13 +851,13 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
                   <td className={`p-3 text-right font-bold tabular-nums whitespace-nowrap ${isTransfer || isCreditPaymentIn ? 'text-slate-500' : isOut || isReturn || tx.amount < 0 ? 'text-rose-600' : 'text-[#5da83f]'}`}>
                     {isTransfer || isCreditPaymentIn ? (tx.transaction_type === 'transfer_out' ? '-' : '+') : isOut || isReturn || tx.amount < 0 ? '-' : '+'}{formatCurrency(Math.abs(tx.amount || 0))}
                   </td>
-                </tr>
+                </motion.tr>
               )
             })}
             {recentTxs.length === 0 && (
-              <tr><td colSpan="6" className="text-center p-8 text-slate-400">Bu filtrelere uygun işlem bulunamadı.</td></tr>
+              <motion.tr variants={rowVariants}><td colSpan="6" className="text-center p-8 text-slate-400">Bu filtrelere uygun işlem bulunamadı.</td></motion.tr>
             )}
-          </tbody>
+          </motion.tbody>
         </table>
       </motion.div>
 
