@@ -28,6 +28,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
   const [summary, setSummary] = useState(null);
   const [monthlySummary, setMonthlySummary] = useState({ income: 0, expense: 0 });
   const [recentTxs, setRecentTxs] = useState([]);
+  const [hasTodayTxs, setHasTodayTxs] = useState(false);
   const [page, setPage] = useState(1);
 
   // Modals
@@ -108,10 +109,17 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
 
       // Build synthetic summaryResults from txs
       const todayMidnight = new Date(); todayMidnight.setHours(0, 0, 0, 0);
-      const fromMs = Math.min(...registers.map(r => r.last_day_close_at || todayMidnight.getTime()).filter(v => v > 0), todayMidnight.getTime());
-      const todayTxs = allTxsRaw.filter(t => Number(t.created_at) >= fromMs && !t.is_day_close);
+      const regMapForSummary = Object.fromEntries(registers.map(r => [r.id, r]));
+      
+      const todayTxs = allTxsRaw.filter(t => {
+        if (t.is_day_close || t.transaction_type === 'day_close') return false;
+        const reg = regMapForSummary[t.register_id];
+        const limitMs = reg?.last_day_close_at ? Math.max(reg.last_day_close_at, todayMidnight.getTime()) : todayMidnight.getTime();
+        return Number(t.created_at) >= limitMs;
+      });
       const combinedSum = { totals: { sale_in: 0, customer_payment_in: 0, deposit_in: 0, return_in: 0, purchase_out: 0, supplier_payment_out: 0, expense_out: 0, withdrawal_out: 0, return_out: 0 } };
       todayTxs.forEach(t => { if (combinedSum.totals[t.transaction_type] !== undefined) combinedSum.totals[t.transaction_type] += Number(t.amount) || 0; });
+      setHasTodayTxs(todayTxs.length > 0);
 
       // Monthly summary
       const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
@@ -401,7 +409,8 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
         <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
           <button 
             onClick={() => setDayCloseModalOpen(true)}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-white text-slate-800 border border-slate-800 hover:bg-slate-50 text-sm font-bold rounded-xl transition-colors shadow-sm"
+            disabled={!hasTodayTxs}
+            className={`w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold rounded-xl transition-colors shadow-sm ${!hasTodayTxs ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed' : 'bg-white text-slate-800 border border-slate-800 hover:bg-slate-50'}`}
           >
             <Moon className="w-4 h-4" /> Günsonu Yap
           </button>
@@ -641,9 +650,9 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Bugünkü Toplam Gelir" value={formatCurrency(inTotal)} icon={TrendingUp} colorTheme="emerald" />
+        <StatCard title="Bugünkü Toplam Gelir" value={formatCurrency(inTotal)} icon={TrendingUp} colorTheme="grass" />
         <StatCard title="Bugünkü Toplam Gider" value={formatCurrency(outTotal)} icon={TrendingDown} colorTheme="rose" />
-        <StatCard title="Bu Ayki Toplam Gelir" value={formatCurrency(monthlySummary.income)} icon={TrendingUp} colorTheme="emerald" />
+        <StatCard title="Bu Ayki Toplam Gelir" value={formatCurrency(monthlySummary.income)} icon={TrendingUp} colorTheme="grass" />
         <StatCard title="Bu Ayki Toplam Gider" value={formatCurrency(monthlySummary.expense)} icon={TrendingDown} colorTheme="rose" />
       </div>
 
@@ -727,7 +736,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
                  typeLabel = 'Transfer';
                  IconComponent = ArrowRightLeft;
               } else if (isAdj) {
-                 pillClass = 'bg-amber-50 text-amber-600 border border-amber-200';
+                 pillClass = 'bg-slate-50 text-slate-600 border border-slate-200';
                  typeLabel = 'Düzeltme';
                  IconComponent = Settings2;
               } else if (isReturn) {

@@ -70,6 +70,35 @@ export const RegisterTransactionsModal = ({ register, onClose }) => {
   const totalPages = Math.ceil(txs.length / PAGE_SIZE) || 1;
   const paginated  = txs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  const renderPaginationButtons = () => {
+    let pages = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, page - Math.floor(maxVisiblePages / 2));
+    let endPage = startPage + maxVisiblePages - 1;
+
+    if (endPage > totalPages) {
+      endPage = totalPages;
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        pages.push(
+          <button
+            key={i}
+            onClick={() => setPage(i)}
+            className={`w-7 h-7 text-xs rounded-lg flex items-center justify-center transition-all cursor-pointer ${
+              page === i 
+                ? 'bg-[#7ed957]/15 text-[#3a8024] border border-[#7ed957]/40 font-bold shadow-sm' 
+                : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            {i}
+          </button>
+        );
+    }
+    return pages;
+  };
+
   return (
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center p-3"
@@ -92,7 +121,7 @@ export const RegisterTransactionsModal = ({ register, onClose }) => {
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="overflow-y-auto min-h-[480px]">
           {loading ? (
             <div className="flex items-center justify-center h-40">
               <div className="w-7 h-7 border-2 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
@@ -109,13 +138,13 @@ export const RegisterTransactionsModal = ({ register, onClose }) => {
                   <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tutar</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-[#7ed957]/30">
                 {paginated.map(tx => {
                   const meta = TX_META[tx.transaction_type] || { label: tx.transaction_type, color: 'bg-slate-50 text-slate-600 border-slate-200', isIncome: null };
                   const isOut = meta.isIncome === false;
                   const isNeutral = meta.isIncome === null;
                   return (
-                    <tr key={tx.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={tx.id} className="hover:bg-[#7ed957]/5 transition-colors">
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${meta.color}`}>
                           {meta.label}
@@ -138,14 +167,14 @@ export const RegisterTransactionsModal = ({ register, onClose }) => {
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 bg-slate-50">
             <span className="text-xs text-slate-400">{(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, txs.length)} / {txs.length}</span>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 transition-all">
+                className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-100 disabled:opacity-30 transition-all">
                 <ChevronLeft className="w-3.5 h-3.5" />
               </button>
-              <span className="text-xs font-bold text-slate-600">{page} / {totalPages}</span>
+              {renderPaginationButtons()}
               <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 transition-all">
+                className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-100 disabled:opacity-30 transition-all">
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>

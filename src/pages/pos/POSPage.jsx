@@ -743,7 +743,7 @@ export const POSPage = () => {
   ];
 
   const paymentActiveStyle = {
-    cash: { background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.35)', boxShadow: '0 4px 12px rgba(34,197,94,0.2)', color: '#15803d' },
+    cash: { background: 'rgba(126,217,87,0.15)', border: '1px solid rgba(126,217,87,0.35)', boxShadow: '0 4px 12px rgba(126,217,87,0.2)', color: '#3a8024' },
     card: { background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.35)', boxShadow: '0 4px 12px rgba(59,130,246,0.2)', color: '#1d4ed8' },
     transfer: { background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.35)', boxShadow: '0 4px 12px rgba(139,92,246,0.2)', color: '#7e22ce' },
     mixed: { background: 'rgba(249,115,22,0.15)', border: '1px solid rgba(249,115,22,0.35)', boxShadow: '0 4px 12px rgba(249,115,22,0.2)', color: '#c2410c' },

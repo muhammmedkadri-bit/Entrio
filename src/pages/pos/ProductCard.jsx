@@ -23,13 +23,13 @@ const glassAddBtnStyle = (disabled) => disabled ? {
   marginTop: '4px',
   transition: 'all 0.15s ease',
 } : {
-  background: 'rgba(16,185,129,0.12)',
+  background: 'rgba(126,217,87,0.12)',
   backdropFilter: 'blur(8px)',
   WebkitBackdropFilter: 'blur(8px)',
-  border: '1px solid rgba(16,185,129,0.25)',
-  boxShadow: '0 2px 8px rgba(16,185,129,0.1), inset 0 1px 0 rgba(255,255,255,0.6)',
+  border: '1px solid rgba(126,217,87,0.25)',
+  boxShadow: '0 2px 8px rgba(126,217,87,0.1), inset 0 1px 0 rgba(255,255,255,0.6)',
   borderRadius: '8px',
-  color: 'rgb(4,120,87)',
+  color: 'rgb(58,128,36)',
   fontWeight: '600',
   fontSize: '13px',
   width: '100%',
@@ -116,7 +116,7 @@ const ProductCardInner = ({ product = {}, onAdd = () => {}, isSelected = false, 
   const hasNoTracking = rawStock === null || rawStock === undefined || product?.is_tracking_stock === false || product?.track_stock === false;
   const stock = rawStock || 0;
   
-  let stockStyle = { bg: 'rgba(16,185,129,0.12)', text: '#059669', border: 'rgba(16,185,129,0.25)', label: `Stok: ${stock}` };
+  let stockStyle = { bg: 'rgba(126,217,87,0.12)', text: 'rgb(58,128,36)', border: 'rgba(126,217,87,0.25)', label: `Stok: ${stock}` };
   if (hasNoTracking) {
     stockStyle = { bg: 'rgba(156,163,175,0.12)', text: '#4b5563', border: 'rgba(156,163,175,0.25)', label: 'Stok: Takipsiz' };
   } else if (stock <= 0) {

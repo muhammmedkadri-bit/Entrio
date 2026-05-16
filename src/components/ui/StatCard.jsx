@@ -9,6 +9,7 @@ export const StatCard = ({ title, value, icon: Icon, change, trend = 'neutral', 
 
   const bgColors = {
     brand: 'bg-brand-50 border-brand-100',
+    grass: 'bg-[#7ed957]/15 border-[#7ed957]/40',
     green: 'bg-green-50 border-green-100',
     emerald: 'bg-emerald-50 border-emerald-100',
     red: 'bg-red-50 border-red-100',
@@ -19,6 +20,7 @@ export const StatCard = ({ title, value, icon: Icon, change, trend = 'neutral', 
 
   const iconColors = {
     brand: 'text-brand-600',
+    grass: 'text-[#3a8024]',
     green: 'text-green-600',
     emerald: 'text-emerald-600',
     red: 'text-red-600',

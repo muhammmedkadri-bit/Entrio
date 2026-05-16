@@ -84,7 +84,7 @@ export const cashService = {
         const updateData = { current_balance: newBalance };
         if (resetGeneral) updateData.general_balance = newBalance;
         await supabase.from('cash_registers').update(updateData).eq('id', registerId);
-        await supabase.from('cash_transactions').insert([{ register_id: registerId, transaction_type: 'balance_adjustment', amount: Math.abs(diff), balance_after: newBalance, notes: `Bakiye Düzeltme: ${reason || ''} (Eski Bakiye: ${reg.current_balance || 0}, Fark: ${diff})`, created_at: Date.now() }]);
+        await supabase.from('cash_transactions').insert([{ register_id: registerId, transaction_type: 'balance_adjustment', amount: diff, balance_after: newBalance, notes: `Bakiye Düzeltme: ${reason || ''} (Eski Bakiye: ${reg.current_balance || 0}, Fark: ${diff})`, created_at: Date.now() }]);
         return true;
       }
       return await db.transaction('rw', db.cash_registers, db.cash_transactions, async () => {
@@ -95,7 +95,7 @@ export const cashService = {
         const updateData = { current_balance: newBalance };
         if (resetGeneral) updateData.general_balance = newBalance;
         await db.cash_registers.update(Number(registerId), updateData);
-        await db.cash_transactions.add({ register_id: Number(registerId), transaction_type: 'balance_adjustment', amount: Math.abs(diff), balance_after: newBalance, notes: `Bakiye Düzeltme: ${reason || ''} (Eski Bakiye: ${reg.current_balance || 0}, Fark: ${diff})`, created_at: Date.now() });
+        await db.cash_transactions.add({ register_id: Number(registerId), transaction_type: 'balance_adjustment', amount: diff, balance_after: newBalance, notes: `Bakiye Düzeltme: ${reason || ''} (Eski Bakiye: ${reg.current_balance || 0}, Fark: ${diff})`, created_at: Date.now() });
         return true;
       });
     } catch (e) { throw new Error('Bakiye düzeltme başarısız: ' + e.message); }
