@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { ArrowDownLeft, ArrowUpRight, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, Filter, MoreVertical, Edit2, Settings2, ArrowRightLeft, RotateCcw, History, Trash2, Archive, Wallet, CreditCard, Building2, Calculator, LayoutGrid, Download, FileText, Moon, Star } from 'lucide-react';
-import { db } from '../../../db';
+import { ArrowDownLeft, ArrowUpRight, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, MoreVertical, Edit2, Settings2, ArrowRightLeft, RotateCcw, History, Trash2, Archive, Wallet, CreditCard, Building2, Calculator, LayoutGrid, Download, Moon, Star } from 'lucide-react';
 import { isSupabase } from '../../../config/database';
+import { supabase } from '../../../lib/supabaseClient';
+import { db } from '../../../db';
 import { StatCard } from '../../../components/ui/StatCard';
 import { EditRegisterModal } from '../modals/EditRegisterModal';
 import { ExportReportModal } from '../modals/ExportReportModal';
@@ -13,9 +14,9 @@ import { ResetRegisterModal } from '../modals/ResetRegisterModal';
 import { CreateRegisterModal } from '../modals/CreateRegisterModal';
 import { TransactionDetailModal } from '../modals/TransactionDetailModal';
 import { DayCloseModal } from '../modals/DayCloseModal';
+import { RegisterTransactionsModal } from '../modals/RegisterTransactionsModal';
 import { cashService } from '../../../services/cashService';
 import toast from '../../../components/ui/CustomToast';
-
 import { ManualTransactionModal } from '../modals/ManualTransactionModal';
 import { DayCloseDetailModal } from '../modals/DayCloseDetailModal';
 
@@ -46,6 +47,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
   const [dayCloseDetailTx, setDayCloseDetailTx] = useState(null);
   const [deleteConfirmReg, setDeleteConfirmReg] = useState(null);
   const [archiveConfirmReg, setArchiveConfirmReg] = useState(null);
+  const [regTxModal, setRegTxModal] = useState(null); // register for tx popup
   const scrollRef = useRef(null);
   const [cardPage, setCardPage] = useState(0);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
@@ -56,12 +58,13 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
+  // Only re-load when registers change — NOT when category changes
   useEffect(() => {
     if (registers && registers.length > 0) {
       setPage(1);
       loadDashboard();
     }
-  }, [registers, activeCategory]);
+  }, [registers]);
 
   const getFilteredRegisters = () => {
     if (activeCategory === 'all') return registers;
@@ -76,39 +79,54 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
   const loadDashboard = async () => {
     onLoadingChange?.(true);
     try {
-      const filteredRegisters = getFilteredRegisters();
-      if (filteredRegisters.length === 0) {
+      if (!registers || registers.length === 0) {
         setSummary({ totals: { sale_in: 0, customer_payment_in: 0, deposit_in: 0, return_in: 0, purchase_out: 0, supplier_payment_out: 0, expense_out: 0, withdrawal_out: 0, return_out: 0 } });
         setMonthlySummary({ income: 0, expense: 0 });
         setRecentTxs([]);
         return;
       }
 
-      // ── Parallel fetch: tüm kasaların özet + hareketleri aynı anda çek ────
-      const [summaryResults, txResults] = await Promise.all([
-        Promise.all(filteredRegisters.map(reg => cashService.getDailySummary(reg.id, new Date()))),
-        Promise.all(filteredRegisters.map(reg =>
-          cashService.getTransactions(reg.id).then(txs => {
-            txs.forEach(t => t.registerName = reg.name);
-            return txs;
-          })
-        ))
-      ]);
+      // ── Tek sorguda TÜM kasaların hareketlerini çek (N+1 sorgu yok) ────
+      const registerMap = Object.fromEntries(registers.map(r => [r.id, r.name]));
+      let allTxsRaw = [];
+      if (isSupabase()) {
+        const regIds = registers.map(r => r.id);
+        const { data, error } = await supabase
+          .from('cash_transactions')
+          .select('*')
+          .in('register_id', regIds)
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        allTxsRaw = data || [];
+      } else {
+        const all = await db.cash_transactions.orderBy('created_at').reverse().toArray();
+        const regIds = new Set(registers.map(r => r.id));
+        allTxsRaw = all.filter(t => regIds.has(t.register_id));
+      }
+      allTxsRaw.forEach(t => { t.registerName = registerMap[t.register_id] || ''; });
 
-      // Özetleri birleştir
-      let combinedSum = {
-        totals: {
-          sale_in: 0, customer_payment_in: 0, deposit_in: 0, return_in: 0,
-          purchase_out: 0, supplier_payment_out: 0, expense_out: 0, withdrawal_out: 0, return_out: 0
-        }
-      };
-      summaryResults.forEach(sum => {
-        for (const key in sum.totals) {
-          combinedSum.totals[key] += sum.totals[key] || 0;
+      // Build synthetic summaryResults from txs
+      const todayMidnight = new Date(); todayMidnight.setHours(0, 0, 0, 0);
+      const fromMs = Math.min(...registers.map(r => r.last_day_close_at || todayMidnight.getTime()).filter(v => v > 0), todayMidnight.getTime());
+      const todayTxs = allTxsRaw.filter(t => Number(t.created_at) >= fromMs && !t.is_day_close);
+      const combinedSum = { totals: { sale_in: 0, customer_payment_in: 0, deposit_in: 0, return_in: 0, purchase_out: 0, supplier_payment_out: 0, expense_out: 0, withdrawal_out: 0, return_out: 0 } };
+      todayTxs.forEach(t => { if (combinedSum.totals[t.transaction_type] !== undefined) combinedSum.totals[t.transaction_type] += Number(t.amount) || 0; });
+
+      // Monthly summary
+      const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
+      const INCOME_TYPES = new Set(['sale_in', 'customer_payment_in', 'deposit_in', 'return_in']);
+      const EXPENSE_TYPES = new Set(['purchase_out', 'supplier_payment_out', 'expense_out', 'withdrawal_out']);
+      let mIncome = 0, mExpense = 0;
+      allTxsRaw.forEach(t => {
+        if (t.transaction_type === 'day_close') return;
+        if (Number(t.created_at) >= monthStart.getTime()) {
+          if (INCOME_TYPES.has(t.transaction_type)) mIncome += Number(t.amount) || 0;
+          else if (EXPENSE_TYPES.has(t.transaction_type)) mExpense += Number(t.amount) || 0;
         }
       });
 
-      let allTxs = txResults.flat().sort((a, b) => b.created_at - a.created_at);
+
+      const allTxs = [...allTxsRaw];
 
       // ── Müşteri / Tedarikçi eşleştirme — sadece gerekli ID'leri çek ──────
       // Tüm ilgili reference ID'leri topla
@@ -125,7 +143,6 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
 
       if (isSupabase()) {
         const { supabase } = await import('../../../lib/supabaseClient');
-
         const [cusRes, supRes, salRes, purRes] = await Promise.all([
           // Tüm müşterileri değil sadece ilgili tx'lerde geçenleri çek
           supabase.from('customers').select('id, name'),
@@ -154,12 +171,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
         purchaseMap = Object.fromEntries(purchases.map(p => [p.id, p.supplier_id]));
       }
 
-      let mIncome = 0;
-      let mExpense = 0;
-      const currentMonthStart = new Date();
-      currentMonthStart.setDate(1);
-      currentMonthStart.setHours(0, 0, 0, 0);
-
+      // ── Aylık toplamlar (already computed above) ────────────────────────────
       allTxs.forEach(t => {
         t.entityName = null;
         if (t.transaction_type === 'sale_in' || t.transaction_type === 'customer_payment_in') {
@@ -176,22 +188,11 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
           if (custId && customerMap[custId]) t.entityName = customerMap[custId];
           t._origSaleNumber = origSale?.sale_number || retSale?.sale_number || null;
         }
-
-        // Aylık toplamlar
-        if (t.created_at >= currentMonthStart.getTime()) {
-          if (t.transaction_type === 'return_out') {
-            mIncome -= t.amount || 0;
-          } else if (t.transaction_type === 'transfer_in' || t.transaction_type === 'transfer_out') {
-            // transferler dahil edilmez
-          } else if (t.transaction_type.includes('_in') || t.transaction_type === 'in') {
-            mIncome += t.amount || 0;
-          } else if (t.transaction_type.includes('_out') || t.transaction_type === 'out') {
-            mExpense += t.amount || 0;
-          }
-        }
       });
 
-      let finalTxs = allTxs.filter(t => !(t.transaction_type === 'day_close' && t.amount === 0));
+      // day_close hareketleri de listede görünsün (filtre kaldırıldı)
+      let finalTxs = allTxs;
+
 
       // Group split payments only in 'all' view to prevent balance confusion
       if (activeCategory === 'all') {
@@ -439,7 +440,11 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
             {/* Cards grid — no overflow, no scroll */}
             <div className="flex-1 grid gap-4" style={{ gridTemplateColumns: `repeat(${CARDS_PER_PAGE}, 1fr)` }}>
               {visible.map(reg => (
-                <div key={reg.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-col hover:shadow-md transition-shadow min-w-0 min-h-[210px]">
+                <div 
+                  key={reg.id} 
+                  className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-col hover:shadow-md transition-shadow min-w-0 min-h-[210px] cursor-pointer"
+                  onClick={() => setRegTxModal(reg)}
+                >
                   
                   {/* Üst: Kasa Adı + Menü */}
                   <div className="flex justify-between items-start">
@@ -461,7 +466,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
                       )}
                     </div>
                     <button
-                      onClick={(e) => openMenu(e, reg.id)}
+                      onClick={(e) => { e.stopPropagation(); openMenu(e, reg.id); }}
                       className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 transition-colors flex-shrink-0 ml-1 mt-[-2px]"
                     >
                       <MoreVertical className="w-4 h-4" />
@@ -509,10 +514,10 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
 
                   {/* Alt: Gelir / Gider Butonları */}
                   <div className="flex gap-2">
-                    <button onClick={() => openManualTx(reg, 'in')} className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-bold bg-[#82e05a]/15 text-[#5da83f] hover:bg-[#82e05a]/25 rounded-xl transition-all border border-[#82e05a]/30">
+                    <button onClick={(e) => { e.stopPropagation(); openManualTx(reg, 'in'); }} className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-bold bg-[#82e05a]/15 text-[#5da83f] hover:bg-[#82e05a]/25 rounded-xl transition-all border border-[#82e05a]/30">
                       <ArrowDownLeft className="w-3.5 h-3.5" /> {reg.type === 'credit_card' ? 'Ödeme' : 'Gelir'}
                     </button>
-                    <button onClick={() => openManualTx(reg, 'out')} className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-bold bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl transition-all border border-rose-200">
+                    <button onClick={(e) => { e.stopPropagation(); openManualTx(reg, 'out'); }} className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-bold bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl transition-all border border-rose-200">
                       <ArrowUpRight className="w-3.5 h-3.5" /> Gider
                     </button>
                   </div>
@@ -855,6 +860,10 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
           onClose={() => setDayCloseDetailTx(null)}
         />
       )}
+      <RegisterTransactionsModal
+        register={regTxModal}
+        onClose={() => setRegTxModal(null)}
+      />
     </div>
   );
 };

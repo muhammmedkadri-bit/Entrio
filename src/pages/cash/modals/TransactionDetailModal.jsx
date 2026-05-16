@@ -148,7 +148,8 @@ export const TransactionDetailModal = ({ isOpen, onClose, transaction, onSaved, 
   const isOut = ['purchase_out', 'supplier_payment_out', 'expense_out', 'withdrawal_out', 'transfer_out']
     .includes(transaction.transaction_type);
 
-  const isReadOnly = isRetailSale || isReturn || isDayClose;
+  // Only allow editing manual income/expense and transfers
+  const isReadOnly = !['deposit_in', 'expense_out', 'withdrawal_out', 'transfer_in', 'transfer_out'].includes(transaction.transaction_type);
 
   const formatCurrency = (val) =>
     new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);

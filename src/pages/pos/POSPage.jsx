@@ -507,11 +507,12 @@ export const POSPage = () => {
         const returnItemsData = items.map(item => ({
           product_id: item.product.id, name: item.product.name,
           quantity: item.quantity,
-          // unit_price is already the net effective price (line_total/qty) set when loading return items
-          unit_price: item.unit_price,
+          // Derive unit_price from lineTotal/quantity (cart items don't store unit_price directly)
+          unit_price: item.unit_price ?? (item.quantity > 0 ? Math.round((item.lineTotal / item.quantity) * 100) / 100 : item.product.sale_price || 0),
           line_total: item.lineTotal,
         }));
         await saleService.createReturn(returnData, returnItemsData, paymentData);
+
         toast.success('İade başarıyla tamamlandı!');
       } else {
         const customNumber = await generateSaleNumber();
