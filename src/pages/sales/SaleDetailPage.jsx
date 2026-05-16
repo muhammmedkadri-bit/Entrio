@@ -144,7 +144,7 @@ export const SaleDetailPage = () => {
           .from('sales')
           .select('id, sale_number, payment_method, total_amount, status, created_at')
           .eq('original_sale_id', saleId)
-          .eq('status', 'returned')
+          .eq('status', 'return')
           .maybeSingle();
         if (retSales) setReturnSale(retSales);
       } catch {

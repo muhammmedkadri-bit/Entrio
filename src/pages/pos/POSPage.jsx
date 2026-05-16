@@ -219,48 +219,48 @@ export const POSPage = () => {
     return cached.slice(0, 12);
   });
 
-  // Already initialized if displayedProducts is non-empty (came from cache)
-  const isInitializedRef = useRef(displayedProducts.length > 0);
+  // Zaten başlatılıp başlatılmadığını izle
+  const isInitializedRef = useRef(false);
 
-  // Restore displayed products from DB/localStorage initially
+  // Restore displayed products from DB/localStorage once allProducts is loaded
   useEffect(() => {
     let mounted = true;
-    const syncQuickSales = async () => {
-      try {
-        const setting = await settingsService.get(LS_KEY);
-        if (setting && setting.value && Array.isArray(setting.value) && mounted) {
-           // Sadece id'leri kaydedip, asıl ürün referanslarını allProducts içinden stock sync effect'i ile eşleyeceğiz.
-           // Ancak ilk yükleme için:
-           const cached = useCacheStore.getState().getCache('products') || [];
-           const idMap = new Map(cached.map(p => [p.id, p]));
-           const restored = setting.value.map(id => idMap.get(id)).filter(Boolean);
-           setDisplayedProducts(restored);
-           localStorage.setItem(LS_KEY, JSON.stringify(restored.map(p => p.id)));
-        }
-      } catch (e) {
-        console.error('Hızlı satış senkronizasyon hatası:', e);
-      }
-    };
-
-    if (!isInitializedRef.current) {
+    
+    if (allProducts.length > 0 && !isInitializedRef.current) {
       isInitializedRef.current = true;
-      let savedIds = [];
-      try {
-        savedIds = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
-      } catch { savedIds = []; }
-
-      const cached = useCacheStore.getState().getCache('products') || [];
-      if (savedIds.length > 0 && cached.length > 0) {
-        const idMap = new Map(cached.map(p => [p.id, p]));
-        const restored = savedIds.map(id => idMap.get(id)).filter(Boolean);
-        setDisplayedProducts(restored);
-      }
       
+      const syncQuickSales = async () => {
+        try {
+          // Önce localStorage'dan dene, daha hızlı
+          let savedIds = [];
+          try {
+            savedIds = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+          } catch { savedIds = []; }
+
+          // Ardından veritabanından güncel listeyi al
+          const setting = await settingsService.get(LS_KEY);
+          let finalIds = savedIds;
+          
+          if (setting && setting.value && Array.isArray(setting.value)) {
+            finalIds = setting.value;
+            localStorage.setItem(LS_KEY, JSON.stringify(finalIds));
+          }
+
+          if (mounted && finalIds.length > 0) {
+            const idMap = new Map(allProducts.map(p => [p.id, p]));
+            const restored = finalIds.map(id => idMap.get(id)).filter(Boolean);
+            setDisplayedProducts(restored);
+          }
+        } catch (e) {
+          console.error('Hızlı satış senkronizasyon hatası:', e);
+        }
+      };
+
       syncQuickSales();
     }
     
     return () => { mounted = false; };
-  }, []);
+  }, [allProducts]);
 
   // Update stock quantities selectively without full re-render
   useEffect(() => {

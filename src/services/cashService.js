@@ -217,7 +217,7 @@ export const cashService = {
 
         let creditNewBal = Number(creditReg.current_balance || 0) + amount;
         await supabase.from('cash_registers').update({ current_balance: creditNewBal }).eq('id', creditRegId);
-        await supabase.from('cash_transactions').insert([{ register_id: creditRegId, transaction_type: 'deposit_in', amount, balance_after: creditNewBal, notes: `Ödeme Alındı: ${sourceReg.name}${notes ? ' - ' + notes : ''}`, created_at: dateVal + 1 }]);
+        await supabase.from('cash_transactions').insert([{ register_id: creditRegId, transaction_type: 'expense_out', amount, balance_after: creditNewBal, notes: `Ödeme Alındı: ${sourceReg.name}${notes ? ' - ' + notes : ''}`, created_at: dateVal + 1 }]);
         return true;
       }
 
@@ -232,7 +232,7 @@ export const cashService = {
 
         let creditNewBal = (creditReg.current_balance || 0) + amount;
         await db.cash_registers.update(Number(creditRegId), { current_balance: creditNewBal });
-        await db.cash_transactions.add({ register_id: Number(creditRegId), transaction_type: 'deposit_in', amount, balance_after: creditNewBal, notes: `Ödeme Alındı: ${sourceReg.name}${notes ? ' - ' + notes : ''}`, created_at: dateVal + 1 });
+        await db.cash_transactions.add({ register_id: Number(creditRegId), transaction_type: 'expense_out', amount, balance_after: creditNewBal, notes: `Ödeme Alındı: ${sourceReg.name}${notes ? ' - ' + notes : ''}`, created_at: dateVal + 1 });
         return true;
       });
     } catch (e) { throw new Error('Kredi kartı ödemesi kaydedilemedi: ' + e.message); }

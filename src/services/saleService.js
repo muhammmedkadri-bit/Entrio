@@ -108,6 +108,9 @@ export const saleService = {
         const returnId = await db.sales.add({ ...returnData, payment_method: paymentData.method, paid_amount: returnData.total_amount, status: 'return', created_at: now });
         const returnNumber = `IAD-${new Date().getFullYear().toString().slice(-2)}${String(returnId).padStart(5, '0')}`;
         await db.sales.update(returnId, { sale_number: returnNumber });
+        if (returnData.original_sale_id) {
+          await db.sales.update(Number(returnData.original_sale_id), { status: 'returned' });
+        }
 
         for (const item of returnItems) {
           await db.sale_items.add({ sale_id: returnId, ...item });

@@ -151,6 +151,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
 
       // Supabase'de lokale kıyasla daha verimli: sadece ilgili satışları çek
       const refIds = [...new Set(allTxs.filter(t => t.reference_id).map(t => t.reference_id))];
+      const purIds = [...new Set(allTxs.filter(t => t.purchase_id).map(t => t.purchase_id))];
 
       if (isSupabase()) {
         const { supabase } = await import('../../../lib/supabaseClient');
@@ -161,8 +162,8 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
           refIds.length > 0
             ? supabase.from('sales').select('id, customer_id, sale_number, original_sale_id').in('id', refIds)
             : Promise.resolve({ data: [] }),
-          refIds.length > 0
-            ? supabase.from('purchases').select('id, supplier_id').in('id', refIds)
+          purIds.length > 0
+            ? supabase.from('purchases').select('id, supplier_id').in('id', purIds)
             : Promise.resolve({ data: [] }),
         ]);
         customerMap = Object.fromEntries((cusRes.data || []).map(c => [c.id, c.name]));
