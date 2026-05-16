@@ -34,18 +34,28 @@ const PIE_COLORS = {
   mixed: '#f59e0b', split: '#f59e0b',
 };
 
-const tableVariants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.05 }
-  }
-};
-
-const rowVariants = {
-  hidden: { opacity: 0, x: -15 },
-  show: { opacity: 1, x: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
-};
+const RowSkeleton = () => (
+  <tr className="border-b border-slate-100 animate-pulse h-[46px]">
+    <td className="px-4 py-2">
+      <div className="w-20 h-6 bg-slate-200/60 rounded-full"></div>
+    </td>
+    <td className="px-4 py-2">
+      <div className="w-32 h-4 bg-slate-200/60 rounded"></div>
+    </td>
+    <td className="px-4 py-2">
+      <div className="flex items-center gap-2">
+        <div className="w-24 h-5 bg-slate-100 rounded-md"></div>
+        <div className="w-16 h-4 bg-slate-100 border border-slate-200 rounded"></div>
+      </div>
+    </td>
+    <td className="px-4 py-2">
+      <div className="w-12 h-4 bg-slate-100 rounded"></div>
+    </td>
+    <td className="px-4 py-2 text-right">
+      <div className="w-16 h-5 bg-slate-200/60 rounded inline-block"></div>
+    </td>
+  </tr>
+);
 const PIE_NAMES = {
   cash: 'Nakit', card: 'Kredi Kartı', credit: 'Veresiye',
   transfer: 'Havale/EFT', bank_transfer: 'Havale/EFT',
@@ -500,13 +510,10 @@ export const Dashboard = () => {
             </div>
             <div className="overflow-auto flex-1 relative">
               <table className="w-full h-full absolute inset-0 text-left text-sm whitespace-nowrap">
-                <motion.tbody 
-                  variants={tableVariants}
-                  initial="hidden"
-                  animate="show"
-                  className="divide-y divide-slate-100"
-                >
-                  {recentTransactions.map(tx => {
+                <tbody className="divide-y divide-slate-100">
+                  {loading ? (
+                    [...Array(5)].map((_, i) => <RowSkeleton key={`skeleton-${i}`} />)
+                  ) : recentTransactions.map(tx => {
                     const isOut = ['purchase_out', 'return_out', 'expense_out', 'supplier_payment_out', 'withdrawal_out'].includes(tx.transaction_type);
                     
                     let pillClass = '';
@@ -563,11 +570,11 @@ export const Dashboard = () => {
                     };
 
                     return tx.isEmpty ? (
-                      <motion.tr variants={rowVariants} key={tx.id} className="h-[46px] border-b border-transparent">
+                      <tr key={tx.id} className="h-[46px] border-b border-transparent">
                         <td colSpan="5"></td>
-                      </motion.tr>
+                      </tr>
                     ) : (
-                      <motion.tr variants={rowVariants} key={tx.id} className="hover:bg-slate-50/50 transition-colors cursor-pointer border-b border-slate-100 last:border-0" onClick={handleRowClick}>
+                      <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors cursor-pointer border-b border-slate-100 last:border-0" onClick={handleRowClick}>
                         <td className="px-4 py-2">
                           <div className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${pillClass}`}>
                             <IconComponent className="w-3 h-3 flex-shrink-0" />
@@ -597,13 +604,13 @@ export const Dashboard = () => {
                         <td className={`px-4 py-2 text-right font-bold tabular-nums ${isOut || tx.amount < 0 ? 'text-rose-600' : 'text-[#5da83f]'}`}>
                           {isOut || tx.amount < 0 ? '-' : '+'}{formatCurrency(tx.displayAmount)}
                         </td>
-                      </motion.tr>
+                      </tr>
                     );
                   })}
-                  {recentTransactions.length === 0 && (
-                    <motion.tr variants={rowVariants}><td colSpan="5" className="p-8 text-center text-slate-400 text-sm">Son işlem kaydı yok.</td></motion.tr>
+                  {!loading && recentTransactions.length === 0 && (
+                    <tr><td colSpan="5" className="p-8 text-center text-slate-400 text-sm">Son işlem kaydı yok.</td></tr>
                   )}
-                </motion.tbody>
+                </tbody>
               </table>
             </div>
           </div>
