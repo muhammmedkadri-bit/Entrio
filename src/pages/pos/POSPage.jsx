@@ -221,6 +221,9 @@ export const POSPage = () => {
 
   // Zaten başlatılıp başlatılmadığını izle
   const isInitializedRef = useRef(false);
+  // Snapshot of current displayed IDs for comparison inside async callbacks
+  const displayedIdsRef = useRef([]);
+  useEffect(() => { displayedIdsRef.current = displayedProducts.map(p => p.id); }, [displayedProducts]);
 
   // Restore displayed products from DB/localStorage once allProducts is loaded
   useEffect(() => {
@@ -247,9 +250,15 @@ export const POSPage = () => {
           }
 
           if (mounted && finalIds.length > 0) {
-            const idMap = new Map(allProducts.map(p => [p.id, p]));
-            const restored = finalIds.map(id => idMap.get(id)).filter(Boolean);
-            setDisplayedProducts(restored);
+            const currentIds = displayedIdsRef.current;
+            const isSame =
+              finalIds.length === currentIds.length &&
+              finalIds.every((id, i) => id === currentIds[i]);
+            if (!isSame) {
+              const idMap = new Map(allProducts.map(p => [p.id, p]));
+              const restored = finalIds.map(id => idMap.get(id)).filter(Boolean);
+              setDisplayedProducts(restored);
+            }
           }
         } catch (e) {
           console.error('Hızlı satış senkronizasyon hatası:', e);

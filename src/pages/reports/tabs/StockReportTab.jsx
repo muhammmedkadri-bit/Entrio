@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, startTransition } from 'react';
 import toast from '../../../components/ui/CustomToast';
 import { Package, Warehouse, TrendingUp, Sparkles, AlertTriangle, PackageX } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -58,7 +58,7 @@ export const StockReportTab = () => {
     setLoading(true);
     try {
       const summary = await reportService.getStockReport();
-      setData(summary);
+      startTransition(() => setData(summary));
     } catch(e) {
       console.error('[StockReport] Yükleme Hatası:', e);
       toast.error('Stok raporu yüklenirken bir hata oluştu.');

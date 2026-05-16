@@ -61,12 +61,17 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  // Only re-load when registers change — NOT when category changes
+  // Fingerprint of register IDs — prevents redundant reloads when same data re-renders
+  const registersFingerRef = useRef('');
+
+  // Only re-load when registers actually change (by ID set)
   useEffect(() => {
-    if (registers && registers.length > 0) {
-      setPage(1);
-      loadDashboard();
-    }
+    if (!registers || registers.length === 0) return;
+    const fingerprint = registers.map(r => r.id).sort().join(',');
+    if (fingerprint === registersFingerRef.current) return; // same data, skip
+    registersFingerRef.current = fingerprint;
+    setPage(1);
+    loadDashboard();
   }, [registers]);
 
   const getFilteredRegisters = () => {
@@ -99,11 +104,11 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
           .select('*')
           .in('register_id', regIds)
           .order('created_at', { ascending: false })
-          .limit(2000);
+          .limit(500); // Reduced from 2000 — UI paginates at 10/page so 500 is ample
         if (error) throw error;
         allTxsRaw = data || [];
       } else {
-        const all = await db.cash_transactions.orderBy('created_at').reverse().limit(2000).toArray();
+        const all = await db.cash_transactions.orderBy('created_at').reverse().limit(500).toArray();
         const regIds = new Set(registers.map(r => r.id));
         allTxsRaw = all.filter(t => regIds.has(t.register_id));
       }
@@ -149,14 +154,14 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
       let saleMap = {};
       let purchaseMap = {};
 
-      // Supabase'de lokale kıyasla daha verimli: sadece ilgili satışları çek
-      const refIds = [...new Set(allTxs.filter(t => t.reference_id).map(t => t.reference_id))];
-      const purIds = [...new Set(allTxs.filter(t => t.purchase_id).map(t => t.purchase_id))];
+      // Only perform expensive entity lookups on the first 200 txs (rest are off-screen)
+      const txsForLookup = allTxs.slice(0, 200);
+      const refIds = [...new Set(txsForLookup.filter(t => t.reference_id).map(t => t.reference_id))];
+      const purIds = [...new Set(txsForLookup.filter(t => t.purchase_id).map(t => t.purchase_id))];
 
       if (isSupabase()) {
         const { supabase } = await import('../../../lib/supabaseClient');
         const [cusRes, supRes, salRes, purRes] = await Promise.all([
-          // Tüm müşterileri değil sadece ilgili tx'lerde geçenleri çek
           supabase.from('customers').select('id, name'),
           supabase.from('suppliers').select('id, name'),
           refIds.length > 0

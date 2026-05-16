@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, startTransition } from 'react';
 import toast from '../../../components/ui/CustomToast';
 import { ArrowDownLeft, ArrowUpRight, TrendingUp, Landmark } from 'lucide-react';
 import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
@@ -89,7 +89,7 @@ export const CashReportTab = ({ startDate, endDate }) => {
     setLoading(true);
     try {
       const summary = await reportService.getCashReport(startDate, endDate);
-      setData(summary);
+      startTransition(() => setData(summary));
     } catch(e) {
       console.error('[CashReport] Yükleme Hatası:', e);
       toast.error('Kasa raporu yüklenirken bir hata oluştu.');

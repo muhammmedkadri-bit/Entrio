@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, startTransition } from 'react';
 import toast from '../../../components/ui/CustomToast';
 import { TrendingUp, Hash, ShoppingBag, Tag, Percent, Wallet, Package } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
@@ -39,7 +39,7 @@ export const SalesReportTab = ({ startDate, endDate }) => {
     setLoading(true);
     try {
       const summary = await reportService.getSalesSummary(startDate, endDate);
-      setData(summary);
+      startTransition(() => setData(summary));
     } catch(e) {
       console.error('[SalesReport] Yükleme Hatası:', e);
       toast.error('Satış raporu yüklenirken bir hata oluştu.');

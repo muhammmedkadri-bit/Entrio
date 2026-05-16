@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, startTransition } from 'react';
 import toast from '../../../components/ui/CustomToast';
 import { Users, Building2, TrendingUp, TrendingDown, AlertCircle, UserCheck, UserX, Crown, PhoneCall } from 'lucide-react';
 import { StatCard } from '../../../components/ui/StatCard';
@@ -21,7 +21,7 @@ export const CariReportTab = () => {
     setLoading(true);
     try {
       const summary = await reportService.getCariReport(mode);
-      setData(summary);
+      startTransition(() => setData(summary));
     } catch(e) {
       console.error('[CariReport] Yükleme Hatası:', e);
       toast.error('Cari rapor yüklenirken bir hata oluştu.');
