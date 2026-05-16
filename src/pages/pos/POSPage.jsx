@@ -11,6 +11,7 @@ import { productService } from '../../services/productService';
 import { saleService } from '../../services/saleService';
 import { purchaseService } from '../../services/purchaseService';
 import { cashService } from '../../services/cashService';
+import { settingsService } from '../../services/settingsService';
 import { BarcodeInput } from '../../components/ui/BarcodeInput';
 import { ProductCard } from './ProductCard';
 import { CartItem } from './CartItem';
@@ -221,24 +222,44 @@ export const POSPage = () => {
   // Already initialized if displayedProducts is non-empty (came from cache)
   const isInitializedRef = useRef(displayedProducts.length > 0);
 
-  // Restore displayed products from localStorage on first fetch (only when cache was empty)
+  // Restore displayed products from localStorage initially, then sync with DB
   useEffect(() => {
     if (!allProducts || allProducts.length === 0) return;
-    if (isInitializedRef.current) return; // skip — already populated from cache
-    isInitializedRef.current = true;
 
-    let savedIds = [];
-    try {
-      savedIds = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
-    } catch { savedIds = []; }
+    const syncQuickSales = async () => {
+      try {
+        const setting = await settingsService.get(LS_KEY);
+        if (setting && setting.value && Array.isArray(setting.value)) {
+          const idMap = new Map(allProducts.map(p => [p.id, p]));
+          const restored = setting.value.map(id => idMap.get(id)).filter(Boolean);
+          if (restored.length > 0) {
+            setDisplayedProducts(restored);
+            localStorage.setItem(LS_KEY, JSON.stringify(restored.map(p => p.id)));
+          }
+        }
+      } catch (e) {
+        console.error('Hızlı satış senkronizasyon hatası:', e);
+      }
+    };
 
-    if (savedIds.length > 0) {
-      const idMap = new Map(allProducts.map(p => [p.id, p]));
-      const restored = savedIds.map(id => idMap.get(id)).filter(Boolean);
-      setDisplayedProducts(restored.length > 0 ? restored : allProducts.slice(0, 12));
-    } else {
-      setDisplayedProducts(allProducts.slice(0, 12));
+    if (!isInitializedRef.current) {
+      isInitializedRef.current = true;
+      let savedIds = [];
+      try {
+        savedIds = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+      } catch { savedIds = []; }
+
+      if (savedIds.length > 0) {
+        const idMap = new Map(allProducts.map(p => [p.id, p]));
+        const restored = savedIds.map(id => idMap.get(id)).filter(Boolean);
+        setDisplayedProducts(restored.length > 0 ? restored : allProducts.slice(0, 12));
+      } else {
+        setDisplayedProducts(allProducts.slice(0, 12));
+      }
     }
+
+    // Her sayfa yüklendiğinde DB'den taze liste çek
+    syncQuickSales();
   }, [allProducts]);
 
   // ── Cash registers — via useCashRegisters hook (cache-aware) ─────────────
@@ -253,10 +274,16 @@ export const POSPage = () => {
     }));
   }, [hookRegisters]);
 
-  // Persist displayed product IDs to localStorage — only after init to avoid overwriting saved data
+  // Persist displayed product IDs to DB and localStorage — only after init to avoid overwriting saved data
   useEffect(() => {
     if (!isInitializedRef.current) return;
-    localStorage.setItem(LS_KEY, JSON.stringify(displayedProducts.map(p => p.id)));
+    const ids = displayedProducts.map(p => p.id);
+    localStorage.setItem(LS_KEY, JSON.stringify(ids));
+    
+    // Arka planda DB'ye kaydet (ayarlar tablosuna)
+    settingsService.put(LS_KEY, ids).catch(e => {
+      console.error('Hızlı satış DB kayıt hatası:', e);
+    });
   }, [displayedProducts]);
 
 

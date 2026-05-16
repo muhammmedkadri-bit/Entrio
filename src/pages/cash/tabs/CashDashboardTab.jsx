@@ -95,11 +95,12 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
           .from('cash_transactions')
           .select('*')
           .in('register_id', regIds)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(2000);
         if (error) throw error;
         allTxsRaw = data || [];
       } else {
-        const all = await db.cash_transactions.orderBy('created_at').reverse().toArray();
+        const all = await db.cash_transactions.orderBy('created_at').reverse().limit(2000).toArray();
         const regIds = new Set(registers.map(r => r.id));
         allTxsRaw = all.filter(t => regIds.has(t.register_id));
       }

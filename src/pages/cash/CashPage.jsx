@@ -6,7 +6,9 @@ import { useGlobalLoader } from '../../hooks/useGlobalLoader';
 
 export const CashPage = () => {
   const { registers, loading, refetch } = useCashRegisters();
-  useGlobalLoader(loading);
+  const [isDashboardLoading, setIsDashboardLoading] = React.useState(true);
+  
+  useGlobalLoader(loading || isDashboardLoading);
 
   return (
     <div className="flex flex-col h-full gap-4">
@@ -23,7 +25,7 @@ export const CashPage = () => {
       </div>
 
       <div className="flex-1 mt-2">
-        <CashDashboardTab registers={registers} onRegisterChanged={refetch} onLoadingChange={() => {}} />
+        <CashDashboardTab registers={registers} onRegisterChanged={refetch} onLoadingChange={setIsDashboardLoading} />
       </div>
     </div>
   );
