@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { PremiumLoader } from '../../components/ui/PremiumLoader';
 import { CheckCircle2, ShoppingCart, User as UserIcon, Banknote, CreditCard, Building2, Shuffle, SplitSquareHorizontal, UserCheck, LayoutGrid, ArrowLeftRight, X, Zap, Package, ChevronDown, ScanBarcode } from 'lucide-react';
 import toast from '../../components/ui/CustomToast';
@@ -33,7 +34,20 @@ import { supabase } from '../../lib/supabaseClient';
 import { isSupabase } from '../../config/database';
 
 const formatCurrency = (val) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
-const LS_KEY = 'pos_displayed_product_ids';
+const LS_KEY = 'entrio_pos_quick_products_v2';
+
+const gridVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.04 }
+  }
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 15, scale: 0.95 },
+  show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 350, damping: 25 } }
+};
 
 /* ─── Integrated Payment Card: button + inline register picker ─────────── */
 const PaymentCard = ({ btn, isActive, isDimmed, activeStyle, regOptions, selectedReg, onSelect, onRegChange }) => {
@@ -882,14 +896,16 @@ export const POSPage = () => {
 
           {/* Grid Content */}
           <div className="flex-1 overflow-y-auto p-2">
-            {loading ? (
-              <div className="relative flex items-center justify-center h-full">
-                
-              </div>
-            ) : displayedProducts.length > 0 ? (
-              <div className={`grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 relative ${swapMode ? 'relative' : ''}`}>
+            {displayedProducts.length > 0 ? (
+              <motion.div 
+                variants={gridVariants}
+                initial="hidden"
+                animate="show"
+                className={`grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 relative ${swapMode ? 'relative' : ''}`}
+              >
                 {displayedProducts.map((p, idx) => (
-                  <div
+                  <motion.div
+                    variants={cardVariants}
                     key={p.id}
                     className={swapMode ? 'relative cursor-pointer' : 'relative z-20'}
                     onClick={swapMode ? () => handleGridCardClickForSwap(p, idx) : undefined}
@@ -931,8 +947,12 @@ export const POSPage = () => {
                         </span>
                       </div>
                     )}
-                  </div>
+                  </motion.div>
                 ))}
+              </motion.div>
+            ) : loading ? (
+              <div className="flex items-center justify-center h-full">
+                <PremiumLoader />
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-3">
