@@ -124,7 +124,8 @@ export const useDashboardData = () => {
       }
     } else {
       // Cache invalidated — re-fetch with force=true since Realtime said data changed
-      fetchData(false, true);
+      // Silent fetch to prevent full-page loader flash
+      fetchData(true, true);
     }
   }, [isDashboardValid, isRegistersValid]);
 
