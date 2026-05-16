@@ -729,6 +729,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
               const isOut = ['purchase_out', 'supplier_payment_out', 'expense_out', 'withdrawal_out'].includes(tx.transaction_type);
               const isReturn = tx.transaction_type === 'return_out';
               const isTransfer = tx.transaction_type === 'transfer_out' || tx.transaction_type === 'transfer_in';
+              const isCreditPaymentIn = tx.transaction_type === 'credit_payment_in';
               const isAdj = tx.transaction_type === 'balance_adjustment';
               const isDayClose = tx.transaction_type === 'day_close';
               
@@ -744,6 +745,10 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
                  pillClass = 'bg-blue-50 text-blue-600 border border-blue-200';
                  typeLabel = 'Transfer';
                  IconComponent = ArrowRightLeft;
+              } else if (isCreditPaymentIn) {
+                 pillClass = 'bg-slate-100 text-slate-700 border border-slate-200';
+                 typeLabel = 'K.Kartı Tahsilatı';
+                 IconComponent = ArrowDownLeft;
               } else if (isAdj) {
                  pillClass = 'bg-slate-50 text-slate-600 border border-slate-200';
                  typeLabel = 'Düzeltme';
@@ -768,6 +773,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
                 if (tx.transaction_type === 'sale_in') desc = 'Satış Geliri';
                 else if (tx.transaction_type === 'customer_payment_in') desc = 'Cari Tahsilat';
                 else if (tx.transaction_type === 'purchase_out') desc = 'Alış Ödemesi';
+                else if (tx.transaction_type === 'credit_payment_in') desc = 'Kredi Kartı Ödemesi Alındı';
                 else if (tx.transaction_type === 'supplier_payment_out') desc = 'Tedarikçi Ödemesi';
                 else if (tx.transaction_type === 'expense_out') desc = 'Gider';
                 else if (tx.transaction_type === 'deposit_in') desc = 'Para Girişi';
@@ -804,8 +810,8 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
                     <span className="bg-slate-100 text-slate-600 font-semibold px-2.5 py-1 rounded-md">{tx.registerName}</span>
                   </td>
                   <td className="p-3 text-xs font-medium text-slate-500 whitespace-nowrap">{fmtDate(tx.created_at)}</td>
-                  <td className={`p-3 text-right font-bold tabular-nums whitespace-nowrap ${isTransfer ? 'text-slate-500' : isOut || isReturn || tx.amount < 0 ? 'text-rose-600' : 'text-[#5da83f]'}`}>
-                    {isTransfer ? (tx.transaction_type === 'transfer_out' ? '-' : '+') : isOut || isReturn || tx.amount < 0 ? '-' : '+'}{formatCurrency(Math.abs(tx.amount || 0))}
+                  <td className={`p-3 text-right font-bold tabular-nums whitespace-nowrap ${isTransfer || isCreditPaymentIn ? 'text-slate-500' : isOut || isReturn || tx.amount < 0 ? 'text-rose-600' : 'text-[#5da83f]'}`}>
+                    {isTransfer || isCreditPaymentIn ? (tx.transaction_type === 'transfer_out' ? '-' : '+') : isOut || isReturn || tx.amount < 0 ? '-' : '+'}{formatCurrency(Math.abs(tx.amount || 0))}
                   </td>
                 </tr>
               )

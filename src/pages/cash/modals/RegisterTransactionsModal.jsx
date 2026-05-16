@@ -25,7 +25,8 @@ const TX_META = {
   withdrawal_out:        { label: 'Para Çıkışı',        color: 'bg-rose-50 text-rose-700 border-rose-200',           isIncome: false },
   return_out:            { label: 'İade Çıkışı',        color: 'bg-orange-50 text-orange-700 border-orange-200',     isIncome: false },
   transfer_out:          { label: 'Transfer Çıkışı',   color: 'bg-blue-50 text-blue-700 border-blue-200',           isIncome: false },
-  balance_adjustment:    { label: 'Bakiye Düzeltme',   color: 'bg-amber-50 text-amber-700 border-amber-200',        isIncome: null },
+  credit_payment_in:     { label: 'K.Kartı Tahsilatı', color: 'bg-slate-100 text-slate-700 border-slate-200',         isIncome: true },
+  balance_adjustment:    { label: 'Bakiye Düzeltme',   color: 'bg-slate-100 text-slate-600 border-slate-200',       isIncome: null },
   day_close:             { label: 'Günsonu',           color: 'bg-slate-100 text-slate-700 border-slate-200',       isIncome: null },
 };
 

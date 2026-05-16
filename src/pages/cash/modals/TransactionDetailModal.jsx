@@ -145,11 +145,12 @@ export const TransactionDetailModal = ({ isOpen, onClose, transaction, onSaved, 
   const isReturn = transaction.transaction_type === 'return_out' || transaction.transaction_type === 'return_in';
   const isDayClose = transaction.transaction_type === 'day_close';
   const isTransfer = transaction.transaction_type === 'transfer_out' || transaction.transaction_type === 'transfer_in';
-  const isOut = ['purchase_out', 'supplier_payment_out', 'expense_out', 'withdrawal_out', 'transfer_out']
-    .includes(transaction.transaction_type);
+  const isCreditPaymentIn = transaction.transaction_type === 'credit_payment_in';
+  const isOut = ['purchase_out', 'supplier_payment_out', 'expense_out', 'withdrawal_out', 'transfer_out'].includes(transaction.transaction_type);
+  const isNeutral = isTransfer || isCreditPaymentIn || transaction.transaction_type === 'balance_adjustment';
 
   // Only allow editing manual income/expense and transfers
-  const isReadOnly = !['deposit_in', 'expense_out', 'withdrawal_out', 'transfer_in', 'transfer_out'].includes(transaction.transaction_type);
+  const isReadOnly = !['deposit_in', 'expense_out', 'withdrawal_out', 'transfer_in', 'transfer_out', 'credit_payment_in'].includes(transaction.transaction_type);
 
   const formatCurrency = (val) =>
     new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
@@ -230,12 +231,12 @@ export const TransactionDetailModal = ({ isOpen, onClose, transaction, onSaved, 
       <div className="space-y-4">
 
         {/* ── Tutar Banner ── */}
-        <div className={`p-4 rounded-2xl flex flex-col items-center justify-center text-center ${isOut ? 'bg-rose-50' : 'bg-emerald-50'}`}>
+        <div className={`p-4 rounded-2xl flex flex-col items-center justify-center text-center ${isNeutral ? 'bg-slate-50' : isOut ? 'bg-rose-50' : 'bg-emerald-50'}`}>
           <div className="text-xs font-bold text-slate-500 mb-1 uppercase tracking-widest">
             {transaction.registerName || 'Kasa Hareketi'}
           </div>
-          <div className={`text-3xl font-black ${isOut ? 'text-rose-600' : 'text-[#5da83f]'}`}>
-            {isOut ? '-' : '+'}{formatCurrency(transaction.amount)}
+          <div className={`text-3xl font-black ${isNeutral ? 'text-slate-600' : isOut ? 'text-rose-600' : 'text-[#5da83f]'}`}>
+            {isNeutral ? '' : isOut ? '-' : '+'}{formatCurrency(transaction.amount)}
           </div>
           <div className="mt-2 text-xs font-semibold text-slate-400 bg-white px-3 py-1 rounded-full shadow-sm border border-slate-100">
             {fmtDate(transaction.created_at)}
