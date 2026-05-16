@@ -25,18 +25,28 @@ import { DayCloseDetailModal } from '../modals/DayCloseDetailModal';
 const ITEMS_PER_PAGE = 10;
 const CARDS_PER_PAGE = 5;
 
-const tableVariants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.05 }
-  }
-};
-
-const rowVariants = {
-  hidden: { opacity: 0, x: -15 },
-  show: { opacity: 1, x: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
-};
+const RowSkeleton = () => (
+  <tr className="border-b border-slate-100 animate-pulse">
+    <td className="p-3 whitespace-nowrap">
+      <div className="w-24 h-6 bg-slate-200/60 rounded-full"></div>
+    </td>
+    <td className="p-3">
+      <div className="w-32 sm:w-48 h-4 bg-slate-200/60 rounded"></div>
+    </td>
+    <td className="p-3 whitespace-nowrap">
+      <div className="w-28 h-5 bg-slate-100 rounded-md"></div>
+    </td>
+    <td className="p-3 whitespace-nowrap">
+      <div className="w-20 h-6 bg-slate-100 rounded-md"></div>
+    </td>
+    <td className="p-3 whitespace-nowrap">
+      <div className="w-24 h-4 bg-slate-100 rounded"></div>
+    </td>
+    <td className="p-3 whitespace-nowrap text-right">
+      <div className="w-20 h-5 bg-slate-200/60 rounded inline-block"></div>
+    </td>
+  </tr>
+);
 
 export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingChange }) => {
   const [activeCategory, setActiveCategory] = useState('all');
@@ -98,12 +108,13 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
         return r.type === activeCategory;
       });
     }
-    // A'dan Z'ye isme göre sırala
     return [...filtered].sort((a, b) => a.name.localeCompare(b.name, 'tr'));
   };
 
+  const [isTableLoading, setIsTableLoading] = useState(true);
+
   const loadDashboard = async () => {
-    onLoadingChange?.(true);
+    setIsTableLoading(true);
     try {
       if (!registers || registers.length === 0) {
         setSummary({ totals: { sale_in: 0, customer_payment_in: 0, deposit_in: 0, return_in: 0, purchase_out: 0, supplier_payment_out: 0, expense_out: 0, withdrawal_out: 0, return_out: 0 } });
@@ -282,6 +293,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
       console.error('[CashDashboard] Kasa özeti alınamadı:', e);
       toast.error(e?.message || 'Kasa özeti alınırken bir hata oluştu.');
     } finally {
+      setIsTableLoading(false);
       onLoadingChange?.(false);
     }
   };
@@ -757,13 +769,10 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
               <th className="p-3 text-right">Tutar</th>
             </tr>
           </thead>
-          <motion.tbody 
-            variants={tableVariants}
-            initial="hidden"
-            animate="show"
-            className="divide-y divide-slate-100"
-          >
-            {paginatedTxs.map(tx => {
+          <tbody className="divide-y divide-slate-100">
+            {isTableLoading ? (
+              [...Array(10)].map((_, i) => <RowSkeleton key={`skeleton-${i}`} />)
+            ) : paginatedTxs.map(tx => {
               const isOut = ['purchase_out', 'supplier_payment_out', 'expense_out', 'withdrawal_out'].includes(tx.transaction_type);
               const isReturn = tx.transaction_type === 'return_out';
               const isTransfer = tx.transaction_type === 'transfer_out' || tx.transaction_type === 'transfer_in';
@@ -821,7 +830,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
               }
 
               return (
-                <motion.tr variants={rowVariants} key={tx.id} onClick={() => {
+                <tr key={tx.id} onClick={() => {
                   if (tx.transaction_type === 'day_close') {
                     setDayCloseDetailTx(tx);
                   } else {
@@ -851,13 +860,13 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
                   <td className={`p-3 text-right font-bold tabular-nums whitespace-nowrap ${isTransfer || isCreditPaymentIn ? 'text-slate-500' : isOut || isReturn || tx.amount < 0 ? 'text-rose-600' : 'text-[#5da83f]'}`}>
                     {isTransfer || isCreditPaymentIn ? (tx.transaction_type === 'transfer_out' ? '-' : '+') : isOut || isReturn || tx.amount < 0 ? '-' : '+'}{formatCurrency(Math.abs(tx.amount || 0))}
                   </td>
-                </motion.tr>
+                </tr>
               )
             })}
-            {recentTxs.length === 0 && (
-              <motion.tr variants={rowVariants}><td colSpan="6" className="text-center p-8 text-slate-400">Bu filtrelere uygun işlem bulunamadı.</td></motion.tr>
+            {!isTableLoading && recentTxs.length === 0 && (
+              <tr><td colSpan="6" className="text-center p-8 text-slate-400">Bu filtrelere uygun işlem bulunamadı.</td></tr>
             )}
-          </motion.tbody>
+          </tbody>
         </table>
       </motion.div>
 
