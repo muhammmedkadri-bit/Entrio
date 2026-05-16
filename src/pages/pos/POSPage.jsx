@@ -49,6 +49,20 @@ const cardVariants = {
   show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 350, damping: 25 } }
 };
 
+const ProductSkeleton = () => (
+  <div className="bg-white rounded-2xl p-3 border border-slate-100 shadow-sm flex flex-col h-[140px] animate-pulse">
+    <div className="flex justify-between items-start mb-2">
+      <div className="w-10 h-10 rounded-xl bg-slate-200/60"></div>
+      <div className="w-14 h-5 rounded-full bg-slate-100"></div>
+    </div>
+    <div className="mt-auto">
+      <div className="h-3.5 bg-slate-200/60 rounded w-3/4 mb-1.5"></div>
+      <div className="h-3 bg-slate-100 rounded w-1/2 mb-3"></div>
+      <div className="h-5 bg-slate-200/80 rounded w-1/3 ml-auto"></div>
+    </div>
+  </div>
+);
+
 /* ─── Integrated Payment Card: button + inline register picker ─────────── */
 const PaymentCard = ({ btn, isActive, isDimmed, activeStyle, regOptions, selectedReg, onSelect, onRegChange }) => {
   const Icon = btn.icon;
@@ -233,6 +247,11 @@ export const POSPage = () => {
     return cached.slice(0, 12);
   });
 
+  const [isGridLoading, setIsGridLoading] = useState(() => {
+    const cached = useCacheStore.getState().getCache('products');
+    return !cached || cached.length === 0;
+  });
+
   // Zaten başlatılıp başlatılmadığını izle
   const isInitializedRef = useRef(false);
   // Snapshot of current displayed IDs for comparison inside async callbacks
@@ -243,7 +262,8 @@ export const POSPage = () => {
   useEffect(() => {
     let mounted = true;
     
-    if (allProducts.length > 0 && !isInitializedRef.current) {
+    // Yükleme tamamlanana kadar (allProducts servisi) bekle, ardından sync işlemlerini yap
+    if (!loading && !isInitializedRef.current) {
       isInitializedRef.current = true;
       
       const syncQuickSales = async () => {
@@ -276,6 +296,8 @@ export const POSPage = () => {
           }
         } catch (e) {
           console.error('Hızlı satış senkronizasyon hatası:', e);
+        } finally {
+          if (mounted) setIsGridLoading(false);
         }
       };
 
@@ -283,7 +305,7 @@ export const POSPage = () => {
     }
     
     return () => { mounted = false; };
-  }, [allProducts]);
+  }, [allProducts, loading]);
 
   // Update stock quantities selectively without full re-render
   useEffect(() => {
@@ -896,7 +918,11 @@ export const POSPage = () => {
 
           {/* Grid Content */}
           <div className="flex-1 overflow-y-auto p-2">
-            {displayedProducts.length > 0 ? (
+            {isGridLoading ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2">
+                {[...Array(12)].map((_, i) => <ProductSkeleton key={`skeleton-${i}`} />)}
+              </div>
+            ) : displayedProducts.length > 0 ? (
               <motion.div 
                 variants={gridVariants}
                 initial="hidden"
@@ -945,10 +971,6 @@ export const POSPage = () => {
                   </motion.div>
                 ))}
               </motion.div>
-            ) : loading ? (
-              <div className="flex items-center justify-center h-full">
-                <PremiumLoader />
-              </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-3">
                 <ShoppingCart className="w-12 h-12 opacity-50" />
