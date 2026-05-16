@@ -2,13 +2,10 @@ import React from 'react';
 import { Wallet } from 'lucide-react';
 import { useCashRegisters } from '../../hooks/useCashRegisters';
 import { CashDashboardTab } from './tabs/CashDashboardTab';
-import { useGlobalLoader } from '../../hooks/useGlobalLoader';
 
 export const CashPage = () => {
   const { registers, loading, refetch } = useCashRegisters();
   const [isDashboardLoading, setIsDashboardLoading] = React.useState(true);
-  
-  useGlobalLoader(loading || isDashboardLoading);
 
   return (
     <div className="flex flex-col h-full gap-4">

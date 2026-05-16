@@ -48,6 +48,55 @@ const RowSkeleton = () => (
   </tr>
 );
 
+const StatCardSkeleton = () => (
+  <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center animate-pulse min-h-[90px]">
+    <div className="flex items-center justify-between mb-2">
+      <div className="w-32 h-3 bg-slate-200/60 rounded"></div>
+      <div className="w-8 h-8 rounded-lg bg-slate-100"></div>
+    </div>
+    <div className="w-32 h-6 bg-slate-200/80 rounded mt-1"></div>
+  </div>
+);
+
+const RegisterCardSkeleton = () => (
+  <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-col min-h-[210px] animate-pulse">
+    <div className="flex justify-between items-start mb-4">
+      <div className="flex items-center gap-1.5 w-full">
+        <div className="w-4 h-4 rounded bg-slate-200/60"></div>
+        <div className="w-24 h-4 rounded bg-slate-200/60"></div>
+      </div>
+      <div className="w-4 h-4 rounded bg-slate-100"></div>
+    </div>
+    <div className="flex-1 flex flex-col justify-center gap-2 py-4">
+      <div className="w-32 h-6 bg-slate-200/80 rounded mb-1"></div>
+      <div className="w-full h-8 bg-slate-100 rounded-lg"></div>
+    </div>
+    <div className="flex gap-2">
+      <div className="flex-1 h-8 rounded-xl bg-[#82e05a]/10"></div>
+      <div className="flex-1 h-8 rounded-xl bg-rose-50"></div>
+    </div>
+  </div>
+);
+
+const CashFlowBarSkeleton = () => (
+  <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-6 animate-pulse">
+    <div className="flex justify-between items-end mb-5">
+      <div>
+        <div className="w-32 h-3 bg-slate-200/60 rounded mb-3"></div>
+        <div className="w-24 h-6 bg-slate-200/80 rounded"></div>
+      </div>
+      <div className="flex items-center gap-5">
+        <div className="w-16 h-3 bg-slate-200/60 rounded"></div>
+        <div className="w-16 h-3 bg-slate-200/60 rounded"></div>
+      </div>
+    </div>
+    <div className="w-full h-3 rounded-full bg-slate-100 flex overflow-hidden">
+      <div className="w-1/2 h-full bg-slate-200/50"></div>
+      <div className="w-1/2 h-full bg-slate-200/30"></div>
+    </div>
+  </div>
+);
+
 export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingChange }) => {
   const [activeCategory, setActiveCategory] = useState('all');
   const [summary, setSummary] = useState(null);
@@ -112,9 +161,10 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
   };
 
   const [isTableLoading, setIsTableLoading] = useState(true);
+  const hasShownDataRef = useRef(false);
 
   const loadDashboard = async () => {
-    setIsTableLoading(true);
+    if (!hasShownDataRef.current) setIsTableLoading(true);
     try {
       if (!registers || registers.length === 0) {
         setSummary({ totals: { sale_in: 0, customer_payment_in: 0, deposit_in: 0, return_in: 0, purchase_out: 0, supplier_payment_out: 0, expense_out: 0, withdrawal_out: 0, return_out: 0 } });
@@ -289,6 +339,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
       setSummary(combinedSum);
       setMonthlySummary({ income: mIncome, expense: mExpense });
       setRecentTxs(finalTxs);
+      hasShownDataRef.current = true;
     } catch (e) {
       console.error('[CashDashboard] Kasa özeti alınamadı:', e);
       toast.error(e?.message || 'Kasa özeti alınırken bir hata oluştu.');
@@ -487,100 +538,108 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
 
             {/* Cards grid — no overflow, no scroll */}
             <div className="flex-1 grid gap-4" style={{ gridTemplateColumns: `repeat(${CARDS_PER_PAGE}, 1fr)` }}>
-              {visible.map(reg => (
-                <div 
-                  key={reg.id} 
-                  className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-col hover:shadow-md transition-shadow min-w-0 min-h-[210px] cursor-pointer"
-                  onClick={() => setRegTxModal(reg)}
-                >
-                  
-                  {/* Üst: Kasa Adı + Menü */}
-                  <div className="flex justify-between items-start">
-                    <div className="flex flex-col gap-1 min-w-0">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        {getRegIcon(reg.type)}
-                        <h3 className="text-sm font-bold text-slate-700 truncate">{reg.name}</h3>
-                        {reg.is_default_for && (
-                          <span className="bg-[#7ed957]/15 text-[#5da83f] text-[10px] font-bold px-1.5 py-0.5 rounded-md border border-[#7ed957]/30 ml-1 flex-shrink-0" title="Varsayılan Kasa">
-                            ★
-                          </span>
-                        )}
-                      </div>
-                      {reg.type === 'credit_card' && (
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          {reg.billing_day && <span className="text-[9px] font-bold bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded-md border border-rose-100">Kesim: {reg.billing_day}. Gün</span>}
-                          {reg.due_day && <span className="text-[9px] font-bold bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded-md border border-rose-100">Son Ödeme: {reg.due_day}. Gün</span>}
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); openMenu(e, reg.id); }}
-                      className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 transition-colors flex-shrink-0 ml-1 mt-[-2px]"
+              {isTableLoading ? (
+                <>
+                  {[...Array(CARDS_PER_PAGE)].map((_, i) => <RegisterCardSkeleton key={`rs-${i}`} />)}
+                </>
+              ) : (
+                <>
+                  {visible.map(reg => (
+                    <div 
+                      key={reg.id} 
+                      className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-col hover:shadow-md transition-shadow min-w-0 min-h-[210px] cursor-pointer"
+                      onClick={() => setRegTxModal(reg)}
                     >
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  {/* Orta: Bakiye Blokları — flex-1 ile üst ve alta eşit mesafe */}
-                  <div className="flex-1 flex flex-col justify-center py-4 gap-2">
-                    {/* Günün Bakiyesi veya Kalan Limit */}
-                    {(() => {
-                      if (reg.type === 'credit_card') {
-                        const limit = reg.credit_limit || 0;
-                        const balance = reg.current_balance || 0;
-                        const remaining = limit + balance;
-                        return (
-                          <div className={`text-2xl font-black tracking-tight leading-none ${
-                            remaining < 0 ? 'text-red-500' : 'text-slate-800'
-                          }`}>
-                            {formatCurrency(remaining)}
-                            <span className="text-[10px] font-semibold text-slate-400 ml-1.5 align-middle">kalan limit</span>
-                          </div>
-                        );
-                      }
                       
-                      const genBal  = reg.general_balance ?? reg.current_balance ?? 0;
-                      const dailyNet = (reg.current_balance ?? 0) - genBal;
-                      return (
-                        <div className={`text-2xl font-black tracking-tight leading-none ${
-                          dailyNet < 0 ? 'text-red-500' : dailyNet === 0 ? 'text-slate-400' : 'text-slate-800'
-                        }`}>
-                          {formatCurrency(dailyNet)}
-                          <span className="text-[10px] font-semibold text-slate-400 ml-1.5 align-middle">bugün</span>
+                      {/* Üst: Kasa Adı + Menü */}
+                      <div className="flex justify-between items-start">
+                        <div className="flex flex-col gap-1 min-w-0">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            {getRegIcon(reg.type)}
+                            <h3 className="text-sm font-bold text-slate-700 truncate">{reg.name}</h3>
+                            {reg.is_default_for && (
+                              <span className="bg-[#7ed957]/15 text-[#5da83f] text-[10px] font-bold px-1.5 py-0.5 rounded-md border border-[#7ed957]/30 ml-1 flex-shrink-0" title="Varsayılan Kasa">
+                                ★
+                              </span>
+                            )}
+                          </div>
+                          {reg.type === 'credit_card' && (
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              {reg.billing_day && <span className="text-[9px] font-bold bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded-md border border-rose-100">Kesim: {reg.billing_day}. Gün</span>}
+                              {reg.due_day && <span className="text-[9px] font-bold bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded-md border border-rose-100">Son Ödeme: {reg.due_day}. Gün</span>}
+                            </div>
+                          )}
                         </div>
-                      );
-                    })()}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); openMenu(e, reg.id); }}
+                          className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 transition-colors flex-shrink-0 ml-1 mt-[-2px]"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+                      </div>
 
-                    {/* Toplam Bakiye / Mevcut Borç */}
-                    <div className="text-[11px] font-semibold text-slate-500 bg-slate-50 px-2 py-1.5 rounded-lg border border-slate-100 flex items-center justify-between">
-                      <span>{reg.type === 'credit_card' ? 'Güncel Borç:' : 'Toplam Bakiye:'}</span>
-                      <span className={(reg.current_balance ?? 0) < 0 ? 'text-red-500 font-bold' : 'text-slate-700 font-bold'}>
-                        {reg.type === 'credit_card' ? formatCurrency(Math.abs(reg.current_balance ?? 0)) : formatCurrency(reg.current_balance ?? 0)}
-                      </span>
+                      {/* Orta: Bakiye Blokları — flex-1 ile üst ve alta eşit mesafe */}
+                      <div className="flex-1 flex flex-col justify-center py-4 gap-2">
+                        {/* Günün Bakiyesi veya Kalan Limit */}
+                        {(() => {
+                          if (reg.type === 'credit_card') {
+                            const limit = reg.credit_limit || 0;
+                            const balance = reg.current_balance || 0;
+                            const remaining = limit + balance;
+                            return (
+                              <div className={`text-2xl font-black tracking-tight leading-none ${
+                                remaining < 0 ? 'text-red-500' : 'text-slate-800'
+                              }`}>
+                                {formatCurrency(remaining)}
+                                <span className="text-[10px] font-semibold text-slate-400 ml-1.5 align-middle">kalan limit</span>
+                              </div>
+                            );
+                          }
+                          
+                          const genBal  = reg.general_balance ?? reg.current_balance ?? 0;
+                          const dailyNet = (reg.current_balance ?? 0) - genBal;
+                          return (
+                            <div className={`text-2xl font-black tracking-tight leading-none ${
+                              dailyNet < 0 ? 'text-red-500' : dailyNet === 0 ? 'text-slate-400' : 'text-slate-800'
+                            }`}>
+                              {formatCurrency(dailyNet)}
+                              <span className="text-[10px] font-semibold text-slate-400 ml-1.5 align-middle">bugün</span>
+                            </div>
+                          );
+                        })()}
+
+                        {/* Toplam Bakiye / Mevcut Borç */}
+                        <div className="text-[11px] font-semibold text-slate-500 bg-slate-50 px-2 py-1.5 rounded-lg border border-slate-100 flex items-center justify-between">
+                          <span>{reg.type === 'credit_card' ? 'Güncel Borç:' : 'Toplam Bakiye:'}</span>
+                          <span className={(reg.current_balance ?? 0) < 0 ? 'text-red-500 font-bold' : 'text-slate-700 font-bold'}>
+                            {reg.type === 'credit_card' ? formatCurrency(Math.abs(reg.current_balance ?? 0)) : formatCurrency(reg.current_balance ?? 0)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Alt: Gelir / Gider Butonları */}
+                      <div className="flex gap-2">
+                        {reg.type === 'credit_card' ? (
+                          <button onClick={(e) => { e.stopPropagation(); setCreditCardPaymentReg(reg); }} className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-bold bg-[#82e05a]/15 text-[#5da83f] hover:bg-[#82e05a]/25 rounded-xl transition-all border border-[#82e05a]/30">
+                            <ArrowDownLeft className="w-3.5 h-3.5" /> Ödeme Yap
+                          </button>
+                        ) : (
+                          <button onClick={(e) => { e.stopPropagation(); openManualTx(reg, 'in'); }} className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-bold bg-[#82e05a]/15 text-[#5da83f] hover:bg-[#82e05a]/25 rounded-xl transition-all border border-[#82e05a]/30">
+                            <ArrowDownLeft className="w-3.5 h-3.5" /> Gelir
+                          </button>
+                        )}
+                        <button onClick={(e) => { e.stopPropagation(); openManualTx(reg, 'out'); }} className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-bold bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl transition-all border border-rose-200">
+                          <ArrowUpRight className="w-3.5 h-3.5" /> Gider
+                        </button>
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Alt: Gelir / Gider Butonları */}
-                  <div className="flex gap-2">
-                    {reg.type === 'credit_card' ? (
-                      <button onClick={(e) => { e.stopPropagation(); setCreditCardPaymentReg(reg); }} className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-bold bg-[#82e05a]/15 text-[#5da83f] hover:bg-[#82e05a]/25 rounded-xl transition-all border border-[#82e05a]/30">
-                        <ArrowDownLeft className="w-3.5 h-3.5" /> Ödeme Yap
-                      </button>
-                    ) : (
-                      <button onClick={(e) => { e.stopPropagation(); openManualTx(reg, 'in'); }} className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-bold bg-[#82e05a]/15 text-[#5da83f] hover:bg-[#82e05a]/25 rounded-xl transition-all border border-[#82e05a]/30">
-                        <ArrowDownLeft className="w-3.5 h-3.5" /> Gelir
-                      </button>
-                    )}
-                    <button onClick={(e) => { e.stopPropagation(); openManualTx(reg, 'out'); }} className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-bold bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl transition-all border border-rose-200">
-                      <ArrowUpRight className="w-3.5 h-3.5" /> Gider
-                    </button>
-                  </div>
-                </div>
-              ))}
-              {/* Empty filler cells to keep grid shape */}
-              {Array.from({ length: CARDS_PER_PAGE - visible.length }).map((_, i) => (
-                <div key={`empty-${i}`} className="rounded-2xl border-2 border-dashed border-slate-100 bg-slate-50/30" />
-              ))}
+                  ))}
+                  {/* Empty filler cells to keep grid shape */}
+                  {Array.from({ length: CARDS_PER_PAGE - visible.length }).map((_, i) => (
+                    <div key={`empty-${i}`} className="rounded-2xl border-2 border-dashed border-slate-100 bg-slate-50/30 min-h-[210px]" />
+                  ))}
+                </>
+              )}
               {regs.length === 0 && (
                 <div className="col-span-5 p-8 text-center text-slate-400 bg-slate-50 border border-dashed border-slate-200 rounded-2xl text-sm">
                   Bu kategoride tanımlı kasa bulunmamaktadır.
@@ -694,60 +753,72 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Bugünkü Toplam Gelir" value={formatCurrency(inTotal)} icon={TrendingUp} colorTheme="grass" />
-        <StatCard title="Bugünkü Toplam Gider" value={formatCurrency(outTotal)} icon={TrendingDown} colorTheme="rose" />
-        <StatCard title="Bu Ayki Toplam Gelir" value={formatCurrency(monthlySummary.income)} icon={TrendingUp} colorTheme="grass" />
-        <StatCard title="Bu Ayki Toplam Gider" value={formatCurrency(monthlySummary.expense)} icon={TrendingDown} colorTheme="rose" />
+        {isTableLoading ? (
+          <>
+            {[...Array(4)].map((_, i) => <StatCardSkeleton key={`sc-${i}`} />)}
+          </>
+        ) : (
+          <>
+            <StatCard title="Bugünkü Toplam Gelir" value={formatCurrency(inTotal)} icon={TrendingUp} colorTheme="grass" />
+            <StatCard title="Bugünkü Toplam Gider" value={formatCurrency(outTotal)} icon={TrendingDown} colorTheme="rose" />
+            <StatCard title="Bu Ayki Toplam Gelir" value={formatCurrency(monthlySummary.income)} icon={TrendingUp} colorTheme="grass" />
+            <StatCard title="Bu Ayki Toplam Gider" value={formatCurrency(monthlySummary.expense)} icon={TrendingDown} colorTheme="rose" />
+          </>
+        )}
       </div>
 
       {/* Premium Cash Flow Bar */}
-      <motion.div 
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="relative overflow-hidden bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-6"
-      >
-        {/* Ambient background glows removed per user request */}
-        
-        <div className="flex justify-between items-end mb-5 relative z-10">
-          <div>
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Bugünkü Para Akışı</h3>
-            <div className="flex items-baseline gap-1.5">
-              <span className={`text-2xl font-black ${(inTotal - outTotal) >= 0 ? 'text-slate-800' : 'text-rose-600'}`}>
-                {formatCurrency(inTotal - outTotal)}
-              </span>
-              <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">NET</span>
+      {isTableLoading ? (
+        <CashFlowBarSkeleton />
+      ) : (
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="relative overflow-hidden bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-6"
+        >
+          {/* Ambient background glows removed per user request */}
+          
+          <div className="flex justify-between items-end mb-5 relative z-10">
+            <div>
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Bugünkü Para Akışı</h3>
+              <div className="flex items-baseline gap-1.5">
+                <span className={`text-2xl font-black ${(inTotal - outTotal) >= 0 ? 'text-slate-800' : 'text-rose-600'}`}>
+                  {formatCurrency(inTotal - outTotal)}
+                </span>
+                <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">NET</span>
+              </div>
+            </div>
+            <div className="text-right">
+               <div className="flex items-center justify-end gap-5 text-[11px] font-bold uppercase tracking-wider">
+                 <div className="flex items-center gap-1.5">
+                   <div className="w-2 h-2 rounded-full bg-[#5da83f] shadow-[0_0_8px_rgba(93,168,63,0.5)]"></div>
+                   <span className="text-slate-500">Gelir: <span className="text-[#5da83f] ml-0.5">{formatCurrency(inTotal)}</span></span>
+                 </div>
+                 <div className="flex items-center gap-1.5">
+                   <div className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"></div>
+                   <span className="text-slate-500">Gider: <span className="text-rose-500 ml-0.5">{formatCurrency(outTotal)}</span></span>
+                 </div>
+               </div>
             </div>
           </div>
-          <div className="text-right">
-             <div className="flex items-center justify-end gap-5 text-[11px] font-bold uppercase tracking-wider">
-               <div className="flex items-center gap-1.5">
-                 <div className="w-2 h-2 rounded-full bg-[#5da83f] shadow-[0_0_8px_rgba(93,168,63,0.5)]"></div>
-                 <span className="text-slate-500">Gelir: <span className="text-[#5da83f] ml-0.5">{formatCurrency(inTotal)}</span></span>
-               </div>
-               <div className="flex items-center gap-1.5">
-                 <div className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"></div>
-                 <span className="text-slate-500">Gider: <span className="text-rose-500 ml-0.5">{formatCurrency(outTotal)}</span></span>
-               </div>
-             </div>
-          </div>
-        </div>
 
-        <div className="relative z-10 h-3 w-full rounded-full overflow-hidden flex bg-slate-100 shadow-inner">
-          {inTotal > 0 && (
-            <div 
-              style={{ width: `${inPerc}%` }} 
-              className="relative h-full transition-all duration-1000 ease-out bg-gradient-to-r from-[#82e05a] to-[#5da83f]"
-            ></div>
-          )}
-          {outTotal > 0 && (
-            <div 
-              style={{ width: `${100 - inPerc}%` }} 
-              className="relative h-full transition-all duration-1000 ease-out bg-gradient-to-l from-rose-400 to-rose-500"
-            ></div>
-          )}
-        </div>
-      </motion.div>
+          <div className="relative z-10 h-3 w-full rounded-full overflow-hidden flex bg-slate-100 shadow-inner">
+            {inTotal > 0 && (
+              <div 
+                style={{ width: `${inPerc}%` }} 
+                className="relative h-full transition-all duration-1000 ease-out bg-gradient-to-r from-[#82e05a] to-[#5da83f]"
+              ></div>
+            )}
+            {outTotal > 0 && (
+              <div 
+                style={{ width: `${100 - inPerc}%` }} 
+                className="relative h-full transition-all duration-1000 ease-out bg-gradient-to-l from-rose-400 to-rose-500"
+              ></div>
+            )}
+          </div>
+        </motion.div>
+      )}
 
       <motion.div 
         initial={{ opacity: 0, y: 15 }}
