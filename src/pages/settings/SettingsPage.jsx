@@ -4,6 +4,8 @@ import { CategoriesTab } from '../stock/tabs/CategoriesTab';
 import { AuthOpsTab } from './tabs/AuthOpsTab';
 import { CompanyInfoTab } from './tabs/CompanyInfoTab';
 import { ReceiptTemplatesTab } from './tabs/ReceiptTemplatesTab';
+import { ClearDataTab } from './tabs/ClearDataTab';
+import { Trash2 } from 'lucide-react';
 
 export const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState('auth_ops');
@@ -12,7 +14,8 @@ export const SettingsPage = () => {
     { id: 'auth_ops', label: 'Giriş İşlemleri', icon: Users },
     { id: 'company_info', label: 'Şirket Bilgileri', icon: Building2 },
     { id: 'receipt_templates', label: 'Fiş Şablonları', icon: FileText },
-    { id: 'categories', label: 'Kategoriler', icon: Tag }
+    { id: 'categories', label: 'Kategoriler', icon: Tag },
+    { id: 'clear_data', label: 'Verileri Sil', icon: Trash2 }
   ];
 
   return (
@@ -60,6 +63,7 @@ export const SettingsPage = () => {
           {activeTab === 'company_info' && <CompanyInfoTab />}
           {activeTab === 'receipt_templates' && <ReceiptTemplatesTab />}
           {activeTab === 'categories' && <CategoriesTab />}
+          {activeTab === 'clear_data' && <ClearDataTab />}
         </div>
       </div>
     </div>
