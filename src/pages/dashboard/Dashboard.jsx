@@ -34,28 +34,62 @@ const PIE_COLORS = {
   mixed: '#f59e0b', split: '#f59e0b',
 };
 
-const RowSkeleton = () => (
+const TxRowSkeleton = () => (
   <tr className="border-b border-slate-100 animate-pulse h-[46px]">
-    <td className="px-4 py-2">
-      <div className="w-20 h-6 bg-slate-200/60 rounded-full"></div>
-    </td>
-    <td className="px-4 py-2">
-      <div className="w-32 h-4 bg-slate-200/60 rounded"></div>
-    </td>
+    <td className="px-4 py-2"><div className="w-20 h-6 bg-slate-200/60 rounded-full"></div></td>
+    <td className="px-4 py-2"><div className="w-36 h-4 bg-slate-200/60 rounded"></div></td>
     <td className="px-4 py-2">
       <div className="flex items-center gap-2">
         <div className="w-24 h-5 bg-slate-100 rounded-md"></div>
         <div className="w-16 h-4 bg-slate-100 border border-slate-200 rounded"></div>
       </div>
     </td>
-    <td className="px-4 py-2">
-      <div className="w-12 h-4 bg-slate-100 rounded"></div>
-    </td>
-    <td className="px-4 py-2 text-right">
-      <div className="w-16 h-5 bg-slate-200/60 rounded inline-block"></div>
-    </td>
+    <td className="px-4 py-2"><div className="w-10 h-4 bg-slate-100 rounded"></div></td>
+    <td className="px-4 py-2 text-right"><div className="w-16 h-5 bg-slate-200/80 rounded inline-block"></div></td>
   </tr>
 );
+
+const ChartSkeleton = () => (
+  <div className="flex-1 flex items-end justify-around gap-2 px-4 pb-2 animate-pulse">
+    {[55, 80, 40, 70, 90, 45, 65].map((h, i) => (
+      <div key={i} className="flex-1 flex flex-col justify-end gap-1">
+        <div className="flex justify-around gap-0.5 items-end" style={{ height: `${h}%` }}>
+          <div className="w-full bg-green-200/60 rounded-t h-full"></div>
+          <div className="w-full bg-rose-200/60 rounded-t" style={{ height: `${Math.max(20, h - 30)}%` }}></div>
+        </div>
+        <div className="h-2.5 bg-slate-100 rounded"></div>
+      </div>
+    ))}
+  </div>
+);
+
+const PieChartSkeleton = () => (
+  <div className="flex items-center gap-4 flex-1 mt-2 animate-pulse">
+    <div className="flex-shrink-0 w-[100px] h-[100px] rounded-full bg-slate-200/60"></div>
+    <div className="flex-1 flex flex-col gap-2">
+      {[1,2,3].map(i => (
+        <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 border border-slate-100">
+          <div className="w-2.5 h-2.5 rounded-full bg-slate-300 flex-shrink-0"></div>
+          <div className="flex flex-1 items-center justify-between">
+            <div className="w-20 h-3 bg-slate-200/60 rounded"></div>
+            <div className="w-6 h-5 bg-slate-200/80 rounded"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const NotesSkeleton = () => (
+  <ul className="flex-1 flex flex-col gap-2 animate-pulse">
+    {[1,2,3,4,5].map(i => (
+      <li key={i} className="flex-1 bg-white/60 px-3 py-2 rounded-lg flex items-center border border-[#fde047]/50 min-h-[46px]">
+        <div className="w-2/3 h-3.5 bg-yellow-200/80 rounded"></div>
+      </li>
+    ))}
+  </ul>
+);
+
 const PIE_NAMES = {
   cash: 'Nakit', card: 'Kredi Kartı', credit: 'Veresiye',
   transfer: 'Havale/EFT', bank_transfer: 'Havale/EFT',
@@ -138,6 +172,11 @@ export const Dashboard = () => {
   const { cashReport, salesSummary, allTxs, registers: hookRegisters, loading } = useDashboardData();
   useGlobalLoader(loading);
 
+  // Track per-section readiness so skeletons show even on cached (loading=false) loads
+  const [isChartsReady, setIsChartsReady] = useState(false);
+  const [isTxReady, setIsTxReady] = useState(false);
+  const [isNotesReady, setIsNotesReady] = useState(false);
+
   // Keep allRegisters in sync with hook
   const [allRegisters, setAllRegisters] = useState([]);
   useEffect(() => {
@@ -152,7 +191,10 @@ export const Dashboard = () => {
 
   // Notları sayfa yüklenirken al
   useEffect(() => {
-    quickNotesService.getAll().then(setQuickNotes);
+    quickNotesService.getAll().then(notes => {
+      setQuickNotes(notes);
+      setIsNotesReady(true);
+    });
   }, []);
 
   const addNote = async (e) => {
@@ -199,6 +241,7 @@ export const Dashboard = () => {
   // ── Derive charts whenever cashReport / salesSummary change ─────────
   useEffect(() => {
     if (!cashReport || !salesSummary) return;
+    setIsChartsReady(false);
 
     const pieData = Object.keys(salesSummary.byPaymentMethod)
       .filter(k => (salesSummary.byPaymentMethod[k].count || 0) > 0)
@@ -216,11 +259,13 @@ export const Dashboard = () => {
       })),
       todayPie: pieData
     });
+    setIsChartsReady(true);
   }, [cashReport, salesSummary]);
 
   // ── Enrich recent transactions whenever allTxs changes ──────────────
   useEffect(() => {
     if (!allTxs || allTxs.length === 0) return;
+    setIsTxReady(false);
 
     const allowedTypes = ['sale_in','purchase_out','return_in','return_out','expense_out','supplier_payment_out','withdrawal_out','customer_payment_in','deposit_in'];
     const rawFiltered = allTxs.filter(t => allowedTypes.includes(t.transaction_type));
@@ -320,6 +365,7 @@ export const Dashboard = () => {
 
       while (uniqueTxs.length < 5) uniqueTxs.push({ id: `empty_${uniqueTxs.length}`, isEmpty: true });
       setRecentTransactions(uniqueTxs);
+      setIsTxReady(true);
     };
 
     enrichTxs().catch(console.error);
@@ -437,26 +483,30 @@ export const Dashboard = () => {
               </div>
             </div>
             <div className="flex-1 w-full min-h-0 outline-none focus:outline-none [&_svg]:outline-none [&_.recharts-wrapper]:outline-none">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={charts.dailyIncomeExpense} margin={{ top: 4, right: 4, left: 0, bottom: 0 }} barGap={2}>
-                  <defs>
-                    <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#65c43d" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#65c43d" stopOpacity={0.3}/>
-                    </linearGradient>
-                    <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#f43f5e" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.3}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8' }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={v => `₺${v >= 1000 ? (v/1000).toFixed(0)+'K' : v}`} width={48} />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
-                  <Bar dataKey="income" name="income" fill="url(#incomeGrad)" radius={[4, 4, 0, 0]} maxBarSize={40} />
-                  <Bar dataKey="expense" name="expense" fill="url(#expenseGrad)" radius={[4, 4, 0, 0]} maxBarSize={40} />
-                </BarChart>
-              </ResponsiveContainer>
+              {isChartsReady ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={charts.dailyIncomeExpense} margin={{ top: 4, right: 4, left: 0, bottom: 0 }} barGap={2}>
+                    <defs>
+                      <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%"  stopColor="#65c43d" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#65c43d" stopOpacity={0.3}/>
+                      </linearGradient>
+                      <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%"  stopColor="#f43f5e" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.3}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8' }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={v => `₺${v >= 1000 ? (v/1000).toFixed(0)+'K' : v}`} width={48} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
+                    <Bar dataKey="income" name="income" fill="url(#incomeGrad)" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                    <Bar dataKey="expense" name="expense" fill="url(#expenseGrad)" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <ChartSkeleton />
+              )}
             </div>
           </div>
           </div>
@@ -466,34 +516,38 @@ export const Dashboard = () => {
                <PieChartIcon className="w-4 h-4 text-[#7ed957]" />
                Satış Tahsilat Tipleri
              </h3>
-             {charts.todayPie.length > 0 ? (
-               <div className="flex items-center gap-4 flex-1 mt-2">
-                 {/* Pie chart — sol */}
-                 <div className="flex-shrink-0" style={{ width: 100, height: 100 }}>
-                   <ResponsiveContainer width="100%" height="100%">
-                     <PieChart>
-                       <Pie data={charts.todayPie} innerRadius={25} outerRadius={45} paddingAngle={2} dataKey="value" animationDuration={300}>
-                         {charts.todayPie.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                       </Pie>
-                       <Tooltip content={<CustomPieTooltip />} />
-                     </PieChart>
-                   </ResponsiveContainer>
-                 </div>
-                 {/* Kategoriler — sağ, 1 sütunlu grid */}
-                 <div className="flex-1 grid grid-cols-1 gap-2">
-                   {charts.todayPie.map(p => (
-                     <div key={p.name} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 border border-slate-100">
-                       <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
-                       <div className="flex flex-1 items-center justify-between min-w-0">
-                         <span className="text-[11px] uppercase font-bold text-slate-500 whitespace-nowrap overflow-hidden text-ellipsis mr-2" title={p.name}>{p.name}</span>
-                         <span className="text-sm font-black text-slate-800">{p.value}</span>
-                       </div>
-                     </div>
-                   ))}
-                 </div>
-               </div>
+             {isChartsReady ? (
+               charts.todayPie.length > 0 ? (
+                <div className="flex items-center gap-4 flex-1 mt-2">
+                  {/* Pie chart — sol */}
+                  <div className="flex-shrink-0" style={{ width: 100, height: 100 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={charts.todayPie} innerRadius={25} outerRadius={45} paddingAngle={2} dataKey="value" animationDuration={300}>
+                          {charts.todayPie.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                        </Pie>
+                        <Tooltip content={<CustomPieTooltip />} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  {/* Kategoriler — sağ, 1 sütunlu grid */}
+                  <div className="flex-1 grid grid-cols-1 gap-2">
+                    {charts.todayPie.map(p => (
+                      <div key={p.name} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 border border-slate-100">
+                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
+                        <div className="flex flex-1 items-center justify-between min-w-0">
+                          <span className="text-[11px] uppercase font-bold text-slate-500 whitespace-nowrap overflow-hidden text-ellipsis mr-2" title={p.name}>{p.name}</span>
+                          <span className="text-sm font-black text-slate-800">{p.value}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">Bugün ödeme kaydı yok.</div>
+              )
              ) : (
-               <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">Bugün ödeme kaydı yok.</div>
+               <PieChartSkeleton />
              )}
           </div>
           </div>
@@ -511,8 +565,8 @@ export const Dashboard = () => {
             <div className="overflow-auto flex-1 relative">
               <table className="w-full h-full absolute inset-0 text-left text-sm whitespace-nowrap">
                 <tbody className="divide-y divide-slate-100">
-                  {loading ? (
-                    [...Array(5)].map((_, i) => <RowSkeleton key={`skeleton-${i}`} />)
+                  {!isTxReady ? (
+                    [...Array(5)].map((_, i) => <TxRowSkeleton key={`skeleton-${i}`} />)
                   ) : recentTransactions.map(tx => {
                     const isOut = ['purchase_out', 'return_out', 'expense_out', 'supplier_payment_out', 'withdrawal_out'].includes(tx.transaction_type);
                     
@@ -607,7 +661,7 @@ export const Dashboard = () => {
                       </tr>
                     );
                   })}
-                  {!loading && recentTransactions.length === 0 && (
+                  {isTxReady && recentTransactions.filter(t => !t.isEmpty).length === 0 && (
                     <tr><td colSpan="5" className="p-8 text-center text-slate-400 text-sm">Son işlem kaydı yok.</td></tr>
                   )}
                 </tbody>
@@ -636,13 +690,10 @@ export const Dashboard = () => {
                 </button>
               </form>
               <ul className="flex-1 flex flex-col gap-2">
-                {[...quickNotes, ...Array(Math.max(0, 5 - quickNotes.length)).fill({ isEmpty: true })].map((n, idx) => {
+                {!isNotesReady ? <NotesSkeleton /> : [...quickNotes, ...Array(Math.max(0, 5 - quickNotes.length)).fill({ isEmpty: true })].map((n, idx) => {
                   if (n.isEmpty) {
-                    return (
-                      <li key={`empty_${idx}`} className="flex-1 bg-transparent p-3 rounded-lg border border-transparent min-h-[46px]"></li>
-                    );
+                    return <li key={`empty_${idx}`} className="flex-1 bg-transparent p-3 rounded-lg border border-transparent min-h-[46px]"></li>;
                   }
-                  
                   return (
                     <li key={n.id} className="w-full bg-white/60 px-3 py-2 rounded-lg flex items-center justify-between group border border-[#fde047] hover:border-[#eab308] transition-colors min-h-[46px]">
                       {editingNoteId === n.id ? (
