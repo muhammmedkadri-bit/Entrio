@@ -41,7 +41,8 @@ export const useAuthStore = create((set) => ({
           email: user?.email || 'admin@pos.com',
           fullName: user?.full_name || 'Hesap Yöneticisi',
           role: user?.role || 'admin',
-          branchId: user?.branch_id || 1
+          branchId: user?.branch_id || 1,
+          expiresAt: Date.now() + (12 * 60 * 60 * 1000) // 12 saat geçerli
         };
 
         localStorage.setItem('retailpos_user', JSON.stringify(userData));
@@ -62,9 +63,16 @@ export const useAuthStore = create((set) => ({
   },
 
   initAuth: () => {
-    const storedUser = localStorage.getItem('retailpos_user');
-    if (storedUser) {
-      set({ user: JSON.parse(storedUser), isAuthenticated: true, isLoading: false });
+    const storedUserStr = localStorage.getItem('retailpos_user');
+    if (storedUserStr) {
+      const storedUser = JSON.parse(storedUserStr);
+      // Eğer süresi dolmuşsa oturumu kapat
+      if (storedUser.expiresAt && Date.now() > storedUser.expiresAt) {
+        localStorage.removeItem('retailpos_user');
+        set({ user: null, isAuthenticated: false, isLoading: false });
+      } else {
+        set({ user: storedUser, isAuthenticated: true, isLoading: false });
+      }
     } else {
       set({ user: null, isAuthenticated: false, isLoading: false });
     }

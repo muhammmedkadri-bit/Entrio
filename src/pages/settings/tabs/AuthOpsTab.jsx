@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../../../db';
+import { db, hashPassword } from '../../../db';
 import { useAuthStore } from '../../../store/authStore';
 import toast from '../../../components/ui/CustomToast';
 import { Edit2, Save, X, User, UserPlus, Mail, Lock, ChevronDown } from 'lucide-react';
@@ -46,18 +46,21 @@ export const AuthOpsTab = () => {
     }
   };
 
-  const handleEditClick = (u) => { setEditingId(u.id); setEditForm({ ...u }); };
+  const handleEditClick = (u) => { setEditingId(u.id); setEditForm({ ...u, password: '' }); };
   const handleCancelEdit = () => { setEditingId(null); setEditForm({}); };
 
   const handleSave = async (id) => {
     if (!editForm.email || !editForm.full_name) return toast.error('İsim ve e-posta zorunludur.');
     try {
-      await db.users.update(id, {
+      const updateData = {
         email: editForm.email,
         full_name: editForm.full_name,
-        role: editForm.role,
-        password: editForm.password
-      });
+        role: editForm.role
+      };
+      if (editForm.password && editForm.password.trim().length > 0) {
+        updateData.password = await hashPassword(editForm.password.trim());
+      }
+      await db.users.update(id, updateData);
       if (currentUser?.id === id) {
         updateUserSession({ email: editForm.email, fullName: editForm.full_name, role: editForm.role });
       }
@@ -77,10 +80,11 @@ export const AuthOpsTab = () => {
     try {
       const existing = await db.users.where('email').equals(newForm.email.trim().toLowerCase()).first();
       if (existing) return toast.error('Bu e-posta adresi zaten kullanımda.');
+      const hashedPassword = await hashPassword(newForm.password.trim());
       await db.users.add({
         email: newForm.email.trim().toLowerCase(),
         full_name: newForm.full_name.trim(),
-        password: newForm.password,
+        password: hashedPassword,
         role: newForm.role,
         branch_id: 1,
         is_active: true
@@ -242,11 +246,12 @@ export const AuthOpsTab = () => {
                       </div>
                     </div>
                     <div>
-                      <label className={labelCls}>Şifre</label>
+                      <label className={labelCls}>Şifre (Değiştirmek için yazın)</label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input type="text" value={editForm.password || ''}
                           onChange={e => setEditForm(p => ({ ...p, password: e.target.value }))}
+                          placeholder="Boş bırakırsanız değişmez"
                           className={inputCls} />
                       </div>
                     </div>
