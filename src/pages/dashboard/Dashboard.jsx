@@ -1,5 +1,6 @@
 import { useGlobalLoader } from "../../hooks/useGlobalLoader";
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import toast from '../../components/ui/CustomToast';
 import { Banknote, ShoppingCart, AlertTriangle, TrendingUp, Users, ChevronRight, ArrowDownLeft, ArrowUpRight, ArrowRightLeft, Settings2, Moon, Plus, Trash2, ListChecks, Calendar, Clock, Calculator, Building2, TrendingDown, PieChart as PieChartIcon, Activity, ScanBarcode, Edit2 } from 'lucide-react';
 import { CurrencyWidget } from '../../components/ui/CurrencyWidget';
@@ -31,6 +32,19 @@ const PIE_COLORS = {
   cash: '#22c55e', card: '#3b82f6', credit: '#ef4444',
   transfer: '#8b5cf6', bank_transfer: '#8b5cf6',
   mixed: '#f59e0b', split: '#f59e0b',
+};
+
+const tableVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.05 }
+  }
+};
+
+const rowVariants = {
+  hidden: { opacity: 0, x: -15 },
+  show: { opacity: 1, x: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
 };
 const PIE_NAMES = {
   cash: 'Nakit', card: 'Kredi Kartı', credit: 'Veresiye',
@@ -486,7 +500,12 @@ export const Dashboard = () => {
             </div>
             <div className="overflow-auto flex-1 relative">
               <table className="w-full h-full absolute inset-0 text-left text-sm whitespace-nowrap">
-                <tbody className="divide-y divide-slate-100">
+                <motion.tbody 
+                  variants={tableVariants}
+                  initial="hidden"
+                  animate="show"
+                  className="divide-y divide-slate-100"
+                >
                   {recentTransactions.map(tx => {
                     const isOut = ['purchase_out', 'return_out', 'expense_out', 'supplier_payment_out', 'withdrawal_out'].includes(tx.transaction_type);
                     
@@ -544,11 +563,11 @@ export const Dashboard = () => {
                     };
 
                     return tx.isEmpty ? (
-                      <tr key={tx.id} className="h-[46px] border-b border-transparent">
+                      <motion.tr variants={rowVariants} key={tx.id} className="h-[46px] border-b border-transparent">
                         <td colSpan="5"></td>
-                      </tr>
+                      </motion.tr>
                     ) : (
-                      <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors cursor-pointer border-b border-slate-100 last:border-0" onClick={handleRowClick}>
+                      <motion.tr variants={rowVariants} key={tx.id} className="hover:bg-slate-50/50 transition-colors cursor-pointer border-b border-slate-100 last:border-0" onClick={handleRowClick}>
                         <td className="px-4 py-2">
                           <div className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${pillClass}`}>
                             <IconComponent className="w-3 h-3 flex-shrink-0" />
@@ -578,13 +597,13 @@ export const Dashboard = () => {
                         <td className={`px-4 py-2 text-right font-bold tabular-nums ${isOut || tx.amount < 0 ? 'text-rose-600' : 'text-[#5da83f]'}`}>
                           {isOut || tx.amount < 0 ? '-' : '+'}{formatCurrency(tx.displayAmount)}
                         </td>
-                      </tr>
+                      </motion.tr>
                     );
                   })}
                   {recentTransactions.length === 0 && (
-                    <tr><td colSpan="5" className="p-8 text-center text-slate-400 text-sm">Son işlem kaydı yok.</td></tr>
+                    <motion.tr variants={rowVariants}><td colSpan="5" className="p-8 text-center text-slate-400 text-sm">Son işlem kaydı yok.</td></motion.tr>
                   )}
-                </tbody>
+                </motion.tbody>
               </table>
             </div>
           </div>
