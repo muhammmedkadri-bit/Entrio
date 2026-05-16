@@ -252,31 +252,44 @@ export const cashService = {
 
   async getDailySummary(registerId, targetDate = new Date()) {
     try {
-      const { dayCloseService } = await import('./dayCloseService');
       const reg = await this.getRegisterById(registerId);
-      const effectiveTxs = await dayCloseService.getRegisterTransactionsForToday(reg);
-      const summary = { openingAmount: 0, totals: { sale_in: 0, customer_payment_in: 0, deposit_in: 0, return_in: 0, expense_out: 0, supplier_payment_out: 0, withdrawal_out: 0, purchase_out: 0, return_out: 0 }, calculatedClosing: 0 };
-      const openingTx = effectiveTxs.slice().reverse().find(t => t.transaction_type === 'opening');
-      if (openingTx) { summary.openingAmount = openingTx.amount; summary.calculatedClosing = openingTx.amount; }
-      else { summary.calculatedClosing = reg ? Number(reg.current_balance) : 0; }
+      const fromMs = reg.last_day_close_at
+        ? (typeof reg.last_day_close_at === 'number' ? reg.last_day_close_at : new Date(reg.last_day_close_at).getTime())
+        : 0;
+
+      let effectiveTxs = [];
+      if (isSupabase()) {
+        const { data, error } = await supabase
+          .from('cash_transactions')
+          .select('*')
+          .eq('register_id', registerId)
+          .gt('created_at', fromMs)
+          .neq('is_day_close', true);
+        if (error) throw error;
+        effectiveTxs = data || [];
+      } else {
+        const all = await db.cash_transactions.where('register_id').equals(Number(registerId)).toArray();
+        effectiveTxs = all.filter(t => Number(t.created_at) > fromMs && !t.is_day_close);
+      }
+
+      const summary = {
+        openingAmount: 0,
+        totals: { sale_in: 0, customer_payment_in: 0, deposit_in: 0, return_in: 0, expense_out: 0, supplier_payment_out: 0, withdrawal_out: 0, purchase_out: 0, return_out: 0 },
+        calculatedClosing: Number(reg?.current_balance) || 0,
+      };
       const ins = ['sale_in', 'customer_payment_in', 'deposit_in', 'return_in'];
       const outs = ['purchase_out', 'supplier_payment_out', 'expense_out', 'withdrawal_out'];
       effectiveTxs.forEach(t => {
         if (t.transaction_type !== 'opening' && t.transaction_type !== 'closing') {
-          if (summary.totals[t.transaction_type] !== undefined) summary.totals[t.transaction_type] += t.amount;
-          if (openingTx) {
-            if (ins.includes(t.transaction_type) || t.transaction_type === 'in') summary.calculatedClosing += t.amount;
-            else if (outs.includes(t.transaction_type) || t.transaction_type === 'out') summary.calculatedClosing -= t.amount;
-          }
+          if (summary.totals[t.transaction_type] !== undefined) summary.totals[t.transaction_type] += Number(t.amount) || 0;
         }
       });
       return summary;
     } catch (e) { throw e; }
   },
 
-  // deleteTransaction ve updateTransaction — Bu işlemler çok sayıda cari/tedarikçi tablosuna
-  // dokunduğu için Supabase'de Aşama 3 RPC'leriyle birlikte ele alınacak.
-  // Şimdilik Dexie yöntemleri çalışmaya devam eder.
+
+  // deleteTransaction ve updateTransaction
   async deleteTransaction(id) {
     return await db.transaction('rw', [db.cash_transactions, db.cash_registers, db.suppliers, db.supplier_transactions, db.customers, db.customer_transactions, db.purchases, db.sales], async () => {
       const tx = await db.cash_transactions.get(id);
