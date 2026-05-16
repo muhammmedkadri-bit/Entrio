@@ -190,16 +190,25 @@ export const SalesReportTab = ({ startDate, endDate }) => {
           <h3 className="font-bold text-slate-700 mb-4">Günlük Satış Trendi</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.dailySeries} barSize={24}>
+              <BarChart data={data.dailySeries} barSize={8} margin={{ bottom: 40 }}>
                 <defs>
                   <linearGradient id="colorTotalBar" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#82e05a" stopOpacity={0.95}/>
-                    <stop offset="95%" stopColor="#5da83f" stopOpacity={1}/>
+                    <stop offset="5%" stopColor="#4ade80" stopOpacity={0.95}/>
+                    <stop offset="95%" stopColor="#16a34a" stopOpacity={1}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} tickFormatter={(val) => `₺${val}`} />
+                <XAxis 
+                  dataKey="date" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 10, fill: '#64748b' }} 
+                  interval={0}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(val) => `₺${val}`} />
                 <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
                 <Bar dataKey="total" name="Günlük Ciro" fill="url(#colorTotalBar)" radius={[4, 4, 0, 0]} />
               </BarChart>
