@@ -49,7 +49,7 @@ export const CariReportTab = () => {
 
   const fmt = (val) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val || 0);
 
-  if (loading) return <div className="relative h-96"></div>;
+  if (loading) return <div className="relative h-96 flex items-center justify-center"><PremiumLoader message="Cari veriler derleniyor..." /></div>;
   if (!data) return <EmptyReport message="Beklenmedik bir hata hesaplamayı durdurdu." />;
 
   const isCust = mode === 'customer';

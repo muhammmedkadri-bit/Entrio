@@ -117,7 +117,7 @@ export const CashReportTab = ({ startDate, endDate }) => {
 
   const formatCurrency = (val) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
 
-  if (loading) return <div className="relative h-96"></div>;
+  if (loading) return <div className="relative h-96 flex items-center justify-center"><PremiumLoader message="Kasa ve nakit akışı verileri derleniyor..." /></div>;
   if (!data) return <EmptyReport message="Hata." />;
 
   const getColor = (name) => (PIE_PALETTE[name]?.color || '#94a3b8');

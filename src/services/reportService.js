@@ -30,11 +30,11 @@ export const reportService = {
     try {
       const allSales = await fetchFiltered('sales', 'created_at', startDate.getTime(), endDate.getTime(),
         () => db.sales.where('created_at').between(startDate.getTime(), endDate.getTime()).toArray());
-      const completedSales = allSales.filter(s => s.status === 'completed');
+      const validSales = allSales.filter(s => ['completed', 'returned', 'return'].includes(s.status));
 
       const summary = {
         totalRevenue: 0,
-        totalCount: completedSales.length,
+        totalCount: validSales.filter(s => s.status !== 'return').length,
         avgBasket: 0,
         totalDiscount: 0,
         totalTax: 0,
@@ -52,24 +52,37 @@ export const reportService = {
       };
 
       const dailyMap = new Map();
+      const daysCount = differenceInDays(endOfDay(endDate), startOfDay(startDate));
+      for (let i = 0; i <= daysCount; i++) {
+        const d = new Date(startDate);
+        d.setDate(d.getDate() + i);
+        const dKey = format(d, 'dd MMMM', { locale: tr });
+        dailyMap.set(dKey, { date: dKey, total: 0, count: 0 });
+      }
 
-      for (const sale of completedSales) {
-        summary.totalRevenue += (sale.total_amount || 0);
-        summary.totalDiscount += (sale.discount_amount || 0);
-        summary.totalTax += (sale.tax_amount || 0);
+      for (const sale of validSales) {
+        const isReturn = sale.status === 'return';
+        const mult = isReturn ? -1 : 1;
+
+        summary.totalRevenue += (sale.total_amount || 0) * mult;
+        summary.totalDiscount += (sale.discount_amount || 0) * mult;
+        summary.totalTax += (sale.tax_amount || 0) * mult;
 
         if (!summary.byPaymentMethod[sale.payment_method]) {
           summary.byPaymentMethod[sale.payment_method] = { count: 0, amount: 0 };
         }
-        summary.byPaymentMethod[sale.payment_method].count += 1;
-        summary.byPaymentMethod[sale.payment_method].amount += sale.total_amount;
+        
+        if (!isReturn) {
+          summary.byPaymentMethod[sale.payment_method].count += 1;
+        }
+        summary.byPaymentMethod[sale.payment_method].amount += (sale.total_amount * mult);
 
         const dayKey = format(sale.created_at, 'dd MMMM', { locale: tr });
-        if (!dailyMap.has(dayKey)) dailyMap.set(dayKey, { date: dayKey, total: 0, count: 0 });
-        
-        const dayStat = dailyMap.get(dayKey);
-        dayStat.total += sale.total_amount;
-        dayStat.count += 1;
+        if (dailyMap.has(dayKey)) {
+          const dayStat = dailyMap.get(dayKey);
+          dayStat.total += (sale.total_amount * mult);
+          if (!isReturn) dayStat.count += 1;
+        }
       }
 
       summary.netRevenue = summary.totalRevenue - summary.totalDiscount;
@@ -77,7 +90,7 @@ export const reportService = {
       summary.dailySeries = Array.from(dailyMap.values());
 
       // Sale Items for Top Products
-      const saleIds = completedSales.map(s => s.id);
+      const saleIds = validSales.map(s => s.id);
       if (saleIds.length > 0) {
         let items = [];
         if (isSupabase()) {
@@ -99,11 +112,14 @@ export const reportService = {
         const productInfoMap = new Map(productsData.map(p => [p.id, p]));
 
         const productMap = new Map();
-        const salesMap = new Map(completedSales.map(s => [s.id, s]));
+        const salesMap = new Map(validSales.map(s => [s.id, s]));
 
         for (const item of items) {
           const sale = salesMap.get(item.sale_id);
           if (!sale) continue;
+
+          const isReturn = sale.status === 'return';
+          const mult = isReturn ? -1 : 1;
 
           if (!productMap.has(item.product_id)) {
             const productInfo = productInfoMap.get(item.product_id);
@@ -116,7 +132,7 @@ export const reportService = {
             });
           }
           const pStat = productMap.get(item.product_id);
-          pStat.quantity += (item.quantity || 0);
+          pStat.quantity += ((item.quantity || 0) * mult);
           
           // Satış kaleminin brüt cirosu
           const rawItemRevenue = item.line_total || (item.unit_price * item.quantity) || 0;
@@ -130,11 +146,11 @@ export const reportService = {
           
           // Gerçek ciro katkısı (İskonto düşülmüş hali)
           const netItemRevenue = rawItemRevenue - proratedDiscount;
-          pStat.revenue += netItemRevenue;
+          pStat.revenue += (netItemRevenue * mult);
 
           // Maliyet hesabı: O anki product_price üzerinden
           const productInfoCost = productInfoMap.get(item.product_id);
-          pStat.cost += (productInfoCost?.purchase_price || 0) * (item.quantity || 0);
+          pStat.cost += ((productInfoCost?.purchase_price || 0) * (item.quantity || 0) * mult);
         }
 
         const topP = Array.from(productMap.values()).map(p => {
@@ -149,10 +165,11 @@ export const reportService = {
         // Toplam brüt kârı hesapla
         summary.totalGrossProfit = topP.reduce((acc, p) => acc + p.profit, 0);
 
-        // Top 10 by quantity
-        summary.topProducts = topP.sort((a, b) => b.quantity - a.quantity).slice(0, 10);
+        // Top 10 by quantity (only those with > 0 quantity)
+        summary.topProducts = topP.filter(p => p.quantity > 0).sort((a, b) => b.quantity - a.quantity).slice(0, 10);
       }
 
+      summary.rawSales = validSales;
       return summary;
     } catch(e) {
       console.error(e);

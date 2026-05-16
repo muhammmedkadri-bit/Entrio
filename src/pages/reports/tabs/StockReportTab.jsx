@@ -86,7 +86,7 @@ export const StockReportTab = () => {
 
   const formatCurrency = (val) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
 
-  if (loading) return <div className="relative h-96"></div>;
+  if (loading) return <div className="relative h-96 flex items-center justify-center"><PremiumLoader message="Stok ve depo verileri derleniyor..." /></div>;
   if (!data || data.totalProducts === 0) return <EmptyReport message="Sistemde listelenecek ürün / stok kaydı bulunamadı." />;
 
   return (
