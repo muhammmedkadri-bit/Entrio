@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { ArrowDownLeft, ArrowUpRight, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, MoreVertical, Edit2, Settings2, ArrowRightLeft, RotateCcw, History, Trash2, Archive, Wallet, CreditCard, Building2, Calculator, LayoutGrid, Download, Moon, Star } from 'lucide-react';
@@ -75,13 +76,17 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
   }, [registers]);
 
   const getFilteredRegisters = () => {
-    if (activeCategory === 'all') return registers;
-    return registers.filter(r => {
-      if (activeCategory === 'cash') {
-        return r.type === 'cash' || !r.type || r.name?.toLowerCase().includes('ana kasa');
-      }
-      return r.type === activeCategory;
-    });
+    let filtered = registers;
+    if (activeCategory !== 'all') {
+      filtered = registers.filter(r => {
+        if (activeCategory === 'cash') {
+          return r.type === 'cash' || !r.type || r.name?.toLowerCase().includes('ana kasa');
+        }
+        return r.type === activeCategory;
+      });
+    }
+    // A'dan Z'ye isme göre sırala
+    return [...filtered].sort((a, b) => a.name.localeCompare(b.name, 'tr'));
   };
 
   const loadDashboard = async () => {
@@ -671,7 +676,12 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
       </div>
 
       {/* Premium Cash Flow Bar */}
-      <div className="relative overflow-hidden bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-6">
+      <motion.div 
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="relative overflow-hidden bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-6"
+      >
         {/* Ambient background glows removed per user request */}
         
         <div className="flex justify-between items-end mb-5 relative z-10">
@@ -712,9 +722,14 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
             ></div>
           )}
         </div>
-      </div>
+      </motion.div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <motion.div 
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+        className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden"
+      >
         <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
           <h3 className="font-bold text-slate-800 flex items-center gap-2"><History className="w-4 h-4 text-[#5da83f]" /> Son Hareketler</h3>
         </div>
@@ -826,7 +841,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
             )}
           </tbody>
         </table>
-      </div>
+      </motion.div>
 
       {/* Pagination Bottom Right relative to table */}
       {recentTxs.length > 0 && (
