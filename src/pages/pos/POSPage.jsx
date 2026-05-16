@@ -906,15 +906,10 @@ export const POSPage = () => {
                 {displayedProducts.map((p, idx) => (
                   <motion.div
                     variants={cardVariants}
+                    animate={removingIds.has(p.id) ? { opacity: 0, scale: 0, transition: { duration: 0.2 } } : undefined}
                     key={p.id}
                     className={swapMode ? 'relative cursor-pointer' : 'relative z-20'}
                     onClick={swapMode ? () => handleGridCardClickForSwap(p, idx) : undefined}
-                    style={{
-                      transition: 'transform 0.2s ease, opacity 0.2s ease',
-                      transform: removingIds.has(p.id) ? 'scale(0)' : 'scale(1)',
-                      opacity: removingIds.has(p.id) ? 0 : 1,
-                      ...(swapMode ? { transition: 'transform 0.1s ease' } : {}),
-                    }}
                   >
                     <ProductCard
                       product={p}
