@@ -30,11 +30,11 @@ export const reportService = {
     try {
       const allSales = await fetchFiltered('sales', 'created_at', startDate.getTime(), endDate.getTime(),
         () => db.sales.where('created_at').between(startDate.getTime(), endDate.getTime()).toArray());
-      const validSales = allSales.filter(s => ['completed', 'returned', 'return'].includes(s.status));
+      const validSales = allSales.filter(s => s.status === 'completed');
 
       const summary = {
         totalRevenue: 0,
-        totalCount: validSales.filter(s => s.status !== 'return').length,
+        totalCount: validSales.length,
         avgBasket: 0,
         totalDiscount: 0,
         totalTax: 0,
@@ -61,27 +61,22 @@ export const reportService = {
       }
 
       for (const sale of validSales) {
-        const isReturn = sale.status === 'return';
-        const mult = isReturn ? -1 : 1;
-
-        summary.totalRevenue += (sale.total_amount || 0) * mult;
-        summary.totalDiscount += (sale.discount_amount || 0) * mult;
-        summary.totalTax += (sale.tax_amount || 0) * mult;
+        summary.totalRevenue += (sale.total_amount || 0);
+        summary.totalDiscount += (sale.discount_amount || 0);
+        summary.totalTax += (sale.tax_amount || 0);
 
         if (!summary.byPaymentMethod[sale.payment_method]) {
           summary.byPaymentMethod[sale.payment_method] = { count: 0, amount: 0 };
         }
         
-        if (!isReturn) {
-          summary.byPaymentMethod[sale.payment_method].count += 1;
-        }
-        summary.byPaymentMethod[sale.payment_method].amount += (sale.total_amount * mult);
+        summary.byPaymentMethod[sale.payment_method].count += 1;
+        summary.byPaymentMethod[sale.payment_method].amount += sale.total_amount;
 
         const dayKey = format(sale.created_at, 'dd MMMM', { locale: tr });
         if (dailyMap.has(dayKey)) {
           const dayStat = dailyMap.get(dayKey);
-          dayStat.total += (sale.total_amount * mult);
-          if (!isReturn) dayStat.count += 1;
+          dayStat.total += sale.total_amount;
+          dayStat.count += 1;
         }
       }
 
@@ -118,9 +113,6 @@ export const reportService = {
           const sale = salesMap.get(item.sale_id);
           if (!sale) continue;
 
-          const isReturn = sale.status === 'return';
-          const mult = isReturn ? -1 : 1;
-
           if (!productMap.has(item.product_id)) {
             const productInfo = productInfoMap.get(item.product_id);
             productMap.set(item.product_id, {
@@ -132,7 +124,7 @@ export const reportService = {
             });
           }
           const pStat = productMap.get(item.product_id);
-          pStat.quantity += ((item.quantity || 0) * mult);
+          pStat.quantity += (item.quantity || 0);
           
           // Satış kaleminin brüt cirosu
           const rawItemRevenue = item.line_total || (item.unit_price * item.quantity) || 0;
@@ -146,11 +138,11 @@ export const reportService = {
           
           // Gerçek ciro katkısı (İskonto düşülmüş hali)
           const netItemRevenue = rawItemRevenue - proratedDiscount;
-          pStat.revenue += (netItemRevenue * mult);
+          pStat.revenue += netItemRevenue;
 
           // Maliyet hesabı: O anki product_price üzerinden
           const productInfoCost = productInfoMap.get(item.product_id);
-          pStat.cost += ((productInfoCost?.purchase_price || 0) * (item.quantity || 0) * mult);
+          pStat.cost += ((productInfoCost?.purchase_price || 0) * (item.quantity || 0));
         }
 
         const topP = Array.from(productMap.values()).map(p => {
@@ -484,7 +476,7 @@ export const reportService = {
       return {
          todayRevenue,           // Brüt satış
          todayReturns,           // İade toplamı (kasa çıkışı)
-         netRevenue: Math.max(0, todayRevenue - todayReturns), // Net satış
+         netRevenue: todayRevenue, // Net satış (İadeler hariç tutulduğu için brüt ile aynı)
          todayCount: completed.length,
          todayReturnCount,
          totalCash,
