@@ -498,16 +498,18 @@ export const POSPage = () => {
         await purchaseService.create(purchaseData, purchaseItems, purchasePaymentData);
         toast.success('Alış işlemi başarıyla tamamlandı!');
       } else if (posMode === 'return') {
-        const customNumber = await generateSaleNumber();
         const returnData = {
-          sale_number: customNumber,
+          // Do NOT send sale_number — SQL generates IAD- prefix automatically
           customer_id: selectedCustomer?.id || 1,
           original_sale_id: returnSaleId,
           total_amount: total,
         };
         const returnItemsData = items.map(item => ({
           product_id: item.product.id, name: item.product.name,
-          quantity: item.quantity, unit_price: item.product.sale_price, line_total: item.lineTotal,
+          quantity: item.quantity,
+          // unit_price is already the net effective price (line_total/qty) set when loading return items
+          unit_price: item.unit_price,
+          line_total: item.lineTotal,
         }));
         await saleService.createReturn(returnData, returnItemsData, paymentData);
         toast.success('İade başarıyla tamamlandı!');

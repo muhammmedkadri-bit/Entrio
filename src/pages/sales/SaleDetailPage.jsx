@@ -167,25 +167,45 @@ export const SaleDetailPage = () => {
       clearCart();
       setPosMode('return');
       setReturnSaleId(saleId);
-      
-      if (sale.customer_id) {
-        const c = await db.customers.get(sale.customer_id).catch(() => null);
-        if (c) setCartCustomer(c);
-      }
-      
-      for (const item of sale.items) {
-        const product = await db.products.get(item.product_id).catch(() => null);
-        if (product) {
-          addItem(product, item.quantity);
+
+      // Load customer via Supabase first, Dexie fallback
+      if (sale.customer_id && sale.customer_id !== 1) {
+        try {
+          const { supabase } = await import('../../lib/supabaseClient');
+          const { data: cust } = await supabase.from('customers').select('*').eq('id', sale.customer_id).maybeSingle();
+          if (cust) setCartCustomer(cust);
+        } catch {
+          const c = await db.customers.get(sale.customer_id).catch(() => null);
+          if (c) setCartCustomer(c);
         }
       }
-      
+
+      for (const item of sale.items) {
+        let product;
+        try {
+          const { supabase } = await import('../../lib/supabaseClient');
+          const { data } = await supabase.from('products').select('*').eq('id', item.product_id).maybeSingle();
+          product = data;
+        } catch {
+          product = await db.products.get(item.product_id).catch(() => null);
+        }
+        if (product) {
+          addItem(product, item.quantity);
+          // Use net effective price (line_total / qty) = what was actually paid after any discount
+          const effectivePrice = item.quantity > 0
+            ? Math.round(((item.line_total || item.unit_price * item.quantity) / item.quantity) * 100) / 100
+            : item.unit_price;
+          useCartStore.getState().updateItemPrice(product.id, effectivePrice);
+        }
+      }
+
       startNavigation();
       setTimeout(() => navigate('/pos'), 150);
     } catch (e) {
       toast.error('İade işlemi başlatılamadı: ' + e.message);
     }
   };
+
 
   /* ── Delete ─────────────────────────────────────────────────────────────── */
   const handleDelete = async () => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { ShoppingCart, Package, Minus, Plus, CheckSquare, X, CheckCircle } from 'lucide-react';
 import { BarcodeStripes } from './components/BarcodeStripes';
 import { useCartStore } from '../../store/cartStore';
@@ -85,7 +85,7 @@ const glassInCartBtnStyle = {
   marginTop: '4px',
 };
 
-export const ProductCard = ({ product = {}, onAdd = () => {}, isSelected = false, onSelect = () => {}, onRemove = () => {}, isWiggleMode = false, index = 0, posMode = 'sale' }) => {
+const ProductCardInner = ({ product = {}, onAdd = () => {}, isSelected = false, onSelect = () => {}, onRemove = () => {}, isWiggleMode = false, index = 0, posMode = 'sale' }) => {
   const [quantity, setQuantity] = useState(1);
   const [editingQty, setEditingQty] = useState(false);
   const [iconHovered, setIconHovered] = useState(false);
@@ -303,3 +303,14 @@ export const ProductCard = ({ product = {}, onAdd = () => {}, isSelected = false
     </div>
   );
 };
+
+// Only re-render when visual data changes; ignore stable callback references.
+const areEqual = (prev, next) =>
+  prev.isSelected     === next.isSelected     &&
+  prev.posMode        === next.posMode        &&
+  prev.product.id     === next.product.id     &&
+  prev.product.stock_quantity === next.product.stock_quantity &&
+  prev.product.sale_price     === next.product.sale_price     &&
+  prev.product.name           === next.product.name;
+
+export const ProductCard = memo(ProductCardInner, areEqual);

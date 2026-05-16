@@ -44,8 +44,15 @@ export const SuppliersPage = () => {
       const data = await supplierService.getAll({});
       setAllSuppliers(data);
       
-      const sum = await supplierService.getSummary();
-      setSummary(sum);
+      // Calculate summary synchronously to avoid a second full DB query
+      let totalDebt = 0;
+      let totalReceivable = 0;
+      data.forEach(s => {
+        const bal = parseFloat(s.balance) || 0;
+        if (bal > 0) totalDebt += bal;
+        else if (bal < 0) totalReceivable += Math.abs(bal);
+      });
+      setSummary({ totalCount: data.length, totalDebt, totalReceivable, netBalance: totalDebt - totalReceivable });
     } catch(err) {
       console.error('[SuppliersPage] Yükleme Hatası:', err);
       toast.error(err?.message || 'Tedarikçiler yüklenemedi.');
@@ -169,10 +176,7 @@ export const SuppliersPage = () => {
 
           {/* Rows */}
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-400">
-              <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-              <span className="text-sm">Yükleniyor...</span>
-            </div>
+            <div className="py-12" />
           ) : paginated.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-400">
               <Building className="w-10 h-10 opacity-30" />

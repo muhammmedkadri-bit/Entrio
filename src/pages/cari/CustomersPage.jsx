@@ -42,8 +42,15 @@ export const CustomersPage = () => {
       const data = await customerService.getAll({});
       setAllCustomers(data);
       
-      const sum = await customerService.getSummary();
-      setSummary(sum);
+      // Calculate summary synchronously to avoid a second full DB query
+      let totalReceivable = 0;
+      let totalDebt = 0;
+      data.forEach(c => {
+        const bal = parseFloat(c.balance) || 0;
+        if (bal > 0) totalReceivable += bal;
+        else if (bal < 0) totalDebt += Math.abs(bal);
+      });
+      setSummary({ totalCount: data.length, totalReceivable, totalDebt, netBalance: totalReceivable - totalDebt });
     } catch(err) {
       console.error('[CustomersPage] Yükleme Hatası:', err);
       toast.error(err?.message || 'Müşteriler yüklenemedi.');
@@ -170,10 +177,7 @@ export const CustomersPage = () => {
 
           {/* Rows */}
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-400">
-              <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-              <span className="text-sm">Yükleniyor...</span>
-            </div>
+            <div className="py-12" />
           ) : paginated.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-400">
               <UserX className="w-10 h-10 opacity-30" />

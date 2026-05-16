@@ -81,7 +81,11 @@ export const ReturnSaleSelectionModal = ({ isOpen, onClose, customerId }) => {
         }
         if (product) {
           addItem(product, item.quantity);
-          useCartStore.getState().updateItemPrice(product.id, item.unit_price);
+          // Use net effective price (line_total / qty) so return amount = what was actually paid (after discount)
+          const effectivePrice = item.quantity > 0
+            ? Math.round((item.line_total / item.quantity) * 100) / 100
+            : item.unit_price;
+          useCartStore.getState().updateItemPrice(product.id, effectivePrice);
         }
       }
 
