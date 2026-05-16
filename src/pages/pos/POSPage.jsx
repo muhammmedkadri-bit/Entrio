@@ -50,15 +50,33 @@ const cardVariants = {
 };
 
 const ProductSkeleton = () => (
-  <div className="bg-white rounded-2xl p-3 border border-slate-100 shadow-sm flex flex-col h-[140px] animate-pulse">
-    <div className="flex justify-between items-start mb-2">
-      <div className="w-10 h-10 rounded-xl bg-slate-200/60"></div>
-      <div className="w-14 h-5 rounded-full bg-slate-100"></div>
+  <div className="p-3 bg-white border border-slate-100 rounded-xl flex flex-col h-[234px] animate-pulse shadow-sm">
+    {/* Top Row: Icon & Barcode */}
+    <div className="flex items-center justify-center gap-3 w-full mb-1">
+      <div className="w-9 h-9 rounded-lg bg-slate-200/60 flex-shrink-0"></div>
+      <div className="h-9 px-3 rounded-lg flex-1 bg-slate-100/60"></div>
     </div>
-    <div className="mt-auto">
-      <div className="h-3.5 bg-slate-200/60 rounded w-3/4 mb-1.5"></div>
-      <div className="h-3 bg-slate-100 rounded w-1/2 mb-3"></div>
-      <div className="h-5 bg-slate-200/80 rounded w-1/3 ml-auto"></div>
+    
+    {/* Name Area */}
+    <div className="flex flex-col items-center justify-center my-1 h-[2.5rem] gap-1.5">
+      <div className="w-4/5 h-3 bg-slate-200/70 rounded-full"></div>
+      <div className="w-1/2 h-3 bg-slate-100 rounded-full"></div>
+    </div>
+    
+    {/* Price Area */}
+    <div className="flex justify-center mt-1 mb-1">
+      <div className="w-20 h-5 bg-slate-200/80 rounded-md"></div>
+    </div>
+    
+    {/* Stock Pill Area */}
+    <div className="flex justify-center mb-2">
+      <div className="w-16 h-5 bg-slate-100 rounded-md"></div>
+    </div>
+    
+    {/* Bottom Block */}
+    <div className="mt-auto flex flex-col justify-end items-center">
+      <div className="h-8 w-full max-w-[140px] bg-slate-100 rounded-[6px] mt-2 mb-1"></div>
+      <div className="h-[31px] w-full bg-slate-200/60 rounded-lg mt-1"></div>
     </div>
   </div>
 );
