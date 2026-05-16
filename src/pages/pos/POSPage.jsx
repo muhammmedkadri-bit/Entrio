@@ -222,20 +222,20 @@ export const POSPage = () => {
   // Already initialized if displayedProducts is non-empty (came from cache)
   const isInitializedRef = useRef(displayedProducts.length > 0);
 
-  // Restore displayed products from localStorage initially, then sync with DB
+  // Restore displayed products from DB/localStorage initially
   useEffect(() => {
-    if (!allProducts || allProducts.length === 0) return;
-
+    let mounted = true;
     const syncQuickSales = async () => {
       try {
         const setting = await settingsService.get(LS_KEY);
-        if (setting && setting.value && Array.isArray(setting.value)) {
-          const idMap = new Map(allProducts.map(p => [p.id, p]));
-          const restored = setting.value.map(id => idMap.get(id)).filter(Boolean);
-          if (restored.length > 0) {
-            setDisplayedProducts(restored);
-            localStorage.setItem(LS_KEY, JSON.stringify(restored.map(p => p.id)));
-          }
+        if (setting && setting.value && Array.isArray(setting.value) && mounted) {
+           // Sadece id'leri kaydedip, asıl ürün referanslarını allProducts içinden stock sync effect'i ile eşleyeceğiz.
+           // Ancak ilk yükleme için:
+           const cached = useCacheStore.getState().getCache('products') || [];
+           const idMap = new Map(cached.map(p => [p.id, p]));
+           const restored = setting.value.map(id => idMap.get(id)).filter(Boolean);
+           setDisplayedProducts(restored);
+           localStorage.setItem(LS_KEY, JSON.stringify(restored.map(p => p.id)));
         }
       } catch (e) {
         console.error('Hızlı satış senkronizasyon hatası:', e);
@@ -249,17 +249,35 @@ export const POSPage = () => {
         savedIds = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
       } catch { savedIds = []; }
 
-      if (savedIds.length > 0) {
-        const idMap = new Map(allProducts.map(p => [p.id, p]));
+      const cached = useCacheStore.getState().getCache('products') || [];
+      if (savedIds.length > 0 && cached.length > 0) {
+        const idMap = new Map(cached.map(p => [p.id, p]));
         const restored = savedIds.map(id => idMap.get(id)).filter(Boolean);
-        setDisplayedProducts(restored.length > 0 ? restored : allProducts.slice(0, 12));
-      } else {
-        setDisplayedProducts(allProducts.slice(0, 12));
+        setDisplayedProducts(restored);
       }
+      
+      syncQuickSales();
     }
+    
+    return () => { mounted = false; };
+  }, []);
 
-    // Her sayfa yüklendiğinde DB'den taze liste çek
-    syncQuickSales();
+  // Update stock quantities selectively without full re-render
+  useEffect(() => {
+    if (!allProducts || allProducts.length === 0) return;
+    setDisplayedProducts(prev => {
+      let changed = false;
+      const idMap = new Map(allProducts.map(p => [p.id, p]));
+      const next = prev.map(p => {
+        const fresh = idMap.get(p.id);
+        if (fresh && fresh.stock_quantity !== p.stock_quantity) {
+          changed = true;
+          return { ...p, stock_quantity: fresh.stock_quantity };
+        }
+        return p;
+      });
+      return changed ? next : prev;
+    });
   }, [allProducts]);
 
   // ── Cash registers — via useCashRegisters hook (cache-aware) ─────────────

@@ -68,7 +68,7 @@ export const ProductsTab = ({ search, categoryFilter, stockStatus, onEditProduct
         onClick={() => setCurrentPage(i)}
         className={`flex items-center justify-center w-7 h-7 text-xs rounded-lg transition-colors ${
           currentPage === i
-            ? 'bg-emerald-50 border border-emerald-200 text-emerald-600 font-semibold'
+            ? 'bg-[#7ed957]/10 border border-[#7ed957]/30 text-[#5da83f] font-semibold'
             : 'bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.7)] text-gray-500 hover:bg-white/40'
         }`}
       >{i}</button>
@@ -81,7 +81,7 @@ export const ProductsTab = ({ search, categoryFilter, stockStatus, onEditProduct
     const min = p.min_stock_level || 0;
     if (stock <= 0) return { bg: 'rgba(244,63,94,0.12)', text: '#e11d48', border: 'rgba(244,63,94,0.25)', label: `${stock} ${p.unit}`, warn: false };
     if (stock <= min) return { bg: 'rgba(249,115,22,0.12)', text: '#c2410c', border: 'rgba(249,115,22,0.25)', label: `${stock} ${p.unit}`, warn: true };
-    return { bg: 'rgba(16,185,129,0.12)', text: '#059669', border: 'rgba(16,185,129,0.25)', label: `${stock} ${p.unit}`, warn: false };
+    return { bg: 'rgba(126,217,87,0.15)', text: '#5da83f', border: 'rgba(126,217,87,0.3)', label: `${stock} ${p.unit}`, warn: false };
   };
 
   return (
@@ -104,7 +104,7 @@ export const ProductsTab = ({ search, categoryFilter, stockStatus, onEditProduct
         {/* ─── Rows ─── */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-400">
-            <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-[#7ed957] border-t-transparent rounded-full animate-spin" />
             <span className="text-sm">Yükleniyor...</span>
           </div>
         ) : paginatedProducts.length === 0 ? (
@@ -125,11 +125,11 @@ export const ProductsTab = ({ search, categoryFilter, stockStatus, onEditProduct
                 >
                   {/* Product */}
                   <div className="flex items-center gap-3 min-w-0 pr-4">
-                    <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-emerald-50 border border-emerald-100 flex-shrink-0">
-                      <Package className="w-4.5 h-4.5 text-emerald-500" style={{ width: 18, height: 18 }} />
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-[#7ed957]/10 border border-[#7ed957]/20 flex-shrink-0">
+                      <Package className="w-4.5 h-4.5 text-[#7ed957]" style={{ width: 18, height: 18 }} />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-bold text-slate-800 truncate group-hover:text-emerald-600 transition-colors leading-tight">
+                      <p className="text-sm font-bold text-slate-800 truncate group-hover:text-[#5da83f] transition-colors leading-tight">
                         {product.name}
                       </p>
                       <p
@@ -157,7 +157,7 @@ export const ProductsTab = ({ search, categoryFilter, stockStatus, onEditProduct
 
                   {/* Satış */}
                   <div className="text-right">
-                    <span className="text-[14px] font-extrabold text-emerald-600 tracking-tight tabular-nums">{fmt(product.sale_price)}</span>
+                    <span className="text-[14px] font-extrabold text-[#5da83f] tracking-tight tabular-nums">{fmt(product.sale_price)}</span>
                   </div>
 
                   {/* Stok */}
@@ -173,7 +173,7 @@ export const ProductsTab = ({ search, categoryFilter, stockStatus, onEditProduct
 
                   {/* Arrow */}
                   <div className="flex justify-end">
-                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-emerald-400 transition-colors" />
+                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#7ed957] transition-colors" />
                   </div>
                 </div>
               );

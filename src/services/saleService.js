@@ -185,25 +185,95 @@ export const saleService = {
   async getSalePayments(saleId) {
     try {
       if (isSupabase()) {
-        const { data, error } = await supabase.from('cash_transactions').select('*').eq('reference_id', saleId);
+        // Fetch direct payment transactions
+        const { data: direct, error } = await supabase.from('cash_transactions').select('*').eq('reference_id', saleId);
         if (error) throw error;
-        return (data || []).map(t => ({
+
+        // Fetch any return sales linked to this original sale
+        const { data: retSales } = await supabase
+          .from('sales')
+          .select('id')
+          .eq('original_sale_id', saleId)
+          .eq('status', 'returned');
+
+        let returnTxs = [];
+        if (retSales && retSales.length > 0) {
+          for (const ret of retSales) {
+            const { data: rtx } = await supabase
+              .from('cash_transactions')
+              .select('*')
+              .eq('reference_id', ret.id)
+              .eq('transaction_type', 'return_out');
+            if (rtx) returnTxs = [...returnTxs, ...rtx.map(t => ({ ...t, isReturn: true }))];
+          }
+        }
+
+        const allTxs = [...(direct || []), ...returnTxs];
+        return allTxs.map(t => ({
           ...t,
           date: t.created_at,
-          method: t.notes && t.notes.includes('Kredi Kartı') ? 'card' : 
-                  t.notes && t.notes.includes('Havale') ? 'transfer' : 'cash',
-          register: t.register_id
+          method: t.isReturn ? 'return'
+                : t.notes && t.notes.includes('Kredi Kartı') ? 'card'
+                : t.notes && t.notes.includes('Havale') ? 'transfer' : 'cash',
+          register: t.register_id,
+          isReturn: t.isReturn || t.transaction_type === 'return_out',
         }));
       }
       const raw = await db.cash_transactions.filter(t => t.reference_id === Number(saleId)).toArray();
       return raw.map(t => ({
         ...t,
         date: t.created_at,
-        method: t.notes && t.notes.includes('Kredi Kartı') ? 'card' : 
-                t.notes && t.notes.includes('Havale') ? 'transfer' : 'cash',
-        register: t.register_id
+        method: t.transaction_type === 'return_out' ? 'return'
+                : t.notes && t.notes.includes('Kredi Kartı') ? 'card'
+                : t.notes && t.notes.includes('Havale') ? 'transfer' : 'cash',
+        register: t.register_id,
+        isReturn: t.transaction_type === 'return_out',
       }));
     } catch (e) { return []; }
+  },
+
+  async addPayment(saleId, amount, method, notes, accountId = null, date = null) {
+    try {
+      const txDate = date ? new Date(date).getTime() : Date.now();
+      const methodLabel = method === 'cash' ? 'Nakit' : method === 'bank_transfer' ? 'Havale/EFT' : 'Kredi Kartı';
+      const txType = 'customer_payment_in';
+
+      if (isSupabase()) {
+        // Get sale info
+        const { data: sale } = await supabase.from('sales').select('total_amount, paid_amount, customer_id').eq('id', saleId).single();
+        const newPaid = (Number(sale.paid_amount) || 0) + amount;
+        const newStatus = newPaid >= Number(sale.total_amount) - 0.01 ? 'completed' : 'partial';
+        await supabase.from('sales').update({ paid_amount: newPaid, status: newStatus }).eq('id', saleId);
+
+        const regId = accountId || null;
+        await supabase.from('cash_transactions').insert([{
+          register_id: regId,
+          reference_id: saleId,
+          transaction_type: txType,
+          amount,
+          notes: notes || `${methodLabel} Tahsilat`,
+          created_at: txDate,
+        }]);
+        return true;
+      }
+
+      await db.transaction('rw', db.sales, db.cash_transactions, db.cash_registers, async () => {
+        const sale = await db.sales.get(Number(saleId));
+        if (!sale) throw new Error('Satış bulunamadı.');
+        const newPaid = (Number(sale.paid_amount) || 0) + amount;
+        const newStatus = newPaid >= Number(sale.total_amount) - 0.01 ? 'completed' : 'partial';
+        await db.sales.update(Number(saleId), { paid_amount: newPaid, status: newStatus });
+        await db.cash_transactions.add({
+          register_id: accountId ? Number(accountId) : null,
+          reference_id: Number(saleId),
+          transaction_type: txType,
+          amount,
+          notes: notes || `${methodLabel} Tahsilat`,
+          created_at: txDate,
+        });
+      });
+      return true;
+    } catch (e) { throw new Error('Tahsilat eklenirken hata: ' + e.message); }
   },
 
   async cancel(id) {

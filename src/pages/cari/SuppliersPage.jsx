@@ -111,7 +111,7 @@ export const SuppliersPage = () => {
         onClick={() => setCurrentPage(i)}
         className={`flex items-center justify-center w-7 h-7 text-xs rounded-lg transition-colors ${
           currentPage === i
-            ? 'bg-emerald-50 border border-emerald-200 text-emerald-600 font-semibold'
+            ? 'bg-[#7ed957]/10 border border-[#7ed957]/30 text-[#5da83f] font-semibold'
             : 'bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.7)] text-gray-500 hover:bg-white/40'
         }`}
       >{i}</button>
@@ -124,8 +124,8 @@ export const SuppliersPage = () => {
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-emerald-50 border border-emerald-100 flex-shrink-0">
-            <Building2 className="w-6 h-6 text-emerald-500" />
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#7ed957]/10 border border-[#7ed957]/20 flex-shrink-0">
+            <Building2 className="w-6 h-6 text-[#7ed957]" />
           </div>
           <div>
             <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Tedarikçiler</h1>
@@ -193,11 +193,11 @@ export const SuppliersPage = () => {
                 >
                   {/* Left: Icon + Name */}
                   <div className="flex items-center gap-3 min-w-0 pr-4">
-                    <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-emerald-50 border border-emerald-100 flex-shrink-0">
-                      <Building2 className="w-4.5 h-4.5 text-emerald-500" style={{ width: 18, height: 18 }} />
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-[#7ed957]/10 border border-[#7ed957]/20 flex-shrink-0">
+                      <Building2 className="w-4.5 h-4.5 text-[#7ed957]" style={{ width: 18, height: 18 }} />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-bold text-slate-800 truncate group-hover:text-emerald-600 transition-colors leading-tight">
+                      <p className="text-sm font-bold text-slate-800 truncate group-hover:text-[#5da83f] transition-colors leading-tight">
                         {supplier.name}
                       </p>
                     </div>
@@ -215,7 +215,7 @@ export const SuppliersPage = () => {
 
                   {/* Chevron */}
                   <div className="flex justify-end">
-                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-emerald-400 transition-colors" />
+                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#7ed957] transition-colors" />
                   </div>
                 </div>
               ))}

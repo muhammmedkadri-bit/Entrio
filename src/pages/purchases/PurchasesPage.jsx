@@ -63,7 +63,7 @@ const ITEMS_PER_PAGE = 10;
 function SummaryCard({ icon: Icon, title, value, sub, color }) {
   const colors = {
     blue:   { bg: 'from-blue-500/10  to-blue-400/5',   border: 'border-blue-100',   icon: 'bg-blue-100   text-blue-600',   val: 'text-blue-700'  },
-    emerald:{ bg: 'from-emerald-500/10 to-emerald-400/5', border: 'border-emerald-100', icon: 'bg-emerald-100 text-emerald-600', val: 'text-emerald-700' },
+    emerald:{ bg: 'from-emerald-500/10 to-emerald-400/5', border: 'border-[#7ed957]/20', icon: 'bg-[#7ed957]/20 text-[#5da83f]', val: 'text-[#4b8a32]' },
     orange: { bg: 'from-orange-500/10 to-orange-400/5', border: 'border-orange-100', icon: 'bg-orange-100  text-orange-600', val: 'text-orange-700' },
   }[color] || {};
 
@@ -232,7 +232,7 @@ export const PurchasesPage = () => {
           onClick={() => setPage(i)}
           className={`flex items-center justify-center w-7 h-7 text-xs rounded-lg transition-colors ${
             page === i
-              ? 'bg-emerald-50 border border-emerald-200 text-emerald-600 font-semibold'
+              ? 'bg-[#7ed957]/10 border border-[#7ed957]/30 text-[#5da83f] font-semibold'
               : 'bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.7)] text-gray-500 hover:bg-white/40' // glassmorphism gray
           }`}
         >
@@ -271,8 +271,8 @@ export const PurchasesPage = () => {
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-emerald-50 border border-emerald-100 flex-shrink-0">
-            <ShoppingBag className="w-6 h-6 text-emerald-500" />
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#7ed957]/10 border border-[#7ed957]/20 flex-shrink-0">
+            <ShoppingBag className="w-6 h-6 text-[#7ed957]" />
           </div>
           <div>
             <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Alış Yönetimi</h1>
@@ -288,13 +288,13 @@ export const PurchasesPage = () => {
         <div className="flex items-center w-full lg:w-auto">
           {/* Search Box */}
           <div className="relative w-full sm:w-64 flex-shrink-0 group">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-[#7ed957] transition-colors" />
             <input 
               type="text" 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tedarikçi veya fatura no ara..." 
-              className="block w-full pl-10 pr-4 py-[11px] border border-slate-300 rounded-lg bg-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm shadow-sm transition-all text-ellipsis overflow-hidden whitespace-nowrap"
+              className="block w-full pl-10 pr-4 py-[11px] border border-slate-300 rounded-lg bg-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-[#7ed957] sm:text-sm shadow-sm transition-all text-ellipsis overflow-hidden whitespace-nowrap"
             />
           </div>
         </div>
@@ -333,7 +333,7 @@ export const PurchasesPage = () => {
                           onClick={() => setIsOpen(!isOpen)}
                           className="text-sm text-slate-700 bg-transparent flex items-center gap-2 outline-none font-semibold transition-colors"
                         >
-                          <Calendar className="w-4 h-4 text-emerald-600" />
+                          <Calendar className="w-4 h-4 text-[#5da83f]" />
                           {val?.start && val?.end ? `${val.start.toLocaleDateString('tr-TR')} - ${val.end.toLocaleDateString('tr-TR')}` : "Tarih Seçiniz"}
                         </button>
                       )
@@ -357,12 +357,12 @@ export const PurchasesPage = () => {
             <div className="relative" ref={filterMenuRef}>
               <button
                 onClick={() => setIsFilterMenuOpen(o => !o)}
-                className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-emerald-600 bg-emerald-50/10 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/10 shadow-sm transition-all whitespace-nowrap"
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-[#5da83f] bg-[#7ed957]/10/10 border border-[#7ed957]/20 rounded-lg hover:bg-[#7ed957]/100/10 shadow-sm transition-all whitespace-nowrap"
               >
                 <Filter className="w-4 h-4" />
                 Filtrele
                 {activeFilters.length > 0 && (
-                  <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-emerald-500 text-white text-[10px] font-bold px-1">
+                  <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-[#7ed957]/100 text-white text-[10px] font-bold px-1">
                     {activeFilters.length}
                   </span>
                 )}
@@ -384,7 +384,7 @@ export const PurchasesPage = () => {
                         {label}
                       </span>
                       {activeFilters.includes(id) && (
-                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">Aktif</span>
+                        <span className="text-[10px] font-bold text-[#5da83f] bg-[#7ed957]/10 px-1.5 py-0.5 rounded">Aktif</span>
                       )}
                     </button>
                   ))}
@@ -431,7 +431,7 @@ export const PurchasesPage = () => {
           {/* Rows */}
           {loading ? (
             <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-400">
-              <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+              <div className="w-8 h-8 border-2 border-[#7ed957] border-t-transparent rounded-full animate-spin" />
               <span className="text-sm">Yükleniyor...</span>
             </div>
           ) : filtered.length === 0 ? (
@@ -458,7 +458,7 @@ export const PurchasesPage = () => {
                   {/* Tedarikçi */}
                   <div className="flex items-center gap-1.5 min-w-0 pr-4">
                     {p.supplier_name
-                      ? <><Building2 className="w-4 h-4 text-emerald-500 flex-shrink-0" /><span className="text-sm font-bold text-slate-800 truncate group-hover:text-emerald-600 transition-colors">{p.supplier_name}</span></>
+                      ? <><Building2 className="w-4 h-4 text-[#7ed957] flex-shrink-0" /><span className="text-sm font-bold text-slate-800 truncate group-hover:text-[#5da83f] transition-colors">{p.supplier_name}</span></>
                       : <span className="text-slate-400 italic text-sm truncate">Bilinmiyor</span>}
                   </div>
 
@@ -479,7 +479,7 @@ export const PurchasesPage = () => {
 
                   {/* Chevron */}
                   <div className="flex justify-end">
-                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-emerald-400 transition-colors" />
+                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#7ed957] transition-colors" />
                   </div>
                 </div>
               ))}

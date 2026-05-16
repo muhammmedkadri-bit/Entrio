@@ -15,6 +15,7 @@ import { CreateRegisterModal } from '../modals/CreateRegisterModal';
 import { TransactionDetailModal } from '../modals/TransactionDetailModal';
 import { DayCloseModal } from '../modals/DayCloseModal';
 import { RegisterTransactionsModal } from '../modals/RegisterTransactionsModal';
+import { CreditCardPaymentModal } from '../modals/CreditCardPaymentModal';
 import { cashService } from '../../../services/cashService';
 import toast from '../../../components/ui/CustomToast';
 import { ManualTransactionModal } from '../modals/ManualTransactionModal';
@@ -35,6 +36,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
   const [isManualTxOpen, setManualTxOpen] = useState(false);
   const [selectedReg, setSelectedReg] = useState(null);
   const [manualTxDirection, setManualTxDirection] = useState('in');
+  const [creditCardPaymentReg, setCreditCardPaymentReg] = useState(null);
 
   const [openMenuId, setOpenMenuId] = useState(null);
   const [editModalReg, setEditModalReg] = useState(null);
@@ -524,9 +526,15 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
 
                   {/* Alt: Gelir / Gider Butonları */}
                   <div className="flex gap-2">
-                    <button onClick={(e) => { e.stopPropagation(); openManualTx(reg, 'in'); }} className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-bold bg-[#82e05a]/15 text-[#5da83f] hover:bg-[#82e05a]/25 rounded-xl transition-all border border-[#82e05a]/30">
-                      <ArrowDownLeft className="w-3.5 h-3.5" /> {reg.type === 'credit_card' ? 'Ödeme' : 'Gelir'}
-                    </button>
+                    {reg.type === 'credit_card' ? (
+                      <button onClick={(e) => { e.stopPropagation(); setCreditCardPaymentReg(reg); }} className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-bold bg-[#82e05a]/15 text-[#5da83f] hover:bg-[#82e05a]/25 rounded-xl transition-all border border-[#82e05a]/30">
+                        <ArrowDownLeft className="w-3.5 h-3.5" /> Ödeme Yap
+                      </button>
+                    ) : (
+                      <button onClick={(e) => { e.stopPropagation(); openManualTx(reg, 'in'); }} className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-bold bg-[#82e05a]/15 text-[#5da83f] hover:bg-[#82e05a]/25 rounded-xl transition-all border border-[#82e05a]/30">
+                        <ArrowDownLeft className="w-3.5 h-3.5" /> Gelir
+                      </button>
+                    )}
                     <button onClick={(e) => { e.stopPropagation(); openManualTx(reg, 'out'); }} className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-bold bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl transition-all border border-rose-200">
                       <ArrowUpRight className="w-3.5 h-3.5" /> Gider
                     </button>
@@ -710,8 +718,8 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
               <th className="p-3">Hareket Tipi</th>
               <th className="p-3">Açıklama</th>
               <th className="p-3 whitespace-nowrap">Müşteri / Tedarikçi</th>
-              <th className="p-3">Tarih / Saat</th>
               <th className="p-3">Kasa</th>
+              <th className="p-3">Tarih / Saat</th>
               <th className="p-3 text-right">Tutar</th>
             </tr>
           </thead>
@@ -741,7 +749,8 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
                  IconComponent = Settings2;
               } else if (isReturn) {
                  pillClass = 'bg-orange-50 text-orange-600 border border-orange-200';
-                 typeLabel = 'İade';
+                 typeLabel = 'İade Ödemesi';
+                 IconComponent = ArrowDownLeft;
               } else if (isOut) {
                  pillClass = 'bg-rose-50 text-rose-600 border border-rose-200';
                  typeLabel = 'Gider';
@@ -790,10 +799,10 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
                       <span className="text-xs text-slate-300">—</span>
                     )}
                   </td>
-                  <td className="p-3 text-xs font-medium text-slate-500 whitespace-nowrap">{fmtDate(tx.created_at)}</td>
                   <td className="p-3 text-xs whitespace-nowrap">
                     <span className="bg-slate-100 text-slate-600 font-semibold px-2.5 py-1 rounded-md">{tx.registerName}</span>
                   </td>
+                  <td className="p-3 text-xs font-medium text-slate-500 whitespace-nowrap">{fmtDate(tx.created_at)}</td>
                   <td className={`p-3 text-right font-bold tabular-nums whitespace-nowrap ${isTransfer ? 'text-slate-500' : isOut || isReturn || tx.amount < 0 ? 'text-rose-600' : 'text-[#5da83f]'}`}>
                     {isTransfer ? (tx.transaction_type === 'transfer_out' ? '-' : '+') : isOut || isReturn || tx.amount < 0 ? '-' : '+'}{formatCurrency(Math.abs(tx.amount || 0))}
                   </td>
@@ -836,6 +845,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
       )}
 
       <ManualTransactionModal isOpen={isManualTxOpen} onClose={() => setManualTxOpen(false)} targetRegister={selectedReg} initialDirection={manualTxDirection} onSaved={handleSaved} />
+      <CreditCardPaymentModal isOpen={!!creditCardPaymentReg} onClose={() => setCreditCardPaymentReg(null)} targetRegister={creditCardPaymentReg} onSaved={handleSaved} />
       <EditRegisterModal isOpen={!!editModalReg} onClose={() => setEditModalReg(null)} register={editModalReg} onSaved={handleSaved} />
       <BalanceAdjustmentModal isOpen={!!adjustModalReg} onClose={() => setAdjustModalReg(null)} register={adjustModalReg} onSaved={handleSaved} />
       <TransferModal isOpen={!!transferModalReg} onClose={() => setTransferModalReg(null)} sourceRegister={transferModalReg} allRegisters={registers} onSaved={handleSaved} />

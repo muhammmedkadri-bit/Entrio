@@ -202,6 +202,42 @@ export const cashService = {
 
   async isRegisterOpen(registerId) { return true; },
 
+  async creditCardPayment(creditRegId, sourceRegId, amount, notes, transactionDate) {
+    try {
+      if (amount <= 0) throw new Error('Ödeme tutarı sıfırdan büyük olmalıdır.');
+      const dateVal = transactionDate ? new Date(transactionDate).getTime() : Date.now();
+      
+      if (isSupabase()) {
+        const sourceReg = await _sbReg(sourceRegId);
+        const creditReg = await _sbReg(creditRegId);
+        
+        let sourceNewBal = Number(sourceReg.current_balance || 0) - amount;
+        await supabase.from('cash_registers').update({ current_balance: sourceNewBal }).eq('id', sourceRegId);
+        await supabase.from('cash_transactions').insert([{ register_id: sourceRegId, transaction_type: 'expense_out', amount, balance_after: sourceNewBal, notes: `Kredi Kartı Ödemesi: ${creditReg.name}${notes ? ' - ' + notes : ''}`, created_at: dateVal }]);
+
+        let creditNewBal = Number(creditReg.current_balance || 0) + amount;
+        await supabase.from('cash_registers').update({ current_balance: creditNewBal }).eq('id', creditRegId);
+        await supabase.from('cash_transactions').insert([{ register_id: creditRegId, transaction_type: 'deposit_in', amount, balance_after: creditNewBal, notes: `Ödeme Alındı: ${sourceReg.name}${notes ? ' - ' + notes : ''}`, created_at: dateVal + 1 }]);
+        return true;
+      }
+
+      return await db.transaction('rw', db.cash_registers, db.cash_transactions, async () => {
+        const sourceReg = await db.cash_registers.get(Number(sourceRegId));
+        const creditReg = await db.cash_registers.get(Number(creditRegId));
+        if (!sourceReg || !creditReg) throw new Error('Kasa bulunamadı.');
+
+        let sourceNewBal = (sourceReg.current_balance || 0) - amount;
+        await db.cash_registers.update(Number(sourceRegId), { current_balance: sourceNewBal });
+        await db.cash_transactions.add({ register_id: Number(sourceRegId), transaction_type: 'expense_out', amount, balance_after: sourceNewBal, notes: `Kredi Kartı Ödemesi: ${creditReg.name}${notes ? ' - ' + notes : ''}`, created_at: dateVal });
+
+        let creditNewBal = (creditReg.current_balance || 0) + amount;
+        await db.cash_registers.update(Number(creditRegId), { current_balance: creditNewBal });
+        await db.cash_transactions.add({ register_id: Number(creditRegId), transaction_type: 'deposit_in', amount, balance_after: creditNewBal, notes: `Ödeme Alındı: ${sourceReg.name}${notes ? ' - ' + notes : ''}`, created_at: dateVal + 1 });
+        return true;
+      });
+    } catch (e) { throw new Error('Kredi kartı ödemesi kaydedilemedi: ' + e.message); }
+  },
+
   async addTransaction(registerId, type, amount, description, transactionDate = null) {
     try {
       const ins = ['sale_in', 'customer_payment_in', 'deposit_in', 'return_in'];

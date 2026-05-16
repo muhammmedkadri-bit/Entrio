@@ -276,7 +276,11 @@ export const SaleDetailPage = () => {
   /* ════════════════════════════════════════════════════════════════════════ */
   return (
     <div className="flex flex-col gap-4 h-full relative">
-      
+      {loading && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-xl">
+          <PremiumLoader />
+        </div>
+      )}
 
       {sale && (
         <>
@@ -305,13 +309,18 @@ export const SaleDetailPage = () => {
                   </h1>
                   <div className="flex flex-wrap items-center gap-2 mt-2">
                     <Pill icon={Hash} label="Fiş No" value={sale.sale_number || `#${sale.id}`} color="green" />
+                    {returnSale && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700 border border-orange-200">
+                        <Undo2 className="w-3 h-3" /> İade Edildi
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
 
               {/* Right: actions */}
               <div className="flex items-center gap-2 print:hidden">
-                {sale.status !== 'returned' && !sale.original_sale_id && !returnSale && (
+                {!loading && sale.status !== 'returned' && !sale.original_sale_id && !returnSale && (
                   <button
                     onClick={handleReturn}
                     className="flex items-center gap-1.5 text-sm font-bold px-3 py-2 rounded-xl border border-orange-200 bg-orange-50 hover:bg-orange-100 text-orange-600 transition-all shadow-sm"
@@ -633,7 +642,7 @@ export const SaleDetailPage = () => {
                 ) : (
                   <div className="flex flex-col gap-1">
                     <p className="text-sm text-gray-400">Perakende Müşteri</p>
-                    {remaining > 0 && sale.status !== 'cancelled' && (
+                    {remaining > 0 && sale.status !== 'cancelled' && !loading && (
                       <button
                         onClick={() => { setPayAmount(remaining); setPaymentModal(true); }}
                         className="mt-3 flex justify-center items-center gap-2 w-full px-4 py-2.5 text-sm font-semibold rounded-lg border bg-emerald-50 text-emerald-600 border-emerald-200/60 hover:bg-emerald-100 hover:border-emerald-300 transition-all"
@@ -667,7 +676,12 @@ export const SaleDetailPage = () => {
                 </div>
                 <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
                   <span className="text-gray-500 text-xs font-medium">Durum</span>
-                  {remaining > 0 && sale.status !== 'cancelled' ? (
+                  {returnSale ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">
+                      <Undo2 className="w-3 h-3" />
+                      İade Edildi
+                    </span>
+                  ) : remaining > 0 && sale.status !== 'cancelled' ? (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">
                       <Clock className="w-3 h-3" />
                       Bekliyor

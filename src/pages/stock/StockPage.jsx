@@ -130,8 +130,8 @@ export const StockPage = () => {
       {/* Header and Top Actions */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-emerald-50 border border-emerald-100 flex-shrink-0">
-            <Package className="w-6 h-6 text-emerald-500" />
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#7ed957]/10 border border-[#7ed957]/30 flex-shrink-0">
+            <Package className="w-6 h-6 text-[#7ed957]" />
           </div>
           <div>
             <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Stok</h1>
