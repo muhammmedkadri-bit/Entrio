@@ -15,7 +15,9 @@ export const StatCard = ({ title, value, icon: Icon, change, trend = 'neutral', 
     red: 'bg-red-50 border-red-100',
     rose: 'bg-rose-50 border-rose-100',
     amber: 'bg-amber-50 border-amber-100',
-    slate: 'bg-slate-50 border-slate-100'
+    slate: 'bg-slate-50 border-slate-100',
+    blue: 'bg-blue-50 border-blue-100',
+    orange: 'bg-orange-50 border-orange-100'
   };
 
   const iconColors = {
@@ -26,7 +28,9 @@ export const StatCard = ({ title, value, icon: Icon, change, trend = 'neutral', 
     red: 'text-red-600',
     rose: 'text-rose-600',
     amber: 'text-amber-600',
-    slate: 'text-slate-600'
+    slate: 'text-slate-600',
+    blue: 'text-blue-600',
+    orange: 'text-orange-600'
   };
 
   return (

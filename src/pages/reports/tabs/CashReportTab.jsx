@@ -194,10 +194,10 @@ export const CashReportTab = ({ startDate, endDate }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Dönem İçi Giriş" value={formatCurrency(data.totalIncome)} icon={ArrowDownLeft} color="grass" />
-        <StatCard title="Dönem İçi Çıkış" value={formatCurrency(data.totalExpense)} icon={ArrowUpRight} color="rose" />
-        <StatCard title="İade Ödemeleri" value={formatCurrency(data.totalReturns || 0)} icon={ArrowUpRight} color="blue" />
-        <StatCard title="Aralık Net Akışı" value={formatCurrency(data.netFlow)} icon={TrendingUp} color={data.netFlow >= 0 ? 'grass' : 'orange'} />
+        <StatCard title="Dönem İçi Giriş" value={formatCurrency(data.totalIncome)} icon={ArrowDownLeft} colorTheme="grass" />
+        <StatCard title="Dönem İçi Çıkış" value={formatCurrency(data.totalExpense)} icon={ArrowUpRight} colorTheme="rose" />
+        <StatCard title="İade Ödemeleri" value={formatCurrency(data.totalReturns || 0)} icon={ArrowUpRight} colorTheme="blue" />
+        <StatCard title="Aralık Net Akışı" value={formatCurrency(data.netFlow)} icon={TrendingUp} colorTheme={data.netFlow >= 0 ? 'grass' : 'orange'} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
