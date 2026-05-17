@@ -204,19 +204,28 @@ export const CashReportTab = ({ startDate, endDate }) => {
         
         <div className="lg:col-span-2 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
           <h3 className="font-bold text-slate-700 mb-1">Nakit Akış Takvimi</h3>
-          <p className="text-[11px] text-slate-400 mb-3">Gelir (yeşil) · Gider (kırmızı) · İade Ödemesi (turuncu)</p>
+          <p className="text-[11px] text-slate-400 mb-3">Gelir (yeşil) · Gider (kırmızı) · İade Ödemesi (mavi)</p>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={data.dailySeries}>
+              <ComposedChart data={data.dailySeries} margin={{ bottom: data.dailySeries.length > 12 ? 40 : 10 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                <XAxis
+                  dataKey="date"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 10, fill: '#64748b' }}
+                  interval={0}
+                  angle={data.dailySeries.length > 12 ? -45 : 0}
+                  textAnchor={data.dailySeries.length > 12 ? 'end' : 'middle'}
+                  height={data.dailySeries.length > 12 ? 55 : 30}
+                />
                 <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(val) => `₺${val}`} />
                 <YAxis yAxisId="right" orientation="right" hide />
                 <RechartsTooltip content={<CashTooltip />} cursor={{ fill: '#f8fafc' }} />
                 <Legend iconType="circle" />
-                <Bar yAxisId="left" dataKey="income" name="Giriş (Gelir)" fill="#10b981" barSize={16} radius={[2, 2, 0, 0]} />
-                <Bar yAxisId="left" dataKey="returns" name="İade Ödemesi" fill="#3b82f6" barSize={16} radius={[2, 2, 0, 0]} />
-                <Bar yAxisId="left" dataKey="expense" name="Çıkış (Gider)" fill="#f43f5e" barSize={16} radius={[2, 2, 0, 0]} />
+                <Bar yAxisId="left" dataKey="income" name="Giriş (Gelir)" fill="#10b981" barSize={data.dailySeries.length > 12 ? 14 : 16} radius={[2, 2, 0, 0]} />
+                <Bar yAxisId="left" dataKey="returns" name="İade Ödemesi" fill="#3b82f6" barSize={data.dailySeries.length > 12 ? 14 : 16} radius={[2, 2, 0, 0]} />
+                <Bar yAxisId="left" dataKey="expense" name="Çıkış (Gider)" fill="#f43f5e" barSize={data.dailySeries.length > 12 ? 14 : 16} radius={[2, 2, 0, 0]} />
                 <Line yAxisId="right" type="monotone" dataKey="balance" name="Net Bakiye" stroke="#65c43d" strokeWidth={3} dot={false} strokeOpacity={0.4} />
               </ComposedChart>
             </ResponsiveContainer>

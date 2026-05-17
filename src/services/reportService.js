@@ -39,7 +39,7 @@ export const reportService = {
         totalDiscount: 0,
         totalTax: 0,
         netRevenue: 0,
-        totalGrossProfit: 0, // Yeni eklendi
+        totalGrossProfit: 0,
         byPaymentMethod: { 
           cash: { count: 0, amount: 0 }, 
           card: { count: 0, amount: 0 }, 
@@ -48,16 +48,33 @@ export const reportService = {
         },
         dailySeries: [], // { date, total, count }
         topProducts: [],
-        rawSales: [] // populated below
+        rawSales: []
       };
 
-      const dailyMap = new Map();
       const daysCount = differenceInDays(endOfDay(endDate), startOfDay(startDate));
-      for (let i = 0; i <= daysCount; i++) {
-        const d = new Date(startDate);
-        d.setDate(d.getDate() + i);
-        const dKey = format(d, 'dd MMMM', { locale: tr });
-        dailyMap.set(dKey, { date: dKey, total: 0, count: 0 });
+      const useMonthly = daysCount > 60; // 60+ gün → aylık gruplama
+
+      const seriesMap = new Map();
+      if (useMonthly) {
+        // Yılın tüm aylarını sıfırla doldur
+        const startYear = startDate.getFullYear();
+        const endYear = endDate.getFullYear();
+        for (let y = startYear; y <= endYear; y++) {
+          const mStart = y === startYear ? startDate.getMonth() : 0;
+          const mEnd   = y === endYear   ? endDate.getMonth()   : 11;
+          for (let m = mStart; m <= mEnd; m++) {
+            const mKey = format(new Date(y, m, 1), 'MMMM yyyy', { locale: tr });
+            seriesMap.set(mKey, { date: mKey, total: 0, count: 0 });
+          }
+        }
+      } else {
+        // Tüm günleri sıfır ile önceden doldur
+        for (let i = 0; i <= daysCount; i++) {
+          const d = new Date(startDate);
+          d.setDate(d.getDate() + i);
+          const dKey = format(d, 'dd MMMM', { locale: tr });
+          seriesMap.set(dKey, { date: dKey, total: 0, count: 0 });
+        }
       }
 
       for (const sale of validSales) {
@@ -68,21 +85,23 @@ export const reportService = {
         if (!summary.byPaymentMethod[sale.payment_method]) {
           summary.byPaymentMethod[sale.payment_method] = { count: 0, amount: 0 };
         }
-        
         summary.byPaymentMethod[sale.payment_method].count += 1;
         summary.byPaymentMethod[sale.payment_method].amount += sale.total_amount;
 
-        const dayKey = format(sale.created_at, 'dd MMMM', { locale: tr });
-        if (dailyMap.has(dayKey)) {
-          const dayStat = dailyMap.get(dayKey);
-          dayStat.total += sale.total_amount;
-          dayStat.count += 1;
+        const saleDate = new Date(Number(sale.created_at));
+        const seriesKey = useMonthly
+          ? format(saleDate, 'MMMM yyyy', { locale: tr })
+          : format(saleDate, 'dd MMMM', { locale: tr });
+        if (seriesMap.has(seriesKey)) {
+          const stat = seriesMap.get(seriesKey);
+          stat.total += sale.total_amount;
+          stat.count += 1;
         }
       }
 
       summary.netRevenue = summary.totalRevenue - summary.totalDiscount;
       summary.avgBasket = summary.totalCount > 0 ? summary.totalRevenue / summary.totalCount : 0;
-      summary.dailySeries = Array.from(dailyMap.values());
+      summary.dailySeries = Array.from(seriesMap.values());
 
       // Sale Items for Top Products
       const saleIds = validSales.map(s => s.id);
@@ -503,23 +522,39 @@ export const reportService = {
       const summary = {
          totalIncome: 0,
          totalExpense: 0,
-         totalReturns: 0,   // Kasadan çıkan iade ödemeleri (ayrı kalem)
+         totalReturns: 0,
          netFlow: 0,
          expenseBreakdown: [],
          dailySeries: []
       };
 
-       const dailyMap = new Map();
+       const seriesMap = new Map();
        let pieGider = 0;
        let pieTedarikci = 0;
 
-       // Tüm aralığı (boş günler dahil) sıfır değerlerle dolduralım
        const daysCount = differenceInDays(endOfDay(endDate), startOfDay(startDate));
-       for (let i = 0; i <= daysCount; i++) {
-         const d = new Date(startDate);
-         d.setDate(d.getDate() + i);
-         const dKey = format(d, 'dd MMMM', { locale: tr });
-         dailyMap.set(dKey, { date: dKey, income: 0, expense: 0, returns: 0 });
+       const useMonthly = daysCount > 60; // 60+ gün → aylık gruplama
+
+       if (useMonthly) {
+         // Yılın tüm aylarını sıfırla doldur
+         const startYear = startDate.getFullYear();
+         const endYear = endDate.getFullYear();
+         for (let y = startYear; y <= endYear; y++) {
+           const mStart = y === startYear ? startDate.getMonth() : 0;
+           const mEnd   = y === endYear   ? endDate.getMonth()   : 11;
+           for (let m = mStart; m <= mEnd; m++) {
+             const mKey = format(new Date(y, m, 1), 'MMMM', { locale: tr });
+             seriesMap.set(mKey, { date: mKey, income: 0, expense: 0, returns: 0 });
+           }
+         }
+       } else {
+         // Tüm günleri sıfır ile doldur (boşluk olmadan)
+         for (let i = 0; i <= daysCount; i++) {
+           const d = new Date(startDate);
+           d.setDate(d.getDate() + i);
+           const dKey = format(d, 'dd MMM', { locale: tr });
+           seriesMap.set(dKey, { date: dKey, income: 0, expense: 0, returns: 0 });
+         }
        }
 
        txs.forEach(t => {
@@ -528,32 +563,32 @@ export const reportService = {
          if (ins.includes(t.transaction_type) || t.transaction_type === 'in') {
             summary.totalIncome += t.amount;
          } else if (t.transaction_type === 'return_out') {
-            // İade ödemeleri: gerçek gider değil, ayrı kalem
             summary.totalReturns += t.amount;
           } else if (outs.includes(t.transaction_type) || t.transaction_type === 'out') {
              summary.totalExpense += t.amount;
-
-             // Sadece Gider ve Tedarikçiye Ödemeler pie için sayılır
              if (t.transaction_type === 'expense_out') pieGider += t.amount;
              if (t.transaction_type === 'supplier_payment_out') pieTedarikci += t.amount;
           }
 
-         const dKey = format(new Date(Number(t.created_at)), 'dd MMMM', { locale: tr });
-         if (!dailyMap.has(dKey)) dailyMap.set(dKey, { date: dKey, income: 0, expense: 0, returns: 0 });
-         const dStat = dailyMap.get(dKey);
+         const txDate = new Date(Number(t.created_at));
+         const seriesKey = useMonthly
+           ? format(txDate, 'MMMM', { locale: tr })
+           : format(txDate, 'dd MMM', { locale: tr });
+
+         if (!seriesMap.has(seriesKey)) seriesMap.set(seriesKey, { date: seriesKey, income: 0, expense: 0, returns: 0 });
+         const dStat = seriesMap.get(seriesKey);
 
          if (ins.includes(t.transaction_type) || t.transaction_type === 'in') {
            dStat.income += t.amount;
          } else if (t.transaction_type === 'return_out') {
-           dStat.returns += t.amount;  // Grafik'te ayrı bar olarak gösterilecek
+           dStat.returns += t.amount;
          } else if (outs.includes(t.transaction_type) || t.transaction_type === 'out') {
            dStat.expense += t.amount;
          }
       });
 
       let rollingBalance = 0;
-      summary.dailySeries = Array.from(dailyMap.values()).map(d => {
-         // Net akış = gelir - gider - iade (hepsi kasaya etkiyor)
+      summary.dailySeries = Array.from(seriesMap.values()).map(d => {
          rollingBalance += (d.income - d.expense - d.returns);
          return { ...d, balance: rollingBalance };
       });
