@@ -11,6 +11,33 @@ const fmt = (v) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency:
 
 const ITEMS_PER_PAGE = 10;
 
+const ProductRowSkeleton = () => (
+  <div className="grid items-center px-4 py-[13px] border-b border-slate-100 last:border-0" style={{ gridTemplateColumns: '2.5fr 1.2fr 1fr 1fr 1fr 32px' }}>
+    <div className="flex items-center gap-3 min-w-0 pr-4">
+      <div className="w-9 h-9 rounded-lg bg-slate-100 animate-pulse flex-shrink-0" />
+      <div className="flex flex-col gap-1 w-full">
+        <div className="h-4 bg-slate-100 rounded animate-pulse w-3/4" />
+        <div className="h-2.5 bg-slate-100 rounded animate-pulse w-1/2" />
+      </div>
+    </div>
+    <div>
+      <div className="h-5 bg-slate-100 rounded-full animate-pulse w-24" />
+    </div>
+    <div className="flex justify-end">
+      <div className="h-4 bg-slate-100 rounded animate-pulse w-16" />
+    </div>
+    <div className="flex justify-end">
+      <div className="h-4 bg-slate-100 rounded animate-pulse w-16" />
+    </div>
+    <div className="flex justify-center">
+      <div className="h-5 bg-slate-100 rounded animate-pulse w-14" />
+    </div>
+    <div className="flex justify-end">
+      <div className="w-4 h-4 bg-slate-100 rounded animate-pulse" />
+    </div>
+  </div>
+);
+
 export const ProductsTab = ({ search, categoryFilter, stockStatus, onEditProduct, onStockMovement }) => {
   const navigate = useNavigate();
   const { startNavigation } = useAppStore();
@@ -103,9 +130,10 @@ export const ProductsTab = ({ search, categoryFilter, stockStatus, onEditProduct
 
         {/* ─── Rows ─── */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-400">
-            <div className="w-8 h-8 border-2 border-[#7ed957] border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm">Yükleniyor...</span>
+          <div className="divide-y divide-slate-100">
+            {[...Array(5)].map((_, i) => (
+              <ProductRowSkeleton key={i} />
+            ))}
           </div>
         ) : paginatedProducts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-400">

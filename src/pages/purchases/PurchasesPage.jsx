@@ -17,6 +17,30 @@ import { Search } from 'lucide-react';
 import { useAppStore } from '../../store/appStore';
 import { useCartStore } from '../../store/cartStore';
 
+const PurchaseRowSkeleton = () => (
+  <div className="grid items-center px-4 py-[13px] border-b border-slate-100 last:border-0 h-[62px]" style={{ gridTemplateColumns: '1.2fr 2fr 1.2fr 1.2fr 1.5fr 32px' }}>
+    <div className="pr-4">
+      <div className="h-4 bg-slate-100 rounded animate-pulse w-24" />
+    </div>
+    <div className="flex items-center gap-2 min-w-0 pr-4">
+      <div className="w-4 h-4 rounded bg-slate-100 animate-pulse flex-shrink-0" />
+      <div className="h-4 bg-slate-100 rounded animate-pulse w-32" />
+    </div>
+    <div>
+      <div className="h-4 bg-slate-100 rounded animate-pulse w-28" />
+    </div>
+    <div>
+      <div className="h-4 bg-slate-100 rounded animate-pulse w-24" />
+    </div>
+    <div className="flex justify-end pr-2">
+      <div className="h-5 bg-slate-100 rounded animate-pulse w-20" />
+    </div>
+    <div className="flex justify-end">
+      <div className="w-4 h-4 bg-slate-100 rounded animate-pulse" />
+    </div>
+  </div>
+);
+
 // ── Hooks ──────────────────────────────────────────────────────────────────
 function useClickOutside(ref, handler) {
   useEffect(() => {
@@ -430,9 +454,10 @@ export const PurchasesPage = () => {
 
           {/* Rows */}
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-400">
-              <div className="w-8 h-8 border-2 border-[#7ed957] border-t-transparent rounded-full animate-spin" />
-              <span className="text-sm">Yükleniyor...</span>
+            <div className="divide-y divide-slate-100">
+              {[...Array(5)].map((_, i) => (
+                <PurchaseRowSkeleton key={i} />
+              ))}
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-400">
