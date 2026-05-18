@@ -24,7 +24,7 @@ export const useCashRegisters = () => {
   const fingerprintRef = useRef('');
 
   const makeFingerprint = (data) =>
-    data.map(r => `${r.id}:${r.current_balance}:${r.is_active}`).join('|');
+    data.map(r => `${r.id}:${r.current_balance}:${r.is_active}:${r.name}:${r.type}`).join('|');
 
   const fetchRegisters = useCallback(async (silent = false, force = false) => {
     if (isFetchingRef.current) return;

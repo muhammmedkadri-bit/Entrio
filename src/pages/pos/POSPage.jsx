@@ -280,35 +280,38 @@ export const POSPage = () => {
   useEffect(() => {
     let mounted = true;
     
-    // Yükleme tamamlanana kadar (allProducts servisi) bekle, ardından sync işlemlerini yap
     if (!loading && !isInitializedRef.current) {
       isInitializedRef.current = true;
       
       const syncQuickSales = async () => {
         try {
-          // Önce localStorage'dan dene, daha hızlı
+          // localStorage her zaman en güncel veridir (removeConfirm sonrası senkron yazılır).
+          // DB yalnızca localStorage BOŞ olduğunda fallback olarak kullanılır.
           let savedIds = [];
           try {
             savedIds = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
           } catch { savedIds = []; }
 
-          // Ardından veritabanından güncel listeyi al
-          const setting = await settingsService.get(LS_KEY);
-          let finalIds = savedIds;
-          
-          if (setting && setting.value && Array.isArray(setting.value)) {
-            finalIds = setting.value;
-            localStorage.setItem(LS_KEY, JSON.stringify(finalIds));
+          if (savedIds.length === 0) {
+            // localStorage boş → DB'den dene
+            try {
+              const setting = await settingsService.get(LS_KEY);
+              if (setting && setting.value && Array.isArray(setting.value)) {
+                savedIds = setting.value;
+                localStorage.setItem(LS_KEY, JSON.stringify(savedIds));
+              }
+            } catch { /* DB erişilemiyorsa sessizce devam et */ }
           }
+          // NOT: localStorage doluysa DB'ye hiç bakılmaz → race condition ortadan kalkar.
 
-          if (mounted && finalIds.length > 0) {
+          if (mounted && savedIds.length > 0) {
             const currentIds = displayedIdsRef.current;
             const isSame =
-              finalIds.length === currentIds.length &&
-              finalIds.every((id, i) => id === currentIds[i]);
+              savedIds.length === currentIds.length &&
+              savedIds.every((id, i) => id === currentIds[i]);
             if (!isSame) {
               const idMap = new Map(allProducts.map(p => [p.id, p]));
-              const restored = finalIds.map(id => idMap.get(id)).filter(Boolean);
+              const restored = savedIds.map(id => idMap.get(id)).filter(Boolean);
               setDisplayedProducts(restored);
             }
           }

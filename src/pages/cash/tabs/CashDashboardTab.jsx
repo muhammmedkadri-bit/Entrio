@@ -137,10 +137,10 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
   // Fingerprint of register IDs — prevents redundant reloads when same data re-renders
   const registersFingerRef = useRef('');
 
-  // Only re-load when registers actually change (by ID set)
+  // Only re-load when registers actually change (by ID set OR by balance change)
   useEffect(() => {
     if (!registers || registers.length === 0) return;
-    const fingerprint = registers.map(r => r.id).sort().join(',');
+    const fingerprint = registers.map(r => `${r.id}:${r.current_balance}:${r.name}`).sort().join(',');
     if (fingerprint === registersFingerRef.current) return; // same data, skip
     registersFingerRef.current = fingerprint;
     setPage(1);
@@ -351,7 +351,8 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
 
 
   const handleSaved = () => {
-    onRegisterChanged(); // this will trigger useEffect via registers prop update
+    loadDashboard(); // Anında veriyi yenile — F5 gereksinimini ortadan kaldırır
+    onRegisterChanged(); // Üst bileşendeki register listesini de güncelle
   };
 
   const openManualTx = (reg, direction) => {
@@ -669,6 +670,9 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
           {(() => {
             const reg = getFilteredRegisters().find(r => r.id === openMenuId);
             if (!reg) return null;
+            // Hareket kaydı olan kasalar silinemez
+            const hasTransactions = recentTxs.some(t => t.register_id === reg.id);
+            const canDelete = !reg.is_default_for && !hasTransactions;
             return (
               <>
                 {!reg.is_default_for && (
@@ -693,8 +697,18 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
                 <button onClick={() => { setArchiveConfirmReg(reg); setOpenMenuId(null); }} className="w-full px-3 py-2 text-left text-sm font-medium text-amber-600 hover:bg-amber-50 flex items-center gap-2">
                   <Archive className="w-4 h-4 text-amber-500" /> Arşivle
                 </button>
-                <button onClick={() => { setDeleteConfirmReg(reg); setOpenMenuId(null); }} className="w-full px-3 py-2 text-left text-sm font-medium text-rose-700 hover:bg-rose-50 flex items-center gap-2">
-                  <Trash2 className="w-4 h-4 text-rose-600" /> Sil
+                <button
+                  disabled={!canDelete}
+                  onClick={() => { if (canDelete) { setDeleteConfirmReg(reg); setOpenMenuId(null); } }}
+                  title={!canDelete ? (reg.is_default_for ? 'Varsayılan kasa silinemez' : 'Hareketi olan kasa silinemez, arşivleyebilirsiniz') : ''}
+                  className={`w-full px-3 py-2 text-left text-sm font-medium flex items-center gap-2 ${
+                    canDelete
+                      ? 'text-rose-700 hover:bg-rose-50 cursor-pointer'
+                      : 'text-slate-300 cursor-not-allowed'
+                  }`}
+                >
+                  <Trash2 className={`w-4 h-4 ${canDelete ? 'text-rose-600' : 'text-slate-300'}`} /> Sil
+                  {!canDelete && <span className="ml-auto text-[10px] font-semibold bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded">Deaktif</span>}
                 </button>
               </>
             );
