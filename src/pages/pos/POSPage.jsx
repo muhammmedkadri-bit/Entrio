@@ -285,24 +285,22 @@ export const POSPage = () => {
       
       const syncQuickSales = async () => {
         try {
-          // localStorage her zaman en güncel veridir (removeConfirm sonrası senkron yazılır).
-          // DB yalnızca localStorage BOŞ olduğunda fallback olarak kullanılır.
           let savedIds = [];
-          try {
-            savedIds = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
-          } catch { savedIds = []; }
-
-          if (savedIds.length === 0) {
-            // localStorage boş → DB'den dene
+          if (isSupabase()) {
             try {
               const setting = await settingsService.get(LS_KEY);
               if (setting && setting.value && Array.isArray(setting.value)) {
                 savedIds = setting.value;
                 localStorage.setItem(LS_KEY, JSON.stringify(savedIds));
+              } else {
+                try { savedIds = JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { savedIds = []; }
               }
-            } catch { /* DB erişilemiyorsa sessizce devam et */ }
+            } catch {
+              try { savedIds = JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { savedIds = []; }
+            }
+          } else {
+            try { savedIds = JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { savedIds = []; }
           }
-          // NOT: localStorage doluysa DB'ye hiç bakılmaz → race condition ortadan kalkar.
 
           if (mounted && savedIds.length > 0) {
             const currentIds = displayedIdsRef.current;
@@ -327,6 +325,41 @@ export const POSPage = () => {
     
     return () => { mounted = false; };
   }, [allProducts, loading]);
+
+  // ── Supabase Realtime Subscription for Quick Products ──────────────────────
+  useEffect(() => {
+    if (!isSupabase()) return;
+
+    const channel = supabase.channel('settings_quick_products')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen for all changes (INSERT, UPDATE)
+          schema: 'public',
+          table: 'settings',
+          filter: `key=eq.${LS_KEY}`
+        },
+        (payload) => {
+          const newIds = payload.new?.value;
+          if (newIds && Array.isArray(newIds)) {
+            // Check if it's actually different from what we are displaying
+            const currentIds = displayedIdsRef.current;
+            const isSame = newIds.length === currentIds.length && newIds.every((id, i) => id === currentIds[i]);
+            if (!isSame) {
+              const idMap = new Map(useCacheStore.getState().getCache('products')?.map(p => [p.id, p]) || []);
+              const restored = newIds.map(id => idMap.get(id)).filter(Boolean);
+              setDisplayedProducts(restored);
+              localStorage.setItem(LS_KEY, JSON.stringify(newIds)); // keep local sync
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   // Update stock quantities selectively without full re-render
   useEffect(() => {
