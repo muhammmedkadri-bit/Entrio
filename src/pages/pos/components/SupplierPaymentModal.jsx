@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, X, Search, CreditCard, Check } from 'lucide-react';
 import { supplierService } from '../../../services/supplierService';
-import { db } from '../../../db';
+import { cashService } from '../../../services/cashService';
 import toast from '../../../components/ui/CustomToast';
 
 const fmt = (v) =>
@@ -27,7 +27,7 @@ export const SupplierPaymentModal = ({ isOpen, onClose, defaultAmount = 0, onCom
 
     Promise.all([
       supplierService.getAll(),
-      db.cash_registers.filter(r => r.is_active !== false).toArray(),
+      cashService.getRegisters(),
     ]).then(([supList, regList]) => {
       setSuppliers(supList);
       setRegisters(regList);
