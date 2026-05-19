@@ -13,6 +13,8 @@ import { SupplierDetailPage } from './pages/cari/SupplierDetailPage';
 import { NewPurchasePage } from './pages/purchases/NewPurchasePage';
 import { PurchaseDetailPage } from './pages/purchases/PurchaseDetailPage';
 import { SaleDetailPage } from './pages/sales/SaleDetailPage';
+import { dayCloseService } from './services/dayCloseService';
+import { isSupabase } from './config/database';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -52,6 +54,49 @@ function App() {
     );
     return unsub;
   }, [clearCache]);
+
+  // ── Auto Day Close at 00:15 ────────────────────────────────────────────────
+  // Checks every minute. If time is 00:15 and the day hasn't been closed yet,
+  // triggers an automatic day close. Only runs when Supabase is active and user is logged in.
+  useEffect(() => {
+    if (!isSupabase()) return;
+    const AUTO_CLOSE_HOUR = 0;
+    const AUTO_CLOSE_MINUTE = 15;
+    const AUTO_CLOSE_KEY = 'entrio_auto_close_date';
+
+    const checkAndAutoClose = async () => {
+      const { isAuthenticated } = useAuthStore.getState();
+      if (!isAuthenticated) return;
+
+      const now = new Date();
+      if (now.getHours() !== AUTO_CLOSE_HOUR || now.getMinutes() !== AUTO_CLOSE_MINUTE) return;
+
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const lastAutoClose = localStorage.getItem(AUTO_CLOSE_KEY);
+      if (lastAutoClose === todayStr) return; // Already auto-closed today
+
+      // Check if manual day close was already done for today
+      const needsClose = await dayCloseService.needsDayClose();
+      if (!needsClose) {
+        // Already closed manually — just mark to prevent double-auto
+        localStorage.setItem(AUTO_CLOSE_KEY, todayStr);
+        return;
+      }
+
+      try {
+        await dayCloseService.performDayClose({ isAuto: true, triggeredBy: 'auto_00_15' });
+        localStorage.setItem(AUTO_CLOSE_KEY, todayStr);
+        console.info('[AutoDayClose] Otomatik günsonu 00:15\'de başarıyla tamamlandı.');
+      } catch (e) {
+        console.error('[AutoDayClose] Otomatik günsonu hatası:', e);
+      }
+    };
+
+    // Check immediately on mount (catches missed 00:15 window if app was reloaded)
+    checkAndAutoClose();
+    const interval = setInterval(checkAndAutoClose, 60_000); // Check every minute
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <Routes>

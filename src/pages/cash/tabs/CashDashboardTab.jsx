@@ -103,6 +103,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
   const [monthlySummary, setMonthlySummary] = useState({ income: 0, expense: 0 });
   const [recentTxs, setRecentTxs] = useState([]);
   const [hasTodayTxs, setHasTodayTxs] = useState(false);
+  const [hasActivityToClose, setHasActivityToClose] = useState(false);
   const [page, setPage] = useState(1);
 
   // Modals
@@ -195,17 +196,25 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
 
       // Build synthetic summaryResults from txs
       const todayMidnight = new Date(); todayMidnight.setHours(0, 0, 0, 0);
+      const todayStr = `${todayMidnight.getFullYear()}-${String(todayMidnight.getMonth() + 1).padStart(2, '0')}-${String(todayMidnight.getDate()).padStart(2, '0')}`;
       const regMapForSummary = Object.fromEntries(registers.map(r => [r.id, r]));
-      
+
+      // BUG FIX: Use last_day_close_at directly as the lower bound (not Math.max with today midnight).
+      // Math.max was incorrectly excluding prior-day unclosed transactions after midnight.
       const todayTxs = allTxsRaw.filter(t => {
         if (t.is_day_close || t.transaction_type === 'day_close') return false;
         const reg = regMapForSummary[t.register_id];
-        const limitMs = reg?.last_day_close_at ? Math.max(reg.last_day_close_at, todayMidnight.getTime()) : todayMidnight.getTime();
+        const limitMs = reg?.last_day_close_at || todayMidnight.getTime();
         return Number(t.created_at) >= limitMs;
       });
       const combinedSum = { totals: { sale_in: 0, customer_payment_in: 0, deposit_in: 0, return_in: 0, purchase_out: 0, supplier_payment_out: 0, expense_out: 0, withdrawal_out: 0, return_out: 0 } };
       todayTxs.forEach(t => { if (combinedSum.totals[t.transaction_type] !== undefined) combinedSum.totals[t.transaction_type] += Number(t.amount) || 0; });
       setHasTodayTxs(todayTxs.length > 0);
+
+      // Enable day-close button if: unclosed transactions exist OR any register has a daily balance diff OR wasn't closed today
+      const hasBalance = registers.some(r => Math.abs((r.current_balance ?? 0) - (r.general_balance ?? 0)) > 0.001);
+      const hasUnclosedPriorDay = registers.some(r => r.last_day_close_date !== todayStr);
+      setHasActivityToClose(todayTxs.length > 0 || hasBalance || hasUnclosedPriorDay);
 
       // Monthly summary
       const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
@@ -499,8 +508,8 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
         <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
           <button 
             onClick={() => setDayCloseModalOpen(true)}
-            disabled={!hasTodayTxs}
-            className={`w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold rounded-xl transition-colors shadow-sm ${!hasTodayTxs ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed' : 'bg-white text-slate-800 border border-slate-800 hover:bg-slate-50'}`}
+            disabled={!hasActivityToClose}
+            className={`w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold rounded-xl transition-colors shadow-sm ${!hasActivityToClose ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed' : 'bg-white text-slate-800 border border-slate-800 hover:bg-slate-50'}`}
           >
             <Moon className="w-4 h-4" /> Günsonu Yap
           </button>
