@@ -256,7 +256,7 @@ export const POSPage = () => {
     const cached = useCacheStore.getState().getCache('products');
     if (!cached || cached.length === 0) return [];
     let savedIds = [];
-    try { savedIds = JSON.parse(localStorage.getItem('pos_displayed_product_ids') || '[]'); } catch { savedIds = []; }
+    try { savedIds = JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { savedIds = []; }
     if (savedIds.length > 0) {
       const idMap = new Map(cached.map(p => [p.id, p]));
       const restored = savedIds.map(id => idMap.get(id)).filter(Boolean);
@@ -272,6 +272,8 @@ export const POSPage = () => {
 
   // Zaten başlatılıp başlatılmadığını izle
   const isInitializedRef = useRef(false);
+  // Async sync tamamlanana kadar persist'i blokla (yanlış liste Supabase'e yazılmasın)
+  const isReadyToSaveRef = useRef(false);
   // Snapshot of current displayed IDs for comparison inside async callbacks
   const displayedIdsRef = useRef([]);
   useEffect(() => { displayedIdsRef.current = displayedProducts.map(p => p.id); }, [displayedProducts]);
@@ -282,6 +284,7 @@ export const POSPage = () => {
     
     if (!loading && !isInitializedRef.current) {
       isInitializedRef.current = true;
+      isReadyToSaveRef.current = false; // reset before async fetch
       
       const syncQuickSales = async () => {
         try {
@@ -316,7 +319,10 @@ export const POSPage = () => {
         } catch (e) {
           console.error('Hızlı satış senkronizasyon hatası:', e);
         } finally {
-          if (mounted) setIsGridLoading(false);
+          if (mounted) {
+            isReadyToSaveRef.current = true; // async sync done → safe to persist now
+            setIsGridLoading(false);
+          }
         }
       };
 
@@ -391,9 +397,9 @@ export const POSPage = () => {
     }));
   }, [hookRegisters]);
 
-  // Persist displayed product IDs to DB and localStorage — only after init to avoid overwriting saved data
+  // Persist displayed product IDs to DB and localStorage — only after async sync completes
   useEffect(() => {
-    if (!isInitializedRef.current) return;
+    if (!isInitializedRef.current || !isReadyToSaveRef.current) return;
     const ids = displayedProducts.map(p => p.id);
     localStorage.setItem(LS_KEY, JSON.stringify(ids));
     
