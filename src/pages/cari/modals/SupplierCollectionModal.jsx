@@ -5,8 +5,7 @@ import {
   ChevronDown, Info, Check
 } from 'lucide-react';
 import { supplierService } from '../../../services/supplierService';
-import { db } from '../../../db';
-
+import { cashService } from '../../../services/cashService';
 const fmt = (v) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(v || 0);
 
 const METHOD_OPTIONS = [
@@ -42,9 +41,13 @@ export const SupplierCollectionModal = ({ isOpen, onClose, supplier, onSaved }) 
   }, [isOpen, supplier]);
 
   const fetchRegisters = async () => {
-    const regs = await db.cash_registers.filter(r => r.is_active !== false).toArray();
-    setRegisters(regs);
-    if (regs.length > 0) setRegisterId(regs[0].id);
+    try {
+      const regs = await cashService.getRegisters();
+      setRegisters(regs);
+      if (regs.length > 0) setRegisterId(regs[0].id);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   if (!isOpen || !supplier) return null;

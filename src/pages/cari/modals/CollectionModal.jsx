@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import toast from '../../../components/ui/CustomToast';
 import { X, HandCoins, CircleDollarSign, Check, ChevronDown, ListPlus, Banknote } from 'lucide-react';
 import { customerService } from '../../../services/customerService';
-import { db } from '../../../db'; // To fetch cash registers
-
+import { cashService } from '../../../services/cashService';
 export const CollectionModal = ({ isOpen, onClose, customer, onSaved }) => {
   const [amount, setAmount] = useState('');
   const [method, setMethod] = useState('Nakit');
@@ -27,9 +26,13 @@ export const CollectionModal = ({ isOpen, onClose, customer, onSaved }) => {
   }, [isOpen]);
 
   const fetchRegisters = async () => {
-    const regs = await db.cash_registers.filter(r => r.is_active !== false).toArray();
-    setRegisters(regs);
-    if (regs.length > 0) setRegisterId(regs[0].id);
+    try {
+      const regs = await cashService.getRegisters();
+      setRegisters(regs);
+      if (regs.length > 0) setRegisterId(regs[0].id);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   if (!isOpen || !customer) return null;
