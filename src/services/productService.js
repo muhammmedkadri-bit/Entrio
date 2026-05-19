@@ -92,7 +92,8 @@ export const productService = {
             .from('products').select('id').eq('barcode', data.barcode).eq('is_active', true).maybeSingle();
           if (existing) throw new Error('Bu barkoda sahip aktif bir ürün zaten var.');
         }
-        const dataToSave = { ...data, is_active: true };
+        const { sku, ...validData } = data;
+        const dataToSave = { ...validData, is_active: true };
         const { data: created, error } = await supabase.from('products').insert([dataToSave]).select().single();
         if (error) throw error;
         return created;
@@ -100,7 +101,8 @@ export const productService = {
 
       const existing = await db.products.where('barcode').equals(data.barcode).first();
       if (existing && existing.is_active !== false) throw new Error('Bu barkoda sahip aktif bir ürün zaten var.');
-      const dataToSave = { ...data, is_active: true };
+      const { sku, ...validData } = data;
+      const dataToSave = { ...validData, is_active: true };
       const id = await db.products.add(dataToSave);
       return { id, ...dataToSave };
     } catch (error) {
@@ -116,7 +118,8 @@ export const productService = {
             .from('products').select('id').eq('barcode', data.barcode).neq('id', id).eq('is_active', true).maybeSingle();
           if (existing) throw new Error('Bu barkod başka bir ürün tarafından kullanılıyor.');
         }
-        const { data: updated, error } = await supabase.from('products').update(data).eq('id', id).select().single();
+        const { sku, ...validData } = data;
+        const { data: updated, error } = await supabase.from('products').update(validData).eq('id', id).select().single();
         if (error) throw error;
         return updated;
       }
@@ -127,7 +130,8 @@ export const productService = {
           throw new Error('Bu barkod başka bir ürün tarafından kullanılıyor.');
         }
       }
-      await db.products.update(Number(id), data);
+      const { sku, ...validData } = data;
+      await db.products.update(Number(id), validData);
       return await this.getById(id);
     } catch (error) {
       throw error;
