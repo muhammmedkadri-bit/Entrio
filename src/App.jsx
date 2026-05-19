@@ -60,8 +60,8 @@ function App() {
   // triggers an automatic day close. Only runs when Supabase is active and user is logged in.
   useEffect(() => {
     if (!isSupabase()) return;
-    const AUTO_CLOSE_HOUR = 0;
-    const AUTO_CLOSE_MINUTE = 15;
+    const AUTO_CLOSE_HOUR = 23;
+    const AUTO_CLOSE_MINUTE = 30;
     const AUTO_CLOSE_KEY = 'entrio_auto_close_date';
 
     const checkAndAutoClose = async () => {

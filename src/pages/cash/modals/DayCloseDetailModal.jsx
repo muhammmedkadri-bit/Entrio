@@ -29,15 +29,23 @@ export const DayCloseDetailModal = ({ tx, onClose }) => {
   const loadData = async () => {
     setLoading(true);
     try {
-      // Determine the day from the transaction's created_at
-      const closeDate = new Date(tx.created_at);
-      const dayStart = new Date(closeDate);
-      dayStart.setHours(0, 0, 0, 0);
-      const dayEnd = new Date(closeDate);
-      dayEnd.setHours(23, 59, 59, 999);
+      // ── 1. Determine the actual closed day ────────────────────────────────────
+      // KEY FIX: Use day_close_data.date (stored by SQL at close time) as the
+      // source of truth. tx.created_at can be the NEXT day when close is done
+      // after midnight for the previous business day.
+      const stored = tx.day_close_data || null;
+      let closeDate;
+      if (stored?.date) {
+        const [y, m, d] = stored.date.split('-').map(Number);
+        closeDate = new Date(y, m - 1, d); // local date — no timezone shift
+      } else {
+        closeDate = new Date(tx.created_at);
+      }
 
-      const startMs = dayStart.getTime();
-      const endMs = dayEnd.getTime();
+      const dayStart = new Date(closeDate); dayStart.setHours(0, 0, 0, 0);
+      const dayEnd   = new Date(closeDate); dayEnd.setHours(23, 59, 59, 999);
+      const startMs  = dayStart.getTime();
+      const endMs    = dayEnd.getTime();
 
       let dayTxs = [];
       let daySales = [];
@@ -57,7 +65,7 @@ export const DayCloseDetailModal = ({ tx, onClose }) => {
           supabase.from('products').select('*'),
           supabase.from('cash_registers').select('*')
         ]);
-        
+
         dayTxs = tData || [];
         daySales = sData || [];
         dayPurchases = pData || [];
@@ -87,47 +95,60 @@ export const DayCloseDetailModal = ({ tx, onClose }) => {
         dayItems = allSaleItems.filter(item => saleIds.has(item.sale_id));
       }
 
-      const productMap = Object.fromEntries(allProducts.map(p => [p.id, p]));
+      const productMap  = Object.fromEntries(allProducts.map(p => [p.id, p]));
       const registerMap = Object.fromEntries(allRegisters.map(r => [r.id, r]));
 
-      // Ayrıştır - Satış ve iadeler
       const daySalesOnly = daySales.filter(s => !s.original_sale_id);
-      const dayReturns = daySales.filter(s => s.original_sale_id);
+      const dayReturns   = daySales.filter(s => s.original_sale_id);
 
-      // Income/expense breakdown from cash txs
-      // ℹ️ İade Ödemeleri (return_out) AYRI kalem — gerçek giderlerle karıştırılmaz
-      // Gider = işletme harcamaları (alış, gider, çekim)
-      // İade = daha önce alınan gelirin müşteriye iadesi (ayrı doğa)
-      const incomeTypes = ['sale_in', 'customer_payment_in', 'deposit_in', 'return_in'];
+      const incomeTypes  = ['sale_in', 'customer_payment_in', 'deposit_in', 'return_in'];
       const expenseTypes = ['purchase_out', 'supplier_payment_out', 'expense_out', 'withdrawal_out'];
-      // return_out gider listesinde YOK — net hesabına dahil ama ayrı kart
 
-      let totalIncome = 0;
-      let totalExpense = 0;
-      let totalReturns = 0;
-      const registerBreakdown = {};
+      // ── 2. Financial totals: prefer stored day_close_data, fall back to live calc ─
+      let totalIncome  = 0, totalExpense = 0, totalReturns = 0;
+      const liveRegBreakdown = {};
 
       dayTxs.forEach(t => {
         if (t.transaction_type === 'day_close') return;
-        const isIn = incomeTypes.includes(t.transaction_type);
+        const isIn  = incomeTypes.includes(t.transaction_type);
         const isOut = expenseTypes.includes(t.transaction_type);
-        if (isIn) totalIncome += t.amount || 0;
+        if (isIn)  totalIncome  += t.amount || 0;
         if (isOut) totalExpense += t.amount || 0;
-        // İade ödemeleri ayrıca takip et (gider toplamına dahil değil)
         if (t.transaction_type === 'return_out') totalReturns += t.amount || 0;
 
-        // Per-register breakdown
         const reg = registerMap[t.register_id];
         if (reg) {
-          if (!registerBreakdown[t.register_id]) {
-            registerBreakdown[t.register_id] = { reg, income: 0, expense: 0 };
-          }
-          if (isIn) registerBreakdown[t.register_id].income += t.amount || 0;
-          if (isOut) registerBreakdown[t.register_id].expense += t.amount || 0;
-          // İade çıkışını kasa breakdown'a ekle (net gösterim için)
-          if (t.transaction_type === 'return_out') registerBreakdown[t.register_id].expense += t.amount || 0;
+          if (!liveRegBreakdown[t.register_id]) liveRegBreakdown[t.register_id] = { reg, income: 0, expense: 0 };
+          if (isIn)  liveRegBreakdown[t.register_id].income  += t.amount || 0;
+          if (isOut) liveRegBreakdown[t.register_id].expense += t.amount || 0;
+          if (t.transaction_type === 'return_out') liveRegBreakdown[t.register_id].expense += t.amount || 0;
         }
       });
+
+      // Use stored totals from SQL if live query found nothing (e.g. date mismatch edge case)
+      if (totalIncome === 0 && totalExpense === 0 && stored?.total_income) {
+        totalIncome  = stored.total_income  || 0;
+        totalExpense = stored.total_expense || 0;
+      }
+
+      // ── 3. Register breakdown: prefer stored summaries for accuracy ────────
+      let registerBreakdown = [];
+      if (stored?.register_summaries && stored.register_summaries.length > 0) {
+        // Build a map of register type from allRegisters
+        registerBreakdown = stored.register_summaries
+          .filter(rs => rs.income > 0 || rs.expense > 0 || rs.daily_net !== 0)
+          .map(rs => {
+            const fullReg = allRegisters.find(r => r.id === rs.register_id);
+            return {
+              reg: fullReg || { id: rs.register_id, name: rs.register_name, type: 'cash' },
+              income:    Number(rs.income    || 0),
+              expense:   Number(rs.expense   || 0),
+              daily_net: Number(rs.daily_net || 0),
+            };
+          });
+      } else {
+        registerBreakdown = Object.values(liveRegBreakdown);
+      }
 
       // Payment method breakdown from sales
       const paymentBreakdown = {};
@@ -138,28 +159,20 @@ export const DayCloseDetailModal = ({ tx, onClose }) => {
         paymentBreakdown[pm].total += s.total_amount || 0;
       });
 
-      // Top selling products — dayItems kullanılarak hesaplanır
-
+      // Top selling products
       const productSales = {};
       dayItems.forEach(item => {
         const pid = item.product_id;
         if (!productSales[pid]) {
-          productSales[pid] = {
-            name: productMap[pid]?.name || item.name || `Ürün #${pid}`,
-            qty: 0,
-            revenue: 0,
-          };
+          productSales[pid] = { name: productMap[pid]?.name || item.name || `Ürün #${pid}`, qty: 0, revenue: 0 };
         }
-        productSales[pid].qty += item.quantity || 0;
+        productSales[pid].qty     += item.quantity || 0;
         productSales[pid].revenue += (item.line_total || (item.unit_price * item.quantity)) || 0;
       });
+      const topProducts = Object.values(productSales).sort((a, b) => b.qty - a.qty).slice(0, 5);
 
-      const topProducts = Object.values(productSales)
-        .sort((a, b) => b.qty - a.qty)
-        .slice(0, 5);
-
-      const totalSalesAmount = daySalesOnly.reduce((acc, s) => acc + (s.total_amount || 0), 0);
-      const totalReturnsAmount = dayReturns.reduce((acc, s) => acc + (s.total_amount || 0), 0);
+      const totalSalesAmount   = daySalesOnly.reduce((acc, s) => acc + (s.total_amount || 0), 0);
+      const totalReturnsAmount = dayReturns.reduce((acc,  s) => acc + (s.total_amount || 0), 0);
 
       setData({
         closeDate,
@@ -167,14 +180,13 @@ export const DayCloseDetailModal = ({ tx, onClose }) => {
         totalIncome,
         totalExpense,
         totalReturns,
-        // Net = Gelir − Gerçek Giderler − İade Ödemeleri
         net: totalIncome - totalExpense - totalReturns,
-        salesCount: daySalesOnly.length,
+        salesCount:        daySalesOnly.length,
         totalSalesAmount,
-        returnsCount: dayReturns.length,
+        returnsCount:      dayReturns.length,
         totalReturnsAmount,
-        purchasesCount: dayPurchases.length,
-        registerBreakdown: Object.values(registerBreakdown),
+        purchasesCount:    dayPurchases.length,
+        registerBreakdown,
         paymentBreakdown,
         topProducts,
         dayTxs,
