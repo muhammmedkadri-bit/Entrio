@@ -71,8 +71,8 @@ export const customerService = {
   async create(data) {
     try {
       const openingBalance = parseFloat(data.opening_balance) || 0;
-      const dataToSave = { ...data, balance: openingBalance, is_active: true };
-      delete dataToSave.opening_balance;
+      const { city, district, address, opening_balance, ...validData } = data;
+      const dataToSave = { ...validData, balance: openingBalance, is_active: true };
 
       if (isSupabase()) {
         const { data: created, error } = await supabase.from('customers').insert([dataToSave]).select().single();
@@ -108,8 +108,8 @@ export const customerService = {
 
   async update(id, data) {
     try {
-      const dataToSave = { ...data };
-      delete dataToSave.opening_balance;
+      const { city, district, address, opening_balance, ...validData } = data;
+      const dataToSave = { ...validData };
       if (isSupabase()) {
         const { data: updated, error } = await supabase.from('customers').update(dataToSave).eq('id', id).select().single();
         if (error) throw error;
