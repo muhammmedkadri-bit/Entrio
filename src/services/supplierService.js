@@ -253,6 +253,14 @@ export const supplierService = {
             created_at: now + i * 5
           }]);
         }
+        if (remaining > 0.001) {
+          await supabase.from('cash_transactions').insert([{
+            register_id: reg.id,
+            transaction_type: 'supplier_payment_out', amount: remaining,
+            notes: baseNotes ? `${methodLabel}: ${baseNotes} (Fazla/Avans Ödeme)` : `${methodLabel} Ödemesi (Fazla/Avans Ödeme)`,
+            created_at: now + allocations.length * 5 + 5
+          }]);
+        }
         await supabase.from('cash_registers').update({ current_balance: Number(((Number(reg.current_balance) || 0) - amt).toFixed(2)) }).eq('id', reg.id);
       }
 
@@ -312,6 +320,9 @@ export const supplierService = {
           const alloc = allocations[i];
           const invoiceRef = alloc.invoice_number || `Fatura #${alloc.purchase_id}`;
           await db.cash_transactions.add({ purchase_id: Number(alloc.purchase_id), register_id: reg.id, transaction_type: 'supplier_payment_out', amount: alloc.applied, reference: alloc.invoice_number || `ALI-${alloc.purchase_id}`, notes: baseNotes ? `${methodLabel}: ${baseNotes} (${invoiceRef})` : `${methodLabel} Ödemesi (${invoiceRef})`, created_at: now + i * 5 });
+        }
+        if (remaining > 0.001) {
+          await db.cash_transactions.add({ register_id: reg.id, transaction_type: 'supplier_payment_out', amount: remaining, notes: baseNotes ? `${methodLabel}: ${baseNotes} (Fazla/Avans Ödeme)` : `${methodLabel} Ödemesi (Fazla/Avans Ödeme)`, created_at: now + allocations.length * 5 + 5 });
         }
         await db.cash_registers.update(reg.id, { current_balance: Number((reg.current_balance - amt).toFixed(2)) });
       }
