@@ -68,7 +68,7 @@ export const GlobalFAB = () => {
 
   return (
     <div 
-      className={`fixed lg:bottom-0 left-1/2 -translate-x-1/2 z-[9999] flex flex-col items-center transition-all duration-300 ${
+      className={`hidden lg:flex fixed lg:bottom-0 left-1/2 -translate-x-1/2 z-[9999] flex-col items-center transition-all duration-300 ${
         (isNavigating || isPageLoading || hasSpinner) ? 'opacity-0 translate-y-full pointer-events-none' : (isOpen ? 'translate-y-0' : 'translate-y-[40%] hover:translate-y-0')
       }`} 
       style={{ bottom: 'max(0px, env(safe-area-inset-bottom))' }}

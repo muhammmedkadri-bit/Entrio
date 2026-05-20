@@ -380,6 +380,8 @@ export const Dashboard = () => {
         uniqueTxs.push({ ...t, displayAmount, paymentMethodLabel: pMethodLabel, entityName: eName,
           originalSaleId: originalSaleRecord?.id || null,
           originalSaleNumber: originalSaleRecord?.sale_number || null,
+          saleNumber: parentRecord?.sale_number || null,
+          invoiceNumber: parentRecord?.invoice_number || null,
         });
       }
 
@@ -419,6 +421,7 @@ export const Dashboard = () => {
           currentTime={currentTime}
           salesSummary={salesSummary}
           cashReport={cashReport}
+          allRegisters={allRegisters}
           recentTransactions={recentTransactions}
           quickNotes={quickNotes}
           onAddNote={handleMobileAddNote}
