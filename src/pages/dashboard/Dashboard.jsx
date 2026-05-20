@@ -26,6 +26,7 @@ import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/appStore';
+import { MobileDashboard } from './components/MobileDashboard';
 
 /* ─── Sabit veriler ─────────────────────────────────────── */
 const PIE_COLORS = {
@@ -215,6 +216,18 @@ export const Dashboard = () => {
     }
   };
 
+  const handleMobileAddNote = async (text) => {
+    if(!text.trim()) return;
+    try {
+      const added = await quickNotesService.add(text);
+      const notes = [added, ...quickNotes].slice(0, 5);
+      setQuickNotes(notes);
+      if (!isSupabase()) quickNotesService.saveLocal(notes);
+    } catch (err) {
+      console.error('Not eklenemedi:', err);
+    }
+  };
+
   const removeNote = async (id) => {
     try {
       await quickNotesService.delete(id);
@@ -399,8 +412,24 @@ export const Dashboard = () => {
   const formatCurrency = formatCurrencyStatic;
 
   return (
-    <div className="-mt-3 pb-[46px] flex flex-col h-full relative">
-      
+    <>
+      <div className="block lg:hidden h-full">
+        <MobileDashboard 
+          companyName={companyName}
+          currentTime={currentTime}
+          salesSummary={salesSummary}
+          cashReport={cashReport}
+          recentTransactions={recentTransactions}
+          quickNotes={quickNotes}
+          onAddNote={handleMobileAddNote}
+          onDeleteNote={removeNote}
+          onEditNote={saveEditedNote}
+          charts={charts}
+          onTxClick={(tx) => setSelectedTransaction(tx)}
+        />
+      </div>
+
+      <div className="hidden lg:flex -mt-3 pb-[46px] flex-col h-full relative">
       
       {/* Dashboard Header - H-16 aligns exactly with Sidebar top border */}
       <div className="h-auto md:h-16 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-50">
@@ -768,6 +797,7 @@ export const Dashboard = () => {
         isOpen={showQuickBarcodes} 
         onClose={() => setShowQuickBarcodes(false)} 
       />
-    </div>
+      </div>
+    </>
   );
 };

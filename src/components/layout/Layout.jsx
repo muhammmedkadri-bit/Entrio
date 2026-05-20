@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
+import { BottomNav } from './BottomNav';
 import { AnimatePresence } from 'framer-motion';
 import { PremiumLoader } from '../ui/PremiumLoader';
 import { GlobalFAB } from '../ui/GlobalFAB';
@@ -47,7 +48,7 @@ export const Layout = () => {
     <div className="flex h-screen overflow-hidden bg-slate-50 font-sans print:bg-white print:h-auto print:overflow-visible">
       <Sidebar />
       <div className="flex flex-col flex-1 overflow-hidden relative print:overflow-visible">
-        <main className={`flex-1 overflow-y-auto ${isPos ? 'p-2' : 'p-3'} scroll-smooth z-0 print:p-0 print:overflow-visible`}>
+        <main className={`flex-1 overflow-y-auto ${isPos ? 'p-2' : 'p-3'} pb-20 lg:pb-3 scroll-smooth z-0 print:p-0 print:overflow-visible`}>
           <div className={`relative ${isPos ? 'h-full flex flex-col' : 'h-full animate-in fade-in duration-300'} print:max-w-none`}>
             <Outlet />
           </div>
@@ -57,6 +58,9 @@ export const Layout = () => {
         
         {/* Global Quick Action FAB */}
         <GlobalFAB />
+        
+        {/* Mobile Bottom Navigation */}
+        <BottomNav />
       </div>
     </div>
   );

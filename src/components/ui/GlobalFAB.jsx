@@ -68,7 +68,7 @@ export const GlobalFAB = () => {
 
   return (
     <div 
-      className={`fixed bottom-0 left-1/2 -translate-x-1/2 z-[9999] flex flex-col items-center transition-all duration-300 ${
+      className={`fixed bottom-[60px] lg:bottom-0 left-1/2 -translate-x-1/2 z-[9999] flex flex-col items-center transition-all duration-300 ${
         (isNavigating || isPageLoading || hasSpinner) ? 'opacity-0 translate-y-full pointer-events-none' : (isOpen ? 'translate-y-0' : 'translate-y-[40%] hover:translate-y-0')
       }`} 
       ref={menuRef}
