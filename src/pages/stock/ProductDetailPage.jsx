@@ -225,28 +225,30 @@ export const ProductDetailPage = () => {
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <h1 className="text-xl font-bold text-gray-900">{product.name}</h1>
-                  <div className="flex items-center gap-3 text-sm text-gray-400">
-                    <span className="flex items-center gap-1 font-mono bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full border border-gray-200">
-                      <Barcode className="w-3.5 h-3.5" />{product.barcode}
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-gray-400">
+                    <span className="flex items-center gap-1 font-mono bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full border border-gray-200">
+                      <Barcode className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate max-w-[120px]">{product.barcode}</span>
                     </span>
                     {product.sku && (
-                      <span className="flex items-center gap-1 font-mono bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full border border-gray-200">
-                        <Hash className="w-3.5 h-3.5" />{product.sku}
+                      <span className="flex items-center gap-1 font-mono bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full border border-gray-200">
+                        <Hash className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate max-w-[100px]">{product.sku}</span>
                       </span>
                     )}
                     {/* Category Pill Dropdown */}
                     <div className="relative z-[100]" ref={catPopupRef}>
                       <button
                         onClick={() => { setShowCatPopup(v => !v); setShowOtherMenu(false); setCatSearch(''); }}
-                        className={`inline-flex items-center gap-1 text-sm font-medium font-sans px-2.5 py-1 rounded-full border cursor-pointer select-none transition-all ${
+                        className={`inline-flex items-center gap-1 text-xs font-medium font-sans px-2 py-0.5 rounded-full border cursor-pointer select-none transition-all ${
                           showCatPopup
                             ? 'bg-[#82e05a]/25 text-[#5da83f] border-[#82e05a]/40 backdrop-blur-md shadow-[inset_0_1px_2px_rgba(255,255,255,0.4)]'
                             : 'bg-[#82e05a]/15 text-[#5da83f] border-[#82e05a]/30 backdrop-blur-md shadow-[inset_0_1px_2px_rgba(255,255,255,0.4)] hover:bg-[#82e05a]/25 hover:border-[#82e05a]/40'
                         }`}
                       >
-                        <Tag className="w-3 h-3" />
-                        {categoryName}
-                        <ChevronDown className={`w-3 h-3 transition-transform duration-150 ${showCatPopup ? 'rotate-180' : ''}`} />
+                        <Tag className="w-3 h-3 shrink-0" />
+                        <span className="truncate max-w-[120px]">{categoryName}</span>
+                        <ChevronDown className={`w-3 h-3 shrink-0 transition-transform duration-150 ${showCatPopup ? 'rotate-180' : ''}`} />
                       </button>
 
                       {/* Category Popup */}
@@ -366,7 +368,7 @@ export const ProductDetailPage = () => {
           </div>
 
           {/* Tab Navigation — no badges */}
-          <div className="flex gap-1 border-b border-gray-100 overflow-x-auto scrollbar-hide whitespace-nowrap">
+          <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md pt-2 pb-1 mb-2 flex gap-1 border-b border-gray-100 overflow-x-auto scrollbar-hide whitespace-nowrap -mx-4 px-4 sm:mx-0 sm:px-0">
             {TABS.map(tab => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
