@@ -5,7 +5,7 @@ import {
   Banknote, ShoppingCart, TrendingUp, Users, ArrowRightLeft, 
   Plus, Edit2, Trash2, CheckCircle, Package 
 } from 'lucide-react';
-import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
+import { BarChart, Bar, ResponsiveContainer, Tooltip } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 
 const MobileTransactionCard = ({ tx, onClick }) => {
@@ -71,7 +71,9 @@ export const MobileDashboard = ({
     navigate(path);
   };
 
-  const totalBalance = cashReport?.cash_amount + cashReport?.card_amount + cashReport?.transfer_amount;
+  const todayData = charts?.dailyIncomeExpense?.[charts.dailyIncomeExpense.length - 1] || { income: 0, expense: 0 };
+  const todayIncome = todayData.income;
+  const todayExpense = todayData.expense;
 
   return (
     <div className="flex flex-col gap-4 pb-4">
@@ -88,27 +90,27 @@ export const MobileDashboard = ({
 
       {/* ── SWIPEABLE STATS ── */}
       <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 pb-2 -mx-2 px-2 scrollbar-hide">
-        {/* Satış Özeti */}
+        {/* Bugünkü Toplam Gelir */}
         <div className="snap-center shrink-0 w-[85%] bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-2xl p-4 shadow-md">
           <div className="flex justify-between items-start mb-2">
             <div className="bg-white/20 p-2 rounded-lg"><ShoppingCart size={20} /></div>
             <span className="text-xs font-semibold bg-white/20 px-2 py-1 rounded-full">Bugün</span>
           </div>
-          <p className="text-sm text-green-100 font-medium">Toplam Satış</p>
+          <p className="text-sm text-green-100 font-medium">Bugünkü Toplam Gelir</p>
           <h2 className="text-2xl font-black mt-0.5">
-            {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(salesSummary?.amount || 0)}
+            {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(todayIncome || 0)}
           </h2>
         </div>
 
-        {/* Kasa Özeti */}
-        <div className="snap-center shrink-0 w-[85%] bg-gradient-to-br from-brand-600 to-indigo-700 text-white rounded-2xl p-4 shadow-md">
+        {/* Bugünkü Toplam Gider */}
+        <div className="snap-center shrink-0 w-[85%] bg-gradient-to-br from-rose-500 to-rose-600 text-white rounded-2xl p-4 shadow-md">
           <div className="flex justify-between items-start mb-2">
             <div className="bg-white/20 p-2 rounded-lg"><Banknote size={20} /></div>
-            <span className="text-xs font-semibold bg-white/20 px-2 py-1 rounded-full">Kasa</span>
+            <span className="text-xs font-semibold bg-white/20 px-2 py-1 rounded-full">Bugün</span>
           </div>
-          <p className="text-sm text-brand-100 font-medium">Toplam Bakiye</p>
+          <p className="text-sm text-rose-100 font-medium">Bugünkü Toplam Gider</p>
           <h2 className="text-2xl font-black mt-0.5">
-            {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(totalBalance || 0)}
+            {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(todayExpense || 0)}
           </h2>
         </div>
       </div>
@@ -140,19 +142,24 @@ export const MobileDashboard = ({
       {charts?.dailyIncomeExpense?.length > 0 && (
         <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm mt-1">
           <h3 className="font-bold text-slate-800 text-sm mb-4 flex items-center">
-            <TrendingUp className="w-4 h-4 mr-2 text-brand-500" /> Haftalık Trend
+            <TrendingUp className="w-4 h-4 mr-2 text-brand-500" /> Günlük Analiz
           </h3>
           <div className="h-32">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={charts.dailyIncomeExpense}>
+              <BarChart data={charts.dailyIncomeExpense}>
                 <defs>
                   <linearGradient id="colorIncMobile" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#10b981" />
+                    <stop offset="95%" stopColor="#10b981" />
+                  </linearGradient>
+                  <linearGradient id="colorExpMobile" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f43f5e" />
+                    <stop offset="95%" stopColor="#f43f5e" />
                   </linearGradient>
                 </defs>
-                <Area type="monotone" dataKey="income" stroke="#10b981" fillOpacity={1} fill="url(#colorIncMobile)" />
-              </AreaChart>
+                <Bar dataKey="income" fill="url(#colorIncMobile)" radius={[4, 4, 0, 0]} maxBarSize={30} />
+                <Bar dataKey="expense" fill="url(#colorExpMobile)" radius={[4, 4, 0, 0]} maxBarSize={30} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -210,7 +217,7 @@ export const MobileDashboard = ({
       </div>
 
       {/* ── RECENT TRANSACTIONS ── */}
-      <div className="mt-2">
+      <div className="mt-2 pb-16">
         <div className="flex justify-between items-end mb-3 px-1">
           <h3 className="font-bold text-slate-800 text-sm flex items-center">
             <ArrowRightLeft className="w-4 h-4 mr-2 text-slate-400" /> Son İşlemler
