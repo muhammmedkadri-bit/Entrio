@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { Download, Moon, Sun, ChevronDown, ChevronUp } from 'lucide-react';
 import { cashService } from '../../../services/cashService';
 import { dayCloseService } from '../../../services/dayCloseService';
+import { useCacheStore } from '../../../store/cacheStore';
 import { DataTable } from '../../../components/ui/DataTable';
 import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
@@ -15,17 +16,24 @@ export const CashMovementsTab = ({ registersArr }) => {
   const [selectedReg, setSelectedReg] = useState(registersArr?.[0]?.id || '');
   const [filterType, setFilterType] = useState('all');
 
+  // ── Realtime bindings ────────────────────────────────────────────────
+  const setCache = useCacheStore(s => s.setCache);
+  const isCacheValid = useCacheStore(s => s._cache['cash_transactions']?.valid);
+
   useEffect(() => {
     if (selectedReg) {
       fetchMovements();
     }
-  }, [selectedReg, filterType]);
+  }, [selectedReg, filterType, isCacheValid]);
 
   const fetchMovements = async () => {
     setLoading(true);
     try {
       const txs = await cashService.getTransactions(parseInt(selectedReg), { type: filterType });
       setTransactions(txs);
+
+      // Register dummy valid cache so Realtime invalidations can trigger updates
+      setCache('cash_transactions', { dummy: true });
     } catch(e) {
       console.error(e);
     } finally {

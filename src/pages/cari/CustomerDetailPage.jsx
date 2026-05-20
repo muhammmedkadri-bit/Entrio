@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/appStore';
+import { useCacheStore } from '../../store/cacheStore';
 import toast from '../../components/ui/CustomToast';
 import {
   ArrowLeft, User, Phone, Mail, MapPin, ChevronDown, HandCoins, Edit, Printer, Trash2, Layers, ArrowDownLeft, ArrowUpLeft, FileText
@@ -51,14 +52,29 @@ export const CustomerDetailPage = () => {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  // ── Realtime bindings ────────────────────────────────────────────────
+  const setCache = useCacheStore(s => s.setCache);
+  const isCustomersValid = useCacheStore(s => s._cache['customers']?.valid);
+  const isTxsValid = useCacheStore(s => s._cache['customer_transactions']?.valid);
+
+  // Re-fetch automatically when global cache is invalidated by Realtime
+  useEffect(() => {
+    if (isCustomersValid === false || isTxsValid === false) {
+      loadData();
+    }
+  }, [isCustomersValid, isTxsValid]);
+
   const loadData = async () => {
     setLoading(true);
     try {
-      const c = await customerService.getById(customerId);
+      const s = await customerService.getById(customerId);
       const txs = await customerService.getTransactions(customerId);
       
-      setCustomer(c);
+      setCustomer(s);
       setTransactions(txs);
+      
+      // Register dummy valid cache so Realtime invalidations can trigger updates
+      setCache('customer_transactions', { dummy: true });
     } catch(err) {
       console.error('[CustomerDetail] Veri Yükleme Hatası:', err);
       toast.error(err?.message || 'Müşteri detayları alınamadı.');

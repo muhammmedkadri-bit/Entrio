@@ -6,6 +6,7 @@ import { StatCard } from '../../../components/ui/StatCard';
 import { EmptyReport } from '../components/EmptyReport';
 import { ReportExportBar } from '../components/ReportExportBar';
 import { reportService } from '../../../services/reportService';
+import { useCacheStore } from '../../../store/cacheStore';
 import { PremiumLoader } from '../../../components/ui/PremiumLoader';
 import { format } from 'date-fns';
 
@@ -117,16 +118,22 @@ export const StockReportTab = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Stock report is primarily current state, not highly date dependent except for movement history
+  // Realtime Cache Binding
+  const setCache = useCacheStore(s => s.setCache);
+  const isProductsValid = useCacheStore(s => s._cache['products']?.valid);
+
   useEffect(() => {
     loadData();
-  }, []);
+  }, [isProductsValid]);
 
   const loadData = async () => {
     setLoading(true);
     try {
       const summary = await reportService.getStockReport();
       startTransition(() => setData(summary));
+      
+      // Register dummy valid cache so Realtime invalidations can trigger updates
+      setCache('products', { dummy: true });
     } catch(e) {
       console.error('[StockReport] Yükleme Hatası:', e);
       toast.error('Stok raporu yüklenirken bir hata oluştu.');

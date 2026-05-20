@@ -108,60 +108,87 @@ export const reportService = {
       if (saleIds.length > 0) {
         let items = [];
         if (isSupabase()) {
-          const { data } = await supabase.from('sale_items').select('*').in('sale_id', saleIds);
-          items = data || [];
+          // Işık hızında tek sorgu ile kalemler ve maliyetleri getir (RPC)
+          const { data, error } = await supabase.rpc('get_sales_report_items', {
+            start_ms: startDate.getTime(),
+            end_ms: endDate.getTime()
+          });
+          if (error) {
+            console.warn('[ReportService] RPC Hatası, fallback yapılıyor...', error);
+            const { data: fbData } = await supabase.from('sale_items').select('*').in('sale_id', saleIds.slice(0, 50));
+            items = fbData || [];
+          } else {
+            items = data || [];
+          }
         } else {
           items = await db.sale_items.where('sale_id').anyOf(saleIds).toArray();
         }
 
-        // Fetch all related products in ONE single batch request (Fixing N+1 problem)
-        const productIds = [...new Set(items.map(i => i.product_id))];
-        let productsData = [];
-        if (isSupabase()) {
-          const { data } = await supabase.from('products').select('id, name, purchase_price').in('id', productIds);
-          productsData = data || [];
-        } else {
-          productsData = await db.products.where('id').anyOf(productIds).toArray();
-        }
-        const productInfoMap = new Map(productsData.map(p => [p.id, p]));
-
         const productMap = new Map();
         const salesMap = new Map(validSales.map(s => [s.id, s]));
 
-        for (const item of items) {
-          const sale = salesMap.get(item.sale_id);
-          if (!sale) continue;
+        if (isSupabase()) {
+          // RPC'den gelen format (purchase_price hazır dönüyor)
+          for (const item of items) {
+            const sale = salesMap.get(item.sale_id);
+            if (!sale) continue;
 
-          if (!productMap.has(item.product_id)) {
-            const productInfo = productInfoMap.get(item.product_id);
-            productMap.set(item.product_id, {
-              id: item.product_id,
-              name: productInfo?.name || item.product_name || 'Bilinmeyen Ürün',
-              quantity: 0,
-              revenue: 0,
-              cost: 0
-            });
+            if (!productMap.has(item.product_id)) {
+              productMap.set(item.product_id, {
+                id: item.product_id,
+                name: item.name || 'Bilinmeyen Ürün',
+                quantity: 0,
+                revenue: 0,
+                cost: 0
+              });
+            }
+            const pStat = productMap.get(item.product_id);
+            pStat.quantity += (item.quantity || 0);
+            
+            const rawItemRevenue = item.line_total || (item.unit_price * item.quantity) || 0;
+            let proratedDiscount = 0;
+            if (sale.discount_amount > 0 && sale.subtotal > 0) {
+              const discountRatio = sale.discount_amount / sale.subtotal;
+              proratedDiscount = rawItemRevenue * discountRatio;
+            }
+            
+            pStat.revenue += (rawItemRevenue - proratedDiscount);
+            pStat.cost += ((item.purchase_price || 0) * (item.quantity || 0));
           }
-          const pStat = productMap.get(item.product_id);
-          pStat.quantity += (item.quantity || 0);
-          
-          // Satış kaleminin brüt cirosu
-          const rawItemRevenue = item.line_total || (item.unit_price * item.quantity) || 0;
-          
-          // Fiş genelinde uygulanan iskontonun bu ürüne düşen payını hesapla
-          let proratedDiscount = 0;
-          if (sale.discount_amount > 0 && sale.subtotal > 0) {
-            const discountRatio = sale.discount_amount / sale.subtotal;
-            proratedDiscount = rawItemRevenue * discountRatio;
-          }
-          
-          // Gerçek ciro katkısı (İskonto düşülmüş hali)
-          const netItemRevenue = rawItemRevenue - proratedDiscount;
-          pStat.revenue += netItemRevenue;
+        } else {
+          // Offline (Dexie) fallback logic
+          const productIds = [...new Set(items.map(i => i.product_id))];
+          const productsData = await db.products.where('id').anyOf(productIds).toArray();
+          const productInfoMap = new Map(productsData.map(p => [p.id, p]));
 
-          // Maliyet hesabı: O anki product_price üzerinden
-          const productInfoCost = productInfoMap.get(item.product_id);
-          pStat.cost += ((productInfoCost?.purchase_price || 0) * (item.quantity || 0));
+          for (const item of items) {
+            const sale = salesMap.get(item.sale_id);
+            if (!sale) continue;
+
+            if (!productMap.has(item.product_id)) {
+              const productInfo = productInfoMap.get(item.product_id);
+              productMap.set(item.product_id, {
+                id: item.product_id,
+                name: productInfo?.name || item.name || 'Bilinmeyen Ürün',
+                quantity: 0,
+                revenue: 0,
+                cost: 0
+              });
+            }
+            const pStat = productMap.get(item.product_id);
+            pStat.quantity += (item.quantity || 0);
+            
+            const rawItemRevenue = item.line_total || (item.unit_price * item.quantity) || 0;
+            let proratedDiscount = 0;
+            if (sale.discount_amount > 0 && sale.subtotal > 0) {
+              const discountRatio = sale.discount_amount / sale.subtotal;
+              proratedDiscount = rawItemRevenue * discountRatio;
+            }
+            
+            pStat.revenue += (rawItemRevenue - proratedDiscount);
+            const productInfoCost = productInfoMap.get(item.product_id);
+            pStat.cost += ((productInfoCost?.purchase_price || 0) * (item.quantity || 0));
+          }
         }
 
         const topP = Array.from(productMap.values()).map(p => {
@@ -288,11 +315,17 @@ export const reportService = {
 
       let debtors = [];
       // tx sayısı toplu sorgu ile
-      const txAll = isSupabase()
-        ? (await supabase.from(sbTxTable).select(idField)).data || []
-        : await dexieTxTable.toArray();
-      const txCountMap = {};
-      txAll.forEach(t => { txCountMap[t[idField]] = (txCountMap[t[idField]] || 0) + 1; });
+      let txCountMap = {};
+      
+      if (isSupabase()) {
+        const { data, error } = await supabase.rpc('get_active_cari_ids', { tx_table: sbTxTable });
+        if (!error && data) {
+          data.forEach(t => { txCountMap[t.cari_id] = 1; });
+        }
+      } else {
+        const txAll = await dexieTxTable.toArray();
+        txAll.forEach(t => { txCountMap[t[idField]] = 1; });
+      }
 
       for (const e of activeFilt) {
         const bal = Number(e.balance) || 0;

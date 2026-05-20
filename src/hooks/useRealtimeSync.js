@@ -13,13 +13,17 @@ import { useCacheStore } from '../store/cacheStore';
 
 // Map: supabase table name → cache store keys to invalidate
 const TABLE_CACHE_MAP = {
-  products:          ['products'],
-  sales:             ['sales', 'dashboard'],
-  cash_transactions: ['cash_transactions', 'dashboard'],
-  cash_registers:    ['cash_registers'],
-  customers:         ['customers'],
-  suppliers:         ['suppliers'],
-  purchases:         ['purchases'],
+  products:              ['products'],
+  sales:                 ['sales', 'dashboard'],
+  cash_transactions:     ['cash_transactions', 'dashboard'],
+  cash_registers:        ['cash_registers'],
+  customers:             ['customers'],
+  suppliers:             ['suppliers'],
+  purchases:             ['purchases'],
+  categories:            ['categories'],
+  customer_transactions: ['customer_transactions'],
+  supplier_transactions: ['supplier_transactions'],
+  purchase_items:        ['purchases'],
 };
 
 const DEBOUNCE_MS = 800; // batch events in 800ms window

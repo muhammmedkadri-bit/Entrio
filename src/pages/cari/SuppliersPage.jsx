@@ -8,9 +8,9 @@ import { DataTable } from '../../components/ui/DataTable';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { CariBalanceBadge } from './components/CariBalanceBadge';
-import { supplierService } from '../../services/supplierService';
 import { SupplierFormModal } from './modals/SupplierFormModal';
 import { PaymentModal } from './modals/PaymentModal';
+import { useSuppliers } from '../../hooks/useSuppliers';
 
 const SupplierRowSkeleton = () => (
   <div className="grid items-center px-4 py-[13px] border-b border-slate-100 last:border-0" style={{ gridTemplateColumns: '1.5fr 1fr 1fr 32px' }}>
@@ -36,9 +36,9 @@ export const SuppliersPage = () => {
   const navigate = useNavigate();
   const { startNavigation } = useAppStore();
 
-  const [allSuppliers, setAllSuppliers] = useState([]);
-  const [summary, setSummary] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // ── Realtime-aware data ────────────────────────────────────────────────
+  const { suppliers: allSuppliers, loading, summary, refetch } = useSuppliers();
+
   const [currentPage, setCurrentPage] = useState(1);
 
   // Filters
@@ -51,33 +51,6 @@ export const SuppliersPage = () => {
 
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [supplierForPayment, setSupplierForPayment] = useState(null);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const data = await supplierService.getAll({});
-      setAllSuppliers(data);
-      
-      // Calculate summary synchronously to avoid a second full DB query
-      let totalDebt = 0;
-      let totalReceivable = 0;
-      data.forEach(s => {
-        const bal = parseFloat(s.balance) || 0;
-        if (bal > 0) totalDebt += bal;
-        else if (bal < 0) totalReceivable += Math.abs(bal);
-      });
-      setSummary({ totalCount: data.length, totalDebt, totalReceivable, netBalance: totalDebt - totalReceivable });
-    } catch(err) {
-      console.error('[SuppliersPage] Yükleme Hatası:', err);
-      toast.error(err?.message || 'Tedarikçiler yüklenemedi.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const suppliers = React.useMemo(() => {
     let res = [...allSuppliers];
@@ -276,14 +249,14 @@ export const SuppliersPage = () => {
         isOpen={isFormOpen} 
         onClose={() => setIsFormOpen(false)} 
         supplierToEdit={supplierToEdit}
-        onSaved={fetchData}
+        onSaved={refetch}
       />
 
       <PaymentModal 
         isOpen={isPaymentOpen}
         onClose={() => setIsPaymentOpen(false)}
         supplier={supplierForPayment}
-        onSaved={fetchData}
+        onSaved={refetch}
       />
     </div>
   );

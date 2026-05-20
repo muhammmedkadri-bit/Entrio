@@ -6,6 +6,7 @@ import { StatCard } from '../../../components/ui/StatCard';
 import { EmptyReport } from '../components/EmptyReport';
 import { ReportExportBar } from '../components/ReportExportBar';
 import { reportService } from '../../../services/reportService';
+import { useCacheStore } from '../../../store/cacheStore';
 import { PremiumLoader } from '../../../components/ui/PremiumLoader';
 import { format } from 'date-fns';
 
@@ -138,17 +139,24 @@ export const CashReportTab = ({ startDate, endDate }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Realtime Cache Binding
+  const setCache = useCacheStore(s => s.setCache);
+  const isCashValid = useCacheStore(s => s._cache['cash_transactions']?.valid);
+
   useEffect(() => {
     if (startDate && endDate) {
       loadData();
     }
-  }, [startDate, endDate]);
+  }, [startDate, endDate, isCashValid]);
 
   const loadData = async () => {
     setLoading(true);
     try {
       const summary = await reportService.getCashReport(startDate, endDate);
       startTransition(() => setData(summary));
+      
+      // Register dummy valid cache so Realtime invalidations can trigger updates
+      setCache('cash_transactions', { dummy: true });
     } catch(e) {
       console.error('[CashReport] Yükleme Hatası:', e);
       toast.error('Kasa raporu yüklenirken bir hata oluştu.');

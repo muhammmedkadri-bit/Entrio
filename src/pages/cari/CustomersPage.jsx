@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Users, User, Plus, Search, ChevronRight, ChevronLeft, UserX } from 'lucide-react';
 import toast from '../../components/ui/CustomToast';
 import { CariBalanceBadge } from './components/CariBalanceBadge';
-import { customerService } from '../../services/customerService';
 import { CustomerFormModal } from './modals/CustomerFormModal';
 import { CollectionModal } from './modals/CollectionModal';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/appStore';
+import { useCustomers } from '../../hooks/useCustomers';
 
 const CustomerRowSkeleton = () => (
   <div className="grid items-center px-4 py-[13px] border-b border-slate-100 last:border-0" style={{ gridTemplateColumns: '1.5fr 1fr 1fr 32px' }}>
@@ -32,9 +32,12 @@ export const CustomersPage = () => {
   const navigate = useNavigate();
   const { startNavigation } = useAppStore();
 
-  const [allCustomers, setAllCustomers] = useState([]);
-  const [summary, setSummary] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // ── Realtime-aware data ────────────────────────────────────────────────
+  // useCustomers subscribes to the 'customers' cache key.
+  // When Supabase Realtime fires a change, the cache is invalidated
+  // and the hook re-fetches automatically — no manual polling needed.
+  const { customers: allCustomers, loading, summary, refetch } = useCustomers();
+
   const [currentPage, setCurrentPage] = useState(1);
 
   // Filters
@@ -48,34 +51,6 @@ export const CustomersPage = () => {
 
   const [isCollectionOpen, setIsCollectionOpen] = useState(false);
   const [customerForCollection, setCustomerForCollection] = useState(null);
-
-  // Fetch all ONCE on mount
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const data = await customerService.getAll({});
-      setAllCustomers(data);
-      
-      // Calculate summary synchronously to avoid a second full DB query
-      let totalReceivable = 0;
-      let totalDebt = 0;
-      data.forEach(c => {
-        const bal = parseFloat(c.balance) || 0;
-        if (bal > 0) totalReceivable += bal;
-        else if (bal < 0) totalDebt += Math.abs(bal);
-      });
-      setSummary({ totalCount: data.length, totalReceivable, totalDebt, netBalance: totalReceivable - totalDebt });
-    } catch(err) {
-      console.error('[CustomersPage] Yükleme Hatası:', err);
-      toast.error(err?.message || 'Müşteriler yüklenemedi.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const customers = React.useMemo(() => {
     let res = [...allCustomers];
@@ -277,14 +252,14 @@ export const CustomersPage = () => {
         isOpen={isFormOpen} 
         onClose={() => setIsFormOpen(false)} 
         customerToEdit={customerToEdit}
-        onSaved={fetchData}
+        onSaved={refetch}
       />
 
       <CollectionModal 
         isOpen={isCollectionOpen}
         onClose={() => setIsCollectionOpen(false)}
         customer={customerForCollection}
-        onSaved={fetchData}
+        onSaved={refetch}
       />
     </div>
   );

@@ -6,6 +6,7 @@ import { StatCard } from '../../../components/ui/StatCard';
 import { EmptyReport } from '../components/EmptyReport';
 import { ReportExportBar } from '../components/ReportExportBar';
 import { reportService } from '../../../services/reportService';
+import { useCacheStore } from '../../../store/cacheStore';
 import { PremiumLoader } from '../../../components/ui/PremiumLoader';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -112,17 +113,24 @@ export const SalesReportTab = ({ startDate, endDate }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Realtime Cache Binding
+  const setCache = useCacheStore(s => s.setCache);
+  const isSalesValid = useCacheStore(s => s._cache['sales']?.valid);
+
   useEffect(() => {
     if (startDate && endDate) {
       loadData();
     }
-  }, [startDate, endDate]);
+  }, [startDate, endDate, isSalesValid]);
 
   const loadData = async () => {
     setLoading(true);
     try {
       const summary = await reportService.getSalesSummary(startDate, endDate);
       startTransition(() => setData(summary));
+      
+      // Register dummy valid cache so Realtime invalidations can trigger updates
+      setCache('sales', { dummy: true });
     } catch(e) {
       console.error('[SalesReport] Yükleme Hatası:', e);
       toast.error('Satış raporu yüklenirken bir hata oluştu.');

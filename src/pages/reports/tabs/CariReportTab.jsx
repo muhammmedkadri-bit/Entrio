@@ -5,6 +5,7 @@ import { StatCard } from '../../../components/ui/StatCard';
 import { EmptyReport } from '../components/EmptyReport';
 import { ReportExportBar } from '../components/ReportExportBar';
 import { reportService } from '../../../services/reportService';
+import { useCacheStore } from '../../../store/cacheStore';
 import { PremiumLoader } from '../../../components/ui/PremiumLoader';
 import { format } from 'date-fns';
 
@@ -102,15 +103,27 @@ export const CariReportTab = () => {
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState('customer');
 
+  // Realtime Cache Binding
+  const setCache = useCacheStore(s => s.setCache);
+  const isCustomersValid = useCacheStore(s => s._cache['customers']?.valid);
+  const isSuppliersValid = useCacheStore(s => s._cache['suppliers']?.valid);
+
   useEffect(() => {
     loadData();
-  }, [mode]);
+  }, [mode, isCustomersValid, isSuppliersValid]);
 
   const loadData = async () => {
     setLoading(true);
     try {
       const summary = await reportService.getCariReport(mode);
       startTransition(() => setData(summary));
+      
+      // Register dummy valid cache so Realtime invalidations can trigger updates
+      if (mode === 'customer') {
+        setCache('customers', { dummy: true });
+      } else {
+        setCache('suppliers', { dummy: true });
+      }
     } catch(e) {
       console.error('[CariReport] Yükleme Hatası:', e);
       toast.error('Cari rapor yüklenirken bir hata oluştu.');

@@ -10,12 +10,11 @@ import {
 import toast from '../../components/ui/CustomToast';
 import { format, parseISO, isAfter, isSameDay, isWithinInterval, startOfDay, endOfDay, subDays } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { purchaseService } from '../../services/purchaseService';
-import { supplierService } from '../../services/supplierService';
 import { PremiumLoader } from '../../components/ui/PremiumLoader';
 import { Search } from 'lucide-react';
 import { useAppStore } from '../../store/appStore';
 import { useCartStore } from '../../store/cartStore';
+import { usePurchases } from '../../hooks/usePurchases';
 
 const PurchaseRowSkeleton = () => (
   <div className="grid items-center px-4 py-[13px] border-b border-slate-100 last:border-0 h-[62px]" style={{ gridTemplateColumns: '1.2fr 2fr 1.2fr 1.2fr 1.5fr 32px' }}>
@@ -110,10 +109,9 @@ export const PurchasesPage = () => {
   const navigate = useNavigate();
   const { startNavigation } = useAppStore();
   const setPosMode = useCartStore(s => s.setPosMode);
-  const [purchases, setPurchases]     = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [summary, setSummary]         = useState({ count: 0, totalAmount: 0, paidAmount: 0, pendingDebt: 0 });
-  const [highestDebtInfo, setHighestDebtInfo] = useState({ name: 'Yok', amount: 0 });
+
+  // ── Realtime-aware data ────────────────────────────────────────────────
+  const { purchases, loading, summary, highestDebtInfo } = usePurchases();
 
   // Filters
   const [search, setSearch] = useState('');
@@ -151,43 +149,6 @@ export const PurchasesPage = () => {
     setIsFilterMenuOpen(false);
   };
 
-  // Pagination
-  const [page, setPage] = useState(1);
-
-  // ── Load ────────────────────────────────────────────────────────────────────
-  useEffect(() => {
-    loadAll();
-  }, []);
-
-  const loadAll = async () => {
-    setLoading(true);
-    try {
-      const [data, sum, sups] = await Promise.all([
-        purchaseService.getAll(),
-        purchaseService.getMonthSummary(),
-        supplierService.getAll(),
-      ]);
-      setPurchases(data);
-      setSummary(sum);
-
-      // Find highest debt supplier
-      let maxDebt = 0;
-      let maxName = 'Yok';
-      sups.forEach(s => {
-        if (s.balance > maxDebt) {
-          maxDebt = s.balance;
-          maxName = s.name;
-        }
-      });
-      setHighestDebtInfo({ name: maxName, amount: maxDebt });
-      
-    } catch (e) {
-      console.error('[PurchasesPage] Veriler yüklenemedi:', e);
-      toast.error(e?.message || 'Veriler yüklenemedi.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // ── Filter ──────────────────────────────────────────────────────────────────
   const filtered = useMemo(() => {

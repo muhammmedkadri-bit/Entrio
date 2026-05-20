@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/appStore';
+import { useCacheStore } from '../../store/cacheStore';
 import toast from '../../components/ui/CustomToast';
 import {
   ArrowLeft, Building2, Phone, Mail, MapPin, ChevronDown, ArrowUpRight, ArrowDownLeft, Edit, Printer, Trash2, Layers, FileText
@@ -51,6 +52,18 @@ export const SupplierDetailPage = () => {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  // ── Realtime bindings ────────────────────────────────────────────────
+  const setCache = useCacheStore(s => s.setCache);
+  const isSuppliersValid = useCacheStore(s => s._cache['suppliers']?.valid);
+  const isTxsValid = useCacheStore(s => s._cache['supplier_transactions']?.valid);
+
+  // Re-fetch automatically when global cache is invalidated by Realtime
+  useEffect(() => {
+    if (isSuppliersValid === false || isTxsValid === false) {
+      loadData();
+    }
+  }, [isSuppliersValid, isTxsValid]);
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -59,6 +72,9 @@ export const SupplierDetailPage = () => {
       
       setSupplier(s);
       setTransactions(txs);
+
+      // Register dummy valid cache so Realtime invalidations can trigger updates
+      setCache('supplier_transactions', { dummy: true });
     } catch(err) {
       console.error('[SupplierDetail] Veri Yükleme Hatası:', err);
       toast.error(err?.message || 'Tedarikçi detayları alınamadı.');

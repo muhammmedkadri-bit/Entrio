@@ -13,6 +13,7 @@ import { tr } from 'date-fns/locale';
 import { purchaseService } from '../../services/purchaseService';
 import { categoryService } from '../../services/categoryService';
 import { cashService } from '../../services/cashService';
+import { useCacheStore } from '../../store/cacheStore';
 
 import { Modal } from '../../components/ui/Modal';
 import { PremiumLoader } from '../../components/ui/PremiumLoader';
@@ -74,6 +75,17 @@ export const PurchaseDetailPage = () => {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  // ── Realtime bindings ────────────────────────────────────────────────
+  const setCache = useCacheStore(s => s.setCache);
+  const isPurchasesValid = useCacheStore(s => s._cache['purchases']?.valid);
+
+  // Re-fetch automatically when global cache is invalidated by Realtime
+  useEffect(() => {
+    if (isPurchasesValid === false) {
+      loadAll();
+    }
+  }, [isPurchasesValid]);
+
   const loadAll = async () => {
     setLoading(true);
     try {
@@ -90,6 +102,9 @@ export const PurchaseDetailPage = () => {
       setPayments(payms);
       setCategories(cats);
       setCashRegisters(regs || []);
+      
+      // Register dummy valid cache so Realtime invalidations can trigger updates
+      setCache('purchases', { dummy: true });
     } catch (e) {
       toast.error('Fatura detayı yüklenemedi: ' + e.message);
       navigate('/purchases');
