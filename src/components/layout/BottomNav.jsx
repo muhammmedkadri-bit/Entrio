@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Briefcase, Menu, Plus, FileText, ArrowLeftRight, PackagePlus, X } from 'lucide-react';
+import { LayoutDashboard, Users, Briefcase, Menu, Plus, FileText, ArrowLeftRight, PackagePlus, X, ShoppingCart } from 'lucide-react';
 import { useAppStore } from '../../store/appStore';
 import { useCartStore } from '../../store/cartStore';
 
