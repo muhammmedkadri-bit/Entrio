@@ -365,7 +365,11 @@ export const MobilePOS = ({
                     setTimeout(() => handleCheckout(), 300);
                   }}
                   disabled={isProcessing || items.length === 0}
-                  className="w-full h-12 bg-brand-500 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg shadow-brand-500/30 active:scale-[0.98] transition-transform disabled:opacity-50 disabled:active:scale-100"
+                  className={`w-full h-12 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-transform disabled:opacity-50 disabled:active:scale-100 ${
+                    posMode === 'return' ? 'bg-orange-500 shadow-orange-500/30' : 
+                    posMode === 'purchase' ? 'bg-blue-500 shadow-blue-500/30' : 
+                    'bg-brand-500 shadow-brand-500/30'
+                  }`}
                 >
                   {isProcessing ? 'İşleniyor...' : (
                     <>
