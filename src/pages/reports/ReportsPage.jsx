@@ -48,16 +48,18 @@ export const ReportsPage = () => {
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex space-x-1 bg-slate-100/80 p-1 rounded-xl overflow-x-auto custom-scrollbar shrink-0">
-            {tabs.map(tab => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 whitespace-nowrap px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
+          {/* Edge-to-edge scrollable container on mobile */}
+          <div className="w-full -mx-4 px-4 sm:mx-0 sm:px-0">
+            <div className="flex space-x-2 bg-slate-100/80 p-1.5 rounded-xl overflow-x-auto hide-scrollbar snap-x snap-mandatory shrink-0 pb-1.5">
+              {tabs.map(tab => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`shrink-0 snap-start flex items-center gap-2 whitespace-nowrap px-4 py-2.5 text-sm font-semibold rounded-lg transition-all ${
                     isActive
                       ? 'bg-white text-brand-700 shadow-sm border border-slate-200/50'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
@@ -71,7 +73,7 @@ export const ReportsPage = () => {
           </div>
           
           <div
-            className={`shrink-0 ${activeTab === 'stock' ? 'opacity-50 pointer-events-none' : ''}`}
+            className={`w-full sm:w-auto shrink-0 ${activeTab === 'stock' ? 'opacity-50 pointer-events-none' : ''}`}
             title={activeTab === 'stock' ? 'Stok değerlemesi her zaman güncel tutarına tabidir' : ''}
           >
             <DateRangePicker onChange={handleDateChange} defaultRange="this_month" variant="compact" />

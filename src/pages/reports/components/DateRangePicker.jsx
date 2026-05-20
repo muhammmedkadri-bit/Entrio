@@ -72,12 +72,12 @@ export const DateRangePicker = ({ onChange, defaultRange = 'this_month', variant
 
   return (
     <div className={containerCls}>
-      <div className="flex flex-wrap gap-2 justify-center md:justify-start flex-1 w-full">
+      <div className="flex sm:flex-wrap overflow-x-auto sm:overflow-visible gap-2 pb-2 sm:pb-0 justify-start sm:justify-start flex-1 w-full snap-x snap-mandatory hide-scrollbar">
         {ranges.map(r => (
            <button 
              key={r.value}
              onClick={() => setActiveRange(r.value)}
-             className={`px-3 py-1.5 text-sm font-semibold rounded-full transition-colors ${activeRange === r.value ? 'bg-brand-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+             className={`shrink-0 snap-start px-4 py-2 sm:px-3 sm:py-1.5 text-sm font-semibold rounded-full transition-colors ${activeRange === r.value ? 'bg-brand-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
            >
              {r.label}
            </button>

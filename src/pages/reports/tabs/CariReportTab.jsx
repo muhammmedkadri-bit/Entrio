@@ -163,18 +163,18 @@ export const CariReportTab = () => {
     <div className="space-y-6">
       {/* Header & Toggle */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hide-on-print">
-        <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-slate-100 p-1.5 rounded-xl w-full sm:w-auto">
           <button
             onClick={() => setMode('customer')}
-            className={`flex items-center gap-2 px-4 py-2 font-bold rounded-lg transition-all text-sm ${isCust ? 'bg-white shadow-sm text-brand-700' : 'text-slate-500 hover:text-slate-700'}`}
+            className={`flex items-center justify-center gap-2 px-4 py-2.5 font-bold rounded-lg transition-all text-sm w-full sm:w-auto ${isCust ? 'bg-white shadow-sm text-brand-700' : 'text-slate-500 hover:text-slate-700'}`}
           >
-            <Users className="w-4 h-4" /> Müşterilerden Alacaklar
+            <Users className="w-4 h-4 shrink-0" /> Müşterilerden Alacaklar
           </button>
           <button
             onClick={() => setMode('supplier')}
-            className={`flex items-center gap-2 px-4 py-2 font-bold rounded-lg transition-all text-sm ${!isCust ? 'bg-white shadow-sm text-red-700' : 'text-slate-500 hover:text-slate-700'}`}
+            className={`flex items-center justify-center gap-2 px-4 py-2.5 font-bold rounded-lg transition-all text-sm w-full sm:w-auto ${!isCust ? 'bg-white shadow-sm text-red-700' : 'text-slate-500 hover:text-slate-700'}`}
           >
-            <Building2 className="w-4 h-4" /> Tedarikçilere Borçlar
+            <Building2 className="w-4 h-4 shrink-0" /> Tedarikçilere Borçlar
           </button>
         </div>
         <ReportExportBar onDownloadCsv={handleCsv} />

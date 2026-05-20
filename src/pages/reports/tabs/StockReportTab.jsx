@@ -166,7 +166,7 @@ export const StockReportTab = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center hide-on-print">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hide-on-print">
         <h2 className="text-xl font-bold text-slate-800">Depo ve Stok Değerlemesi</h2>
         <ReportExportBar onDownloadCsv={handleCsv} />
       </div>
