@@ -28,6 +28,7 @@ import { CartDiscountSection } from './components/CartDiscountSection';
 import { SupplierPaymentModal } from './components/SupplierPaymentModal';
 import { RemoveProductModal } from './components/RemoveProductModal';
 import { QuickBarcodesModal } from '../dashboard/modals/QuickBarcodesModal';
+import { MobilePOS } from './components/MobilePOS';
 import { db } from '../../db';
 import { generateSaleNumber } from '../../utils/invoiceUtils';
 import { supabase } from '../../lib/supabaseClient';
@@ -880,7 +881,8 @@ export const POSPage = () => {
 
 
   return (
-    <div className="flex gap-2 h-full overflow-hidden print:hidden">
+    <>
+    <div className="hidden lg:flex gap-2 h-full overflow-hidden print:hidden">
 
       {/* ── LEFT PANEL ─────────────────────────────────────────────────────── */}
       <div className="flex-[3] flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -1344,7 +1346,26 @@ export const POSPage = () => {
           )}
         </div>
       </div>
-
+    </div>
+      
+      {/* ── MOBILE POS ── */}
+      <div className="block lg:hidden h-full">
+        <MobilePOS
+          posMode={posMode} setPosMode={setPosMode}
+          selectedCustomer={selectedCustomer} selectedSupplier={selectedSupplier}
+          setCustomerModalOpen={setCustomerModalOpen} setSupplierSearchOpen={setSupplierSearchOpen}
+          items={items} addItem={addItem} removeItem={removeItem} updateQty={updateQty} clearCart={clearCart}
+          total={total} subtotal={subtotal} discountAmount={discountAmount} discountType={discountType} discountValue={discountValue} discountEnabled={discountEnabled}
+          paymentMethod={paymentMethod} handlePaymentSelect={handlePaymentSelect} handleCheckout={handleCheckout} isProcessing={isProcessing}
+          searchQuery={searchQuery} setSearchQuery={setSearchQuery} dropdownResults={dropdownResults} showDropdown={showDropdown} setShowDropdown={setShowDropdown}
+          handleAddProduct={handleAddProduct} handleScan={handleScan} searchInputRef={searchInputRef} focusSearch={focusSearch}
+          displayedProducts={displayedProducts} isGridLoading={isGridLoading} ProductSkeleton={ProductSkeleton}
+          swapMode={swapMode} handleGridCardClickForSwap={handleGridCardClickForSwap} selectedProductId={selectedProductId} handleSelectProduct={handleSelectProduct} handleRemoveRequest={handleRemoveRequest} removingIds={removingIds}
+          setQuickBarcodesOpen={setQuickBarcodesOpen} setQpmOpen={setQpmOpen}
+          setReturnSaleSearchOpen={setReturnSaleSearchOpen}
+        />
+      </div>
+    
       {/* ── Modals ─────────────────────────────────────────────────────────── */}
       <CustomerSearchModal isOpen={customerModalOpen} onClose={() => setCustomerModalOpen(false)} onSelect={setCustomer} />
       <SupplierSearchModal isOpen={supplierSearchOpen} onClose={() => setSupplierSearchOpen(false)} onSelect={setSupplier} />
@@ -1406,6 +1427,6 @@ export const POSPage = () => {
           handleAddProduct(product, 1);
         }}
       />
-    </div>
+    </>
   );
 };
