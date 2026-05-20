@@ -286,30 +286,32 @@ export const PurchasesPage = () => {
         </div>
 
         {/* Right Side: Active Filters + Buttons */}
-        <div className="flex items-center justify-end gap-2 flex-wrap sm:flex-nowrap w-full lg:w-auto">
+        <div className="flex flex-col sm:flex-row items-center justify-end gap-2 w-full lg:w-auto">
           
           {/* Aktif Filtreler */}
           {(activeFilters.includes('status') || activeFilters.includes('date')) && (
-            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto justify-end">
+            <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto justify-start sm:justify-end">
               {activeFilters.includes('status') && (
-                <FilterChipDropdown
-                  icon={Filter}
-                  label="Durum Seçin"
-                  value={statusFilter}
-                  onChange={setStatusFilter}
-                  onClear={() => toggleFilter('status')}
-                  options={[
-                    { id: 'all', label: 'Tüm Durumlar' },
-                    { id: 'paid', label: 'Ödenmiş' },
-                    { id: 'overdue', label: 'Vadesi Geçen' },
-                    { id: 'pending_due', label: 'Vadesi Gelmemiş' },
-                    { id: 'due_unknown', label: 'Vadesi Bilinmeyen' },
-                  ]}
-                />
+                <div className="flex-1 sm:flex-none">
+                  <FilterChipDropdown
+                    icon={Filter}
+                    label="Durum Seçin"
+                    value={statusFilter}
+                    onChange={setStatusFilter}
+                    onClear={() => toggleFilter('status')}
+                    options={[
+                      { id: 'all', label: 'Tüm Durumlar' },
+                      { id: 'paid', label: 'Ödenmiş' },
+                      { id: 'overdue', label: 'Vadesi Geçen' },
+                      { id: 'pending_due', label: 'Vadesi Gelmemiş' },
+                      { id: 'due_unknown', label: 'Vadesi Bilinmeyen' },
+                    ]}
+                  />
+                </div>
               )}
 
               {activeFilters.includes('date') && (
-                <div className="flex items-center gap-1.5 py-2.5 px-3 bg-white border border-slate-200 hover:bg-slate-50 transition-colors rounded-lg shadow-sm whitespace-nowrap h-full">
+                <div className="flex-1 sm:flex-none flex items-center justify-between gap-1.5 py-2.5 px-3 bg-white border border-slate-200 hover:bg-slate-50 transition-colors rounded-lg shadow-sm whitespace-nowrap h-full">
                   <DatePicker 
                     value={dateRange}
                     onChange={setDateRange}
@@ -325,12 +327,14 @@ export const PurchasesPage = () => {
                       )
                     }}
                   />
-                  <div className="h-4 w-px bg-slate-200 mx-1"></div>
-                  <div 
-                    onClick={() => toggleFilter('date')}
-                    className="text-slate-400 hover:text-red-500 cursor-pointer p-0.5 rounded transition-colors"
-                  >
-                    <X className="w-3.5 h-3.5" />
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-4 w-px bg-slate-200"></div>
+                    <div 
+                      onClick={() => toggleFilter('date')}
+                      className="text-slate-400 hover:text-red-500 cursor-pointer p-0.5 rounded transition-colors"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </div>
                   </div>
                 </div>
               )}
@@ -338,15 +342,16 @@ export const PurchasesPage = () => {
           )}
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto mt-2 sm:mt-0">
             {/* Native Filtre Butonu */}
-            <div className="relative" ref={filterMenuRef}>
+            <div className="relative flex-1 sm:flex-none min-w-[120px]" ref={filterMenuRef}>
               <button
                 onClick={() => setIsFilterMenuOpen(o => !o)}
-                className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-[#5da83f] bg-[#7ed957]/10/10 border border-[#7ed957]/20 rounded-lg hover:bg-[#7ed957]/100/10 shadow-sm transition-all whitespace-nowrap"
+                className="w-full justify-center flex items-center gap-2 px-3 py-2.5 text-sm font-semibold text-[#5da83f] bg-[#7ed957]/10/10 border border-[#7ed957]/20 rounded-lg hover:bg-[#7ed957]/100/10 shadow-sm transition-all whitespace-nowrap"
               >
                 <Filter className="w-4 h-4" />
-                Filtrele
+                <span className="hidden sm:inline">Filtrele</span>
+                <span className="sm:hidden">Filtre</span>
                 {activeFilters.length > 0 && (
                   <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-[#7ed957]/100 text-white text-[10px] font-bold px-1">
                     {activeFilters.length}
@@ -354,7 +359,7 @@ export const PurchasesPage = () => {
                 )}
               </button>
               {isFilterMenuOpen && (
-                <div className="absolute right-0 top-full mt-1.5 z-50 w-52 bg-white rounded-xl border border-slate-200 shadow-xl overflow-hidden py-1">
+                <div className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1.5 z-50 w-52 bg-white rounded-xl border border-slate-200 shadow-xl overflow-hidden py-1">
                   {[
                     { id: 'status', label: 'Durum Filtresi', Icon: Filter },
                     { id: 'date', label: 'Tarih Aralığı', Icon: Calendar },
@@ -384,18 +389,19 @@ export const PurchasesPage = () => {
                 startNavigation();
                 setTimeout(() => navigate('/pos'), 150);
               }}
-              className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold bg-white border border-[#7ed957] rounded-lg text-[#7ed957] hover:bg-[#7ed957]/10 shadow-sm active:scale-95 transition-all outline-none whitespace-nowrap"
+              className="flex-1 sm:flex-none justify-center flex items-center gap-2 px-3 py-2.5 text-sm font-bold bg-white border border-[#7ed957] rounded-lg text-[#7ed957] hover:bg-[#7ed957]/10 shadow-sm active:scale-95 transition-all outline-none whitespace-nowrap min-w-[120px]"
             >
-              <Zap className="w-4 h-4" />
-              Hızlı Alış
+              <Zap className="w-4 h-4 shrink-0" />
+              <span>Hızlı Alış</span>
             </button>
 
             <button
               onClick={() => navigate('/purchases/new')}
-              className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold bg-white border border-[#7ed957] rounded-lg text-[#7ed957] hover:bg-[#7ed957]/10 shadow-sm active:scale-95 transition-all outline-none whitespace-nowrap"
+              className="flex-1 sm:flex-none justify-center flex items-center gap-2 px-3 py-2.5 text-sm font-bold bg-[#7ed957] border border-[#7ed957] rounded-lg text-white hover:bg-[#5da83f] shadow-sm active:scale-95 transition-all outline-none whitespace-nowrap min-w-[120px]"
             >
-              <Plus className="w-4 h-4" />
-              Alış Faturası
+              <Plus className="w-4 h-4 shrink-0" />
+              <span className="hidden sm:inline">Alış Faturası</span>
+              <span className="sm:hidden">Yeni Fatura</span>
             </button>
           </div>
         </div>
