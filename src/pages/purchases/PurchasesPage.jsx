@@ -113,10 +113,11 @@ export const PurchasesPage = () => {
   // ── Realtime-aware data ────────────────────────────────────────────────
   const { purchases, loading, summary, highestDebtInfo } = usePurchases();
 
-  // Filters
+  // Filters & Pagination
   const [search, setSearch] = useState('');
   const [dateRange, setDateRange]     = useState({ start: startOfDay(subDays(new Date(), 30)), end: endOfDay(new Date()) });
   const [statusFilter, setStatusFilter] = useState('all');
+  const [page, setPage] = useState(1);
   
   // Filter Toggle Logic
   const [activeFilters, setActiveFilters] = useState(['date']); // default visible
