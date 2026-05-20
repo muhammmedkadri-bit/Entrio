@@ -126,18 +126,30 @@ export const MobilePOS = ({
           </div>
         </div>
         
-        <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-hide">
+        <div className="flex gap-2 mt-3 w-full">
           <button
             onClick={() => setQuickBarcodesOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-semibold whitespace-nowrap"
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all hover:bg-[#7ed957]/20"
+            style={{
+              background: 'rgba(126,217,87,0.1)',
+              border: '1px solid rgba(126,217,87,0.2)',
+              boxShadow: '0 2px 8px rgba(126,217,87,0.08), inset 0 1px 0 rgba(255,255,255,0.6)',
+              color: 'rgb(58,128,36)'
+            }}
           >
-            <ScanBarcode className="w-3.5 h-3.5" /> Barkodlar
+            <ScanBarcode className="w-4 h-4 shrink-0" /> <span className="whitespace-nowrap truncate">Barkodlar</span>
           </button>
           <button
             onClick={() => setQpmOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-semibold whitespace-nowrap"
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all hover:bg-[#7ed957]/20"
+            style={{
+              background: 'rgba(126,217,87,0.1)',
+              border: '1px solid rgba(126,217,87,0.2)',
+              boxShadow: '0 2px 8px rgba(126,217,87,0.08), inset 0 1px 0 rgba(255,255,255,0.6)',
+              color: 'rgb(58,128,36)'
+            }}
           >
-            <ArrowLeftRight className="w-3.5 h-3.5" /> Ürün Ekle/Değiş
+            <ArrowLeftRight className="w-4 h-4 shrink-0" /> <span className="whitespace-nowrap truncate">Ürün Ekle/Değiş</span>
           </button>
         </div>
       </div>
