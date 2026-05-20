@@ -62,8 +62,8 @@ export const StockMovementsTab = ({ movements = [], product }) => {
 
   return (
     <div className="pt-1 pb-10 relative">
-      {/* Table — shrinks to content */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      {/* Desktop Table — shrinks to content */}
+      <div className="hidden sm:block bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <table className="w-full text-sm divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
@@ -94,7 +94,6 @@ export const StockMovementsTab = ({ movements = [], product }) => {
                       startNavigation();
                       setTimeout(() => navigate(`/sales/${m.reference_id}`), 150);
                     } else if (m.reference_id && m.movement_type === 'return_in') {
-                      // Navigate to the original sale, not the return receipt
                       startNavigation();
                       setTimeout(() => navigate(`/sales/${m.original_sale_id || m.reference_id}`), 150);
                     } else if (m.reference_id && ['purchase', 'return_out'].includes(m.movement_type)) {
@@ -104,18 +103,15 @@ export const StockMovementsTab = ({ movements = [], product }) => {
                   }}
                   className={`transition-colors ${m.reference_id ? 'cursor-pointer hover:bg-gray-100/80' : 'hover:bg-gray-50/80'}`}
                 >
-                  {/* Müşteri / Tedarikçi */}
                   <td className="px-4 py-[11.5px] text-xs text-gray-800 font-bold whitespace-nowrap truncate max-w-[150px]" title={m.counterparty || '—'}>
                     {m.counterparty || '—'}
                   </td>
-                  {/* Hareket Türü */}
                   <td className="px-3 py-[11.5px] whitespace-nowrap">
                     <div className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${meta.color}`}>
                       {meta.icon && <meta.icon className="w-3 h-3 flex-shrink-0" />}
                       <span>{meta.label}</span>
                     </div>
                   </td>
-                  {/* Fiş / Fatura */}
                   <td className="px-4 py-[11.5px] whitespace-nowrap text-xs font-semibold tabular-nums">
                     {(['sale', 'out'].includes(m.movement_type) && m.reference)
                       ? <span className="font-mono text-[#10b981]">{m.reference}</span>
@@ -127,23 +123,19 @@ export const StockMovementsTab = ({ movements = [], product }) => {
                           ? <span className="font-mono text-[#10b981]">{m.reference}</span>
                           : <span className="text-slate-300">—</span>}
                   </td>
-                  {/* Miktar */}
                   <td className="px-4 py-[11.5px] font-bold tabular-nums whitespace-nowrap">
                     <span className="text-slate-900">
                       {input ? '+' : '-'}{m.quantity} {product?.unit}
                     </span>
                   </td>
-                  {/* Birim Fiyat — net (iskonto düşülmüş) */}
                   <td className="px-4 py-[11.5px] text-gray-500 tabular-nums">
                     {m.unit_price ? (() => {
-                      // Eğer harekette item_discount varsa göster, yoksa brüt fiyatı göster
                       const netPrice = m.item_discount > 0
                         ? m.unit_price - (m.item_discount / (m.quantity || 1))
                         : m.unit_price;
                       return fmt(netPrice);
                     })() : '—'}
                   </td>
-                  {/* Tarih / Saat */}
                   <td className="px-4 py-[11.5px] whitespace-nowrap text-xs font-medium text-gray-500">{fmtDate(m.created_at)}</td>
                 </tr>
               );
@@ -152,27 +144,84 @@ export const StockMovementsTab = ({ movements = [], product }) => {
         </table>
       </div>
 
-      {/* Pagination — fixed to page bottom-right */}
+      {/* Mobile Card List */}
+      <div className="sm:hidden space-y-2">
+        {paginated.length === 0 && (
+          <div className="text-center py-10 bg-white rounded-xl border border-slate-200 text-gray-400 text-sm">
+            Stok hareketi bulunamadı.
+          </div>
+        )}
+        {paginated.map((m, i) => {
+          const meta = MOVEMENT_LABELS[m.movement_type] || { label: m.movement_type, color: 'bg-gray-100 text-gray-600' };
+          const input = isInput(m.movement_type);
+          const netPrice = m.unit_price ? (m.item_discount > 0 ? m.unit_price - (m.item_discount / (m.quantity || 1)) : m.unit_price) : null;
+          
+          return (
+            <div
+              key={m.id || i}
+              onClick={() => {
+                if (m.reference_id && ['sale', 'out'].includes(m.movement_type)) {
+                  startNavigation();
+                  setTimeout(() => navigate(`/sales/${m.reference_id}`), 150);
+                } else if (m.reference_id && m.movement_type === 'return_in') {
+                  startNavigation();
+                  setTimeout(() => navigate(`/sales/${m.original_sale_id || m.reference_id}`), 150);
+                } else if (m.reference_id && ['purchase', 'return_out'].includes(m.movement_type)) {
+                  startNavigation();
+                  setTimeout(() => navigate(`/purchases/${m.reference_id}`), 150);
+                }
+              }}
+              className={`p-3 bg-white rounded-xl border border-slate-200 shadow-sm transition-colors ${m.reference_id ? 'active:scale-95 cursor-pointer' : ''}`}
+            >
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <div className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full mb-1 ${meta.color}`}>
+                    {meta.icon && <meta.icon className="w-3 h-3 flex-shrink-0" />}
+                    <span>{meta.label}</span>
+                  </div>
+                  <div className="text-sm font-bold text-gray-800 line-clamp-1">{m.counterparty || 'Bilinmeyen'}</div>
+                  <div className="text-xs text-gray-500 mt-0.5">{fmtDate(m.created_at)}</div>
+                </div>
+                <div className="text-right">
+                  <div className={`text-sm font-bold ${input ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    {input ? '+' : '-'}{m.quantity} {product?.unit}
+                  </div>
+                  {netPrice && <div className="text-xs text-gray-500 mt-1">{fmt(netPrice)}</div>}
+                </div>
+              </div>
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
+                <span className="text-gray-500">Fiş / Fatura No:</span>
+                <span className="font-mono text-[#10b981] font-semibold">
+                  {m.movement_type === 'return_in' ? (m.original_sale_number || m.reference || '—') : (m.reference || '—')}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Pagination */}
       {movements.length > 0 && (
-        <div className="fixed bottom-5 right-6 flex items-center gap-3 z-20">
-          <span className="text-xs text-gray-400">
-            {movements.length} kayıt içinde {(page - 1) * ITEMS_PER_PAGE + 1}-{Math.min(page * ITEMS_PER_PAGE, movements.length)} gösteriliyor
+        <div className="fixed bottom-[80px] sm:bottom-5 left-4 sm:left-auto right-4 sm:right-6 flex items-center justify-between sm:justify-end gap-3 z-20 bg-white/80 sm:bg-transparent backdrop-blur-md sm:backdrop-blur-none p-2 sm:p-0 rounded-xl sm:rounded-none border sm:border-none border-slate-200 shadow-sm sm:shadow-none">
+          <span className="text-xs text-gray-400 font-medium ml-2 sm:ml-0">
+            <span className="sm:hidden">Sayfa {page}/{totalPages}</span>
+            <span className="hidden sm:inline">{movements.length} kayıt içinde {(page - 1) * ITEMS_PER_PAGE + 1}-{Math.min(page * ITEMS_PER_PAGE, movements.length)}</span>
           </span>
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+              className="w-8 h-8 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 bg-white hover:bg-gray-50 disabled:opacity-40 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            
-            {renderPaginationButtons()}
-            
+            <div className="hidden sm:flex items-center gap-1.5">
+              {renderPaginationButtons()}
+            </div>
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+              className="w-8 h-8 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 bg-white hover:bg-gray-50 disabled:opacity-40 transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>

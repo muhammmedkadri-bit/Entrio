@@ -68,8 +68,8 @@ export const SalesHistoryTab = ({ salesHistory = [], product }) => {
 
   return (
     <div className="pt-1 pb-10 relative">
-      {/* Table — shrinks to content */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      {/* Desktop Table — shrinks to content */}
+      <div className="hidden sm:block bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <table className="w-full text-sm divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
@@ -138,27 +138,80 @@ export const SalesHistoryTab = ({ salesHistory = [], product }) => {
         </table>
       </div>
 
-      {/* Pagination — fixed to page bottom-right */}
+      {/* Mobile Card List */}
+      <div className="sm:hidden space-y-2">
+        {paginated.length === 0 && (
+          <div className="text-center py-10 bg-white rounded-xl border border-slate-200 text-gray-400 text-sm">
+            Satış kaydı bulunamadı.
+          </div>
+        )}
+        {paginated.map((si, i) => {
+          const sale = si.sale || {};
+          const cost = (product?.purchase_price || 0) * (si.quantity || 0);
+          const profit = (si.line_total || 0) - cost;
+          const payMethod = sale.payment_method || si.payment_method || '';
+          const pm = PAYMENT_LABELS[payMethod] || { label: payMethod || '—', color: 'bg-gray-100 text-gray-600' };
+          const saleNumber = sale.sale_number || si.sale_number || '—';
+          const customerName = si.customer_name || sale.customer_name || (sale.customer_id && sale.customer_id !== 1 ? `Müşteri #${sale.customer_id}` : 'Perakende');
+          const createdAt = sale.created_at || si.created_at;
+          const saleId = si.sale_id || sale.id;
+
+          return (
+            <div
+              key={si.id || i}
+              onClick={() => {
+                if (!saleId) return;
+                startNavigation();
+                setTimeout(() => navigate(`/sales/${saleId}`), 150);
+              }}
+              className={`p-3 bg-white rounded-xl border border-slate-200 shadow-sm transition-colors ${saleId ? 'active:scale-95 cursor-pointer' : ''}`}
+            >
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <div className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full mb-1 ${pm.color}`}>
+                    <span>{pm.label}</span>
+                  </div>
+                  <div className="text-sm font-bold text-gray-800 line-clamp-1">{customerName}</div>
+                  <div className="text-xs text-gray-500 mt-0.5">{fmtDate(createdAt)}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-bold text-rose-600">
+                    -{si.quantity} {product?.unit}
+                  </div>
+                  <div className="text-sm font-bold text-gray-800 mt-1">{fmt(si.line_total)}</div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
+                <span className="text-gray-500">Fiş No:</span>
+                <span className="font-mono text-[#10b981] font-semibold">{saleNumber}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Pagination */}
       {salesHistory.length > 0 && (
-        <div className="fixed bottom-5 right-6 flex items-center gap-3 z-20">
-          <span className="text-xs text-gray-400">
-            {salesHistory.length} kayıt içinde {(page - 1) * ITEMS_PER_PAGE + 1}-{Math.min(page * ITEMS_PER_PAGE, salesHistory.length)} gösteriliyor
+        <div className="fixed bottom-[80px] sm:bottom-5 left-4 sm:left-auto right-4 sm:right-6 flex items-center justify-between sm:justify-end gap-3 z-20 bg-white/80 sm:bg-transparent backdrop-blur-md sm:backdrop-blur-none p-2 sm:p-0 rounded-xl sm:rounded-none border sm:border-none border-slate-200 shadow-sm sm:shadow-none">
+          <span className="text-xs text-gray-400 font-medium ml-2 sm:ml-0">
+            <span className="sm:hidden">Sayfa {page}/{totalPages}</span>
+            <span className="hidden sm:inline">{salesHistory.length} kayıt içinde {(page - 1) * ITEMS_PER_PAGE + 1}-{Math.min(page * ITEMS_PER_PAGE, salesHistory.length)}</span>
           </span>
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+              className="w-8 h-8 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 bg-white hover:bg-gray-50 disabled:opacity-40 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            
-            {renderPaginationButtons()}
-            
+            <div className="hidden sm:flex items-center gap-1.5">
+              {renderPaginationButtons()}
+            </div>
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+              className="w-8 h-8 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 bg-white hover:bg-gray-50 disabled:opacity-40 transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>

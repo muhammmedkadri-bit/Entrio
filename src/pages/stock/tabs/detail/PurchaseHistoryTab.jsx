@@ -61,8 +61,8 @@ export const PurchaseHistoryTab = ({ purchaseHistory = [], product }) => {
 
   return (
     <div className="pt-1 pb-10 relative">
-      {/* Table — shrinks to content */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      {/* Desktop Table — shrinks to content */}
+      <div className="hidden sm:block bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <table className="w-full text-sm divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
@@ -118,27 +118,71 @@ export const PurchaseHistoryTab = ({ purchaseHistory = [], product }) => {
         </table>
       </div>
 
-      {/* Pagination — fixed to page bottom-right */}
+      {/* Mobile Card List */}
+      <div className="sm:hidden space-y-2">
+        {paginated.length === 0 && (
+          <div className="text-center py-10 bg-white rounded-xl border border-slate-200 text-gray-400 text-sm">
+            Alış kaydı bulunamadı.
+          </div>
+        )}
+        {paginated.map((pi, i) => {
+          const st = STATUS_LABELS[pi.status] || { label: pi.status || '—', color: 'bg-gray-100 text-gray-600' };
+
+          return (
+            <div
+              key={pi.id || i}
+              onClick={() => {
+                startNavigation();
+                setTimeout(() => navigate(`/purchases/${pi.purchase_id}`), 150);
+              }}
+              className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm transition-colors active:scale-95 cursor-pointer"
+            >
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <div className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full mb-1 ${st.color}`}>
+                    <span>{st.label}</span>
+                  </div>
+                  <div className="text-sm font-bold text-gray-800 line-clamp-1">{pi.supplier_name || 'Bilinmeyen'}</div>
+                  <div className="text-xs text-gray-500 mt-0.5">{fmtDate(pi.created_at)}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-bold text-emerald-600">
+                    +{pi.quantity} {product?.unit}
+                  </div>
+                  <div className="text-sm font-bold text-gray-800 mt-1">{fmt(pi.line_total)}</div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
+                <span className="text-gray-500">Fatura No:</span>
+                <span className="font-mono text-[#10b981] font-semibold">{pi.purchase_number}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Pagination */}
       {purchaseHistory.length > 0 && (
-        <div className="fixed bottom-5 right-6 flex items-center gap-3 z-20">
-          <span className="text-xs text-gray-400">
-            {purchaseHistory.length} kayıt içinde {(page - 1) * ITEMS_PER_PAGE + 1}-{Math.min(page * ITEMS_PER_PAGE, purchaseHistory.length)} gösteriliyor
+        <div className="fixed bottom-[80px] sm:bottom-5 left-4 sm:left-auto right-4 sm:right-6 flex items-center justify-between sm:justify-end gap-3 z-20 bg-white/80 sm:bg-transparent backdrop-blur-md sm:backdrop-blur-none p-2 sm:p-0 rounded-xl sm:rounded-none border sm:border-none border-slate-200 shadow-sm sm:shadow-none">
+          <span className="text-xs text-gray-400 font-medium ml-2 sm:ml-0">
+            <span className="sm:hidden">Sayfa {page}/{totalPages}</span>
+            <span className="hidden sm:inline">{purchaseHistory.length} kayıt içinde {(page - 1) * ITEMS_PER_PAGE + 1}-{Math.min(page * ITEMS_PER_PAGE, purchaseHistory.length)}</span>
           </span>
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+              className="w-8 h-8 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 bg-white hover:bg-gray-50 disabled:opacity-40 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            
-            {renderPaginationButtons()}
-            
+            <div className="hidden sm:flex items-center gap-1.5">
+              {renderPaginationButtons()}
+            </div>
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+              className="w-8 h-8 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 bg-white hover:bg-gray-50 disabled:opacity-40 transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
