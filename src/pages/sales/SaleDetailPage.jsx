@@ -726,38 +726,38 @@ export const SaleDetailPage = () => {
           </div>
 
           {/* ── PRINTABLE RECEIPT ──────────────────────────────────────── */}
-          <div id="sale-receipt-print" className="hidden print:block mx-auto max-w-sm bg-white p-4 font-mono text-sm leading-tight text-slate-800">
-            <div className="text-center mb-4">
-              <h1 className="font-bold text-lg">ENTRIO</h1>
-              <p className="text-xs mt-1">Merkez Şube</p>
+          <div id="receipt-print-area" className="hidden print:block mx-auto max-w-sm bg-white p-4 font-mono text-sm leading-tight text-slate-800">
+            <div className="text-center mb-2">
+              <h1 className="font-bold text-base print:text-[12px]">ENTRIO</h1>
+              <p className="text-xs print:text-[9px] mt-1">Merkez Şube</p>
             </div>
-            <div className="border-b border-dashed border-slate-400 pb-2 mb-2 text-xs">
+            <div className="border-b border-dashed border-slate-400 pb-1 mb-1 text-xs print:text-[9px]">
               <div className="flex justify-between"><span>Tarih:</span><span>{fmtDate(sale.created_at)}</span></div>
               <div className="flex justify-between"><span>Fiş No:</span><span className="font-semibold">{sale.sale_number}</span></div>
-              <div className="flex justify-between"><span>Müşteri:</span><span>{customer?.name || 'Perakende Müşteri'}</span></div>
+              <div className="flex justify-between"><span>Müşteri:</span><span className="truncate max-w-[120px] print:max-w-[80px] text-right">{customer?.name || 'Perakende Müşteri'}</span></div>
             </div>
-            <div className="mb-2">
+            <div className="mb-1">
               {sale.items?.map((item, idx) => (
                 <div key={idx} className="mb-1.5">
-                  <div className="font-semibold">{item.productName}</div>
-                  <div className="flex justify-between text-xs">
+                  <div className="font-semibold print:text-[10px] whitespace-normal break-words leading-tight">{item.productName}</div>
+                  <div className="flex justify-between text-xs print:text-[9px] mt-0.5">
                     <span>{item.quantity} x ₺{fmt(item.unit_price)}</span>
                     <span>₺{fmt(item.line_total)}</span>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="border-t border-dashed border-slate-400 pt-2 text-sm">
+            <div className="border-t border-dashed border-slate-400 pt-1 text-sm print:text-[10px]">
               {discount > 0 && (
-                <div className="flex justify-between text-red-600 mb-1"><span>İskonto</span><span>-₺{fmt(discount)}</span></div>
+                <div className="flex justify-between text-red-600 mb-1 print:text-[9px]"><span>İskonto</span><span>-₺{fmt(discount)}</span></div>
               )}
-              <div className="flex justify-between font-bold text-base mt-1"><span>TOPLAM</span><span>₺{fmt(grandTotal)}</span></div>
+              <div className="flex justify-between font-bold text-base print:text-[11px] mt-1"><span>TOPLAM</span><span>₺{fmt(grandTotal)}</span></div>
             </div>
-            <div className="border-t border-b border-dashed border-slate-400 py-2 my-2 text-xs flex justify-between">
+            <div className="border-t border-b border-dashed border-slate-400 py-1 my-1 text-xs print:text-[9px] flex justify-between">
               <span>Ödeme:</span>
               <span>{METHOD_LABELS[sale.payment_method] || sale.payment_method}</span>
             </div>
-            <div className="text-center mt-4 text-xs">
+            <div className="text-center mt-4 text-xs print:text-[8px] font-medium">
               <p>BİZİ TERCİH ETTİĞİNİZ İÇİN</p>
               <p>TEŞEKKÜR EDERİZ</p>
             </div>
