@@ -124,9 +124,6 @@
   }
 
   #receipt-print-area {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
     width: 48mm !important; /* 50mm kağıt için güvenli baskı alanı genelde 48mm'dir */
     margin: 0 !important;
     padding: 1mm !important;

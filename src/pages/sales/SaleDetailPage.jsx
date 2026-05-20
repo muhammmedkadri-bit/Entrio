@@ -296,7 +296,7 @@ export const SaleDetailPage = () => {
           </div>
 
           {/* ── Hero Header ──────────────────────────────────────────── */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5 print:hidden">
             <div className="flex items-start justify-between gap-4">
               {/* Left: icon + title + pills */}
               <div className="flex items-start gap-4">
@@ -365,7 +365,7 @@ export const SaleDetailPage = () => {
           </div>
 
           {/* ── Two-column layout ─────────────────────────────────────── */}
-          <div className="flex gap-5 items-start">
+          <div className="flex gap-5 items-start print:hidden">
 
             {/* ── LEFT — Items + Notes ───────────────────────────────── */}
             <div className="flex-1 min-w-0 flex flex-col gap-4">
