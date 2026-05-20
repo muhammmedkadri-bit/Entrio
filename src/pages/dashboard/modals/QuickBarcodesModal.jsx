@@ -270,7 +270,7 @@ export const QuickBarcodesModal = ({ isOpen, onClose, onAddToCart }) => {
 
                   {/* Picker Pagination */}
                   {pickerTotalPages > 1 && (
-                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200 flex-none">
+                    <div className="flex items-center justify-between mt-4 pt-4 pb-24 sm:pb-0 border-t border-slate-200 flex-none">
                       <div className="text-sm text-slate-500 font-bold">{pickerFiltered.length} ürün — Sayfa {pickerPage}/{pickerTotalPages}</div>
                       <div className="flex items-center gap-1.5">
                         <button onClick={() => setPickerPage(p => Math.max(1, p - 1))} disabled={pickerPage === 1}
@@ -370,7 +370,7 @@ export const QuickBarcodesModal = ({ isOpen, onClose, onAddToCart }) => {
               )}
 
               {!isLoading && displayedBarcodeProducts.length > 0 && (
-                <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-200 flex-none px-2">
+                <div className="flex items-center justify-between mt-6 pt-4 pb-24 sm:pb-0 border-t border-slate-200 flex-none px-2">
                   <div className="text-sm text-slate-500 font-bold">{displayedBarcodeProducts.length} ürün — Sayfa {currentPage}/{totalPages}</div>
                   <div className="flex items-center gap-1.5">
                     <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}

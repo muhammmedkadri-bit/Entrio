@@ -384,7 +384,7 @@ export const QuickProductManagerModal = ({
 
              {/* Pagination Bar */}
              {!showQuickCreate && filtered.length > 0 && (
-                <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100 flex-none px-1">
+                <div className="flex items-center justify-between mt-auto pt-3 pb-24 sm:pb-0 border-t border-gray-100 flex-none px-1">
                    <div className="text-xs text-gray-500 font-medium">
                      {filtered.length} ürün — Sayfa {currentPage}/{totalPages}
                    </div>
