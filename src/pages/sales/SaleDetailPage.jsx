@@ -366,7 +366,7 @@ export const SaleDetailPage = () => {
           </div>
 
           {/* ── Two-column layout ─────────────────────────────────────── */}
-          <div className="flex gap-5 items-start print:hidden">
+          <div className="flex flex-col lg:flex-row gap-5 items-start print:hidden">
 
             {/* ── LEFT — Items + Notes ───────────────────────────────── */}
             <div className="flex-1 min-w-0 flex flex-col gap-4">
@@ -387,8 +387,8 @@ export const SaleDetailPage = () => {
                 </div>
 
                 {/* Items table */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                <div className="overflow-x-auto hide-scrollbar">
+                  <table className="w-full text-sm whitespace-nowrap">
                     <thead>
                       <tr className="border-b border-gray-100">
                         {['ÜRÜN / HİZMET', 'MİKTAR', 'BİRİM', 'BİRİM FİYAT', 'İSKONTO', 'KDV', 'TOPLAM'].map(h => (
@@ -447,7 +447,7 @@ export const SaleDetailPage = () => {
                 </div>
 
                 {/* Notes & Totals Grid moved inside the card */}
-                <div className="flex gap-6 items-stretch pt-6 mt-2 border-t border-gray-100 justify-end" style={{ marginRight: '-16px' }}>
+                <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 items-stretch pt-6 mt-2 border-t border-gray-100 lg:justify-end lg:mr-[-16px]">
                   {/* Notes (Satış Notları) - only shown if there's a note */}
                   {sale.notes && (
                     <div className="flex-1 flex flex-col">
@@ -460,7 +460,7 @@ export const SaleDetailPage = () => {
                   )}
 
                   {/* Totals */}
-                  <div style={{ width: '360px', minWidth: '320px' }} className="flex flex-col">
+                  <div className="flex flex-col w-full lg:w-[360px] lg:min-w-[320px]">
                     <InvoiceTotalsCard
                       subtotal={subtotal}
                       discountTotal={discount}
@@ -527,8 +527,8 @@ export const SaleDetailPage = () => {
                   })();
 
                   return (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left">
+                    <div className="overflow-x-auto hide-scrollbar">
+                      <table className="w-full text-left whitespace-nowrap">
                         <thead className="bg-gray-50 text-xs font-semibold text-gray-500">
                           <tr className="bg-gray-50/80 border-b border-gray-100">
                             <th className="px-5 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Hareket Türü</th>
@@ -608,7 +608,7 @@ export const SaleDetailPage = () => {
             </div>
 
             {/* ── RIGHT — Customer + Payment summary ────────────────── */}
-            <div className="w-[280px] shrink-0 flex flex-col gap-4 print:hidden">
+            <div className="w-full lg:w-[320px] shrink-0 flex flex-col gap-4 print:hidden">
 
               {/* Customer card */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
