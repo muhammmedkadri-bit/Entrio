@@ -252,7 +252,7 @@ export const DayCloseDetailModal = ({ tx, onClose }) => {
           <div className="p-6 space-y-5">
 
             {/* KPI Strip */}
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
                 { label: 'Toplam Gelir', value: fmt(data.totalIncome), icon: TrendingUp, color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
                 { label: 'İade Ödemeleri', value: fmt(data.totalReturns || 0), icon: RotateCcw, color: '#ea580c', bg: '#fff7ed', border: '#fed7aa' },
@@ -274,7 +274,7 @@ export const DayCloseDetailModal = ({ tx, onClose }) => {
             </div>
 
             {/* Sales / Returns / Purchases */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
                 { label: 'Satış İşlemi', count: data.salesCount, total: data.totalSalesAmount, icon: ShoppingCart, color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0' },
                 { label: 'İade İşlemi', count: data.returnsCount, total: data.totalReturnsAmount, icon: RotateCcw, color: '#c2410c', bg: '#fff7ed', border: '#fed7aa' },
@@ -298,7 +298,7 @@ export const DayCloseDetailModal = ({ tx, onClose }) => {
             </div>
 
             {/* Two-column: Kasa Bazlı + Ödeme Yöntemi */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
               {/* Register Breakdown */}
               <div className="rounded-2xl p-4 bg-slate-50 border border-slate-100">
