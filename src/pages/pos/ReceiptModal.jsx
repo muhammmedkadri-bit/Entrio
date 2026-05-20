@@ -53,28 +53,28 @@ export const ReceiptModal = ({ isOpen, onClose, saleDetails }) => {
 
   const renderTemplate1 = () => (
     <div id="receipt-print-area" className="mx-auto max-w-sm bg-white p-4 border border-dashed border-slate-300 print:border-none print:w-full print:max-w-none print:p-0 font-mono text-sm leading-tight text-slate-800">
-      <div className="text-center mb-4">
-        {companyInfo.logo && <img src={companyInfo.logo} alt="Logo" className="w-16 h-16 object-contain mx-auto mb-2 grayscale" />}
-        <h1 className="font-bold text-lg">{companyInfo.name || 'ENTRIO POS LTD. ŞTİ.'}</h1>
-        <p className="text-xs mt-1 whitespace-pre-wrap">{companyInfo.address || 'Merkez Şube'}</p>
+      <div className="text-center mb-2">
+        {companyInfo.logo && <img src={companyInfo.logo} alt="Logo" className="w-12 h-12 object-contain mx-auto mb-1 grayscale" />}
+        <h1 className="font-bold text-base print:text-[12px]">{companyInfo.name || 'ENTRIO POS LTD. ŞTİ.'}</h1>
+        <p className="text-xs print:text-[9px] mt-1 whitespace-pre-wrap">{companyInfo.address || 'Merkez Şube'}</p>
         {(companyInfo.tax_office || companyInfo.tax_number) && (
-          <p className="text-xs mt-0.5">{companyInfo.tax_office || ''} VD: {companyInfo.tax_number || ''}</p>
+          <p className="text-xs print:text-[9px] mt-0.5">{companyInfo.tax_office || ''} VD: {companyInfo.tax_number || ''}</p>
         )}
-        <p className="text-xs">Tel: {companyInfo.phone || '0555 555 55 55'}</p>
+        <p className="text-xs print:text-[9px]">Tel: {companyInfo.phone || '0555 555 55 55'}</p>
       </div>
 
-      <div className="border-b border-dashed border-slate-400 pb-2 mb-2 text-xs">
+      <div className="border-b border-dashed border-slate-400 pb-1 mb-1 text-xs print:text-[9px]">
         <div className="flex justify-between"><span>Tarih:</span><span>{saleDetails.created_at ? format(saleDetails.created_at, 'dd.MM.yyyy HH:mm') : '-'}</span></div>
-        <div className="flex justify-between"><span>Fiş No:</span><span className="font-mono font-semibold text-indigo-600">{saleDetails.sale_number || `#${saleDetails.id}`}</span></div>
-        <div className="flex justify-between"><span>Müşteri:</span><span className="truncate max-w-[150px] text-right">{saleDetails.customerName || 'Perakende Müşteri'}</span></div>
+        <div className="flex justify-between"><span>Fiş No:</span><span className="font-mono font-semibold">{saleDetails.sale_number || `#${saleDetails.id}`}</span></div>
+        <div className="flex justify-between"><span>Müşteri:</span><span className="truncate max-w-[120px] print:max-w-[80px] text-right">{saleDetails.customerName || 'Perakende Müşteri'}</span></div>
         <div className="flex justify-between"><span>Kasiyer:</span><span>{saleDetails.cashierName || 'Kasiyer'}</span></div>
       </div>
 
-      <div className="mb-2">
+      <div className="mb-1">
         {saleDetails.items?.map((item, idx) => (
-          <div key={idx} className="mb-2">
-            <div className="font-semibold">{item.name || `Ürün ID: ${item.product_id}`}</div>
-            <div className="flex justify-between text-xs">
+          <div key={idx} className="mb-1.5">
+            <div className="font-semibold print:text-[10px] whitespace-normal break-words leading-tight">{item.name || `Ürün ID: ${item.product_id}`}</div>
+            <div className="flex justify-between text-xs print:text-[9px] mt-0.5">
               <span>{item.quantity} x {formatCurrency(item.unit_price)}</span>
               <span>{formatCurrency(item.line_total)}</span>
             </div>
@@ -82,18 +82,18 @@ export const ReceiptModal = ({ isOpen, onClose, saleDetails }) => {
         ))}
       </div>
 
-      <div className="border-t border-dashed border-slate-400 pt-2 text-sm">
+      <div className="border-t border-dashed border-slate-400 pt-1 text-sm print:text-[10px]">
         {saleDetails.discount > 0 && (
-          <div className="flex justify-between text-red-600 mb-1">
+          <div className="flex justify-between text-red-600 mb-1 print:text-[9px]">
             <span>İskonto</span><span>-{formatCurrency(saleDetails.discount)}</span>
           </div>
         )}
-        <div className="flex justify-between font-bold text-base mt-1">
+        <div className="flex justify-between font-bold text-base print:text-[11px] mt-1">
           <span>GENEL TOPLAM</span><span>{formatCurrency(saleDetails.total_amount)}</span>
         </div>
       </div>
 
-      <div className="border-t border-b border-dashed border-slate-400 py-2 my-2 text-xs flex justify-between">
+      <div className="border-t border-b border-dashed border-slate-400 py-1 my-1 text-xs print:text-[9px] flex justify-between">
         <span>Ödeme Tipi:</span><span>{saleDetails.payment_method?.toUpperCase()}</span>
       </div>
 
@@ -105,16 +105,16 @@ export const ReceiptModal = ({ isOpen, onClose, saleDetails }) => {
   );
 
   const renderTemplate2 = () => (
-    <div id="receipt-print-area" className="mx-auto max-w-sm bg-white p-6 border border-slate-200 shadow-sm print:border-none print:shadow-none print:w-full font-sans text-sm text-slate-800">
-      <div className="flex justify-between items-start border-b border-slate-200 pb-4 mb-4">
-        <div>
-          <h1 className="font-black text-xl text-slate-900 uppercase">{companyInfo.name || 'ENTRIO POS'}</h1>
-          <p className="text-xs text-slate-500 mt-1 max-w-[180px]">{companyInfo.address}</p>
+    <div id="receipt-print-area" className="mx-auto max-w-sm bg-white p-6 border border-slate-200 shadow-sm print:border-none print:shadow-none print:w-full font-sans text-sm print:text-[9px] text-slate-800">
+      <div className="flex justify-between items-start border-b border-slate-200 pb-2 mb-2">
+        <div className="min-w-0 pr-2">
+          <h1 className="font-black text-xl print:text-[12px] text-slate-900 uppercase break-words leading-tight">{companyInfo.name || 'ENTRIO POS'}</h1>
+          <p className="text-xs print:text-[8px] text-slate-500 mt-1 max-w-[180px] print:max-w-none">{companyInfo.address}</p>
         </div>
-        {companyInfo.logo && <img src={companyInfo.logo} alt="Logo" className="w-12 h-12 object-contain" />}
+        {companyInfo.logo && <img src={companyInfo.logo} alt="Logo" className="w-12 h-12 print:w-8 print:h-8 object-contain shrink-0" />}
       </div>
 
-      <div className="flex justify-between text-xs text-slate-500 mb-6">
+      <div className="flex justify-between text-xs print:text-[8px] text-slate-500 mb-3">
         <div>
           <p className="font-bold text-slate-700">Tahsilat Fişi</p>
           <p>{saleDetails.sale_number || `#${saleDetails.id}`}</p>
@@ -125,36 +125,36 @@ export const ReceiptModal = ({ isOpen, onClose, saleDetails }) => {
         </div>
       </div>
 
-      <div className="space-y-3 mb-6">
+      <div className="space-y-2 mb-3">
         {saleDetails.items?.map((item, idx) => (
-          <div key={idx} className="flex justify-between items-center text-sm">
-            <div className="flex-1">
-              <p className="font-semibold">{item.name}</p>
-              <p className="text-xs text-slate-500">{item.quantity} Adet x {formatCurrency(item.unit_price)}</p>
+          <div key={idx} className="flex justify-between items-center text-sm print:text-[9px]">
+            <div className="flex-1 min-w-0 pr-2">
+              <p className="font-semibold truncate">{item.name}</p>
+              <p className="text-xs print:text-[8px] text-slate-500">{item.quantity} Adet x {formatCurrency(item.unit_price)}</p>
             </div>
-            <p className="font-bold">{formatCurrency(item.line_total)}</p>
+            <p className="font-bold shrink-0">{formatCurrency(item.line_total)}</p>
           </div>
         ))}
       </div>
 
-      <div className="border-t-2 border-slate-900 pt-4 mb-6">
+      <div className="border-t-2 border-slate-900 pt-2 mb-3">
         {saleDetails.discount > 0 && (
-          <div className="flex justify-between text-rose-500 font-medium mb-1 text-sm">
+          <div className="flex justify-between text-rose-500 font-medium mb-1 text-sm print:text-[8px]">
             <span>İndirim</span><span>-{formatCurrency(saleDetails.discount)}</span>
           </div>
         )}
         <div className="flex justify-between items-end">
           <div>
-            <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Toplam Tutar</p>
-            <p className="text-2xl font-black">{formatCurrency(saleDetails.total_amount)}</p>
+            <p className="text-xs print:text-[8px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Toplam Tutar</p>
+            <p className="text-2xl print:text-[14px] font-black">{formatCurrency(saleDetails.total_amount)}</p>
           </div>
-          <div className="text-right text-xs font-semibold text-slate-500 uppercase bg-slate-100 px-3 py-1.5 rounded-lg">
+          <div className="text-right text-xs print:text-[8px] font-semibold text-slate-500 uppercase bg-slate-100 print:bg-transparent px-3 py-1.5 print:p-0 rounded-lg">
             {saleDetails.payment_method}
           </div>
         </div>
       </div>
 
-      <div className="text-center text-xs text-slate-400">
+      <div className="text-center text-xs print:text-[8px] text-slate-400">
         <p>{companyInfo.tax_office && `${companyInfo.tax_office} VD - `}{companyInfo.tax_number}</p>
         <p className="mt-1">Teşekkürler!</p>
       </div>
