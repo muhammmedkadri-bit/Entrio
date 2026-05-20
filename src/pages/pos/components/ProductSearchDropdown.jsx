@@ -42,14 +42,13 @@ function DropdownRow({ product, onAdd, isHighlighted, rowRef }) {
   return (
     <div
       ref={rowRef}
-      className={`flex items-center justify-between px-3 py-2 transition-colors cursor-pointer ${isHighlighted ? 'bg-brand-50/50' : 'hover:bg-white/60'}`}
+      className={`flex flex-col sm:flex-row sm:items-center justify-between px-3 py-3 sm:py-2 transition-colors cursor-pointer border-b border-gray-100 last:border-0 ${isHighlighted ? 'bg-brand-50/50' : 'hover:bg-white/60'}`}
       onClick={() => { onAdd(product, 1); }}
     >
-      {/* Left */}
-      <div className="flex items-center gap-3 min-w-0 flex-1">
+      {/* Top/Left Section: Icon, Name, Price */}
+      <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto flex-1">
         <div 
           className="h-9 px-3 rounded-lg flex items-center justify-center transition-all bg-white/40 border border-black/5 backdrop-blur-[4px] shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] flex-shrink-0"
-          style={{ background: 'rgba(255, 255, 255, 0.45)' }}
         >
           {product.barcode ? (
             <div className="scale-[0.85] origin-center -my-1">
@@ -60,52 +59,31 @@ function DropdownRow({ product, onAdd, isHighlighted, rowRef }) {
           )}
         </div>
         
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 flex flex-col justify-center">
           <div className="text-sm font-bold text-gray-800 line-clamp-1">{product.name}</div>
+          <div className="text-xs font-bold text-brand-600 mt-0.5">{formatCurrency(product.sale_price)}</div>
         </div>
-        
-
 
         {/* Stock Pill */}
         <span
           className="text-[10px] font-bold px-2.5 py-1 rounded-md flex items-center justify-center whitespace-nowrap shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex-shrink-0"
-          style={{
-            background: stockStyle.bg,
-            color: stockStyle.text,
-            border: `1px solid ${stockStyle.border}`,
-          }}
+          style={{ background: stockStyle.bg, color: stockStyle.text, border: `1px solid ${stockStyle.border}` }}
         >
           {stockStyle.label}
         </span>
       </div>
 
-      {/* Right: qty + add */}
-      <div className="flex items-center gap-2 flex-shrink-0 ml-4" onClick={e => e.stopPropagation()}>
+      {/* Bottom/Right Section: Qty & Add */}
+      <div className="flex items-center justify-between sm:justify-end gap-2 flex-shrink-0 w-full sm:w-auto mt-3 sm:mt-0 ml-0 sm:ml-4" onClick={e => e.stopPropagation()}>
         {/* Qty pill */}
-        <div className="flex items-stretch h-[32px] rounded-lg shadow-sm">
-          <button
-            onClick={() => setQty(q => Math.max(1, q - 1))}
-            className="w-8 flex items-center justify-center rounded-l-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-500 transition-colors"
-          >
-            <Minus className="w-3 h-3" />
-          </button>
-          <div className="w-10 border-y border-gray-200 bg-white flex items-center justify-center text-sm font-bold text-gray-700 select-none">
-            {qty}
-          </div>
-          <button
-            onClick={() => setQty(q => q + 1)}
-            className="w-8 flex items-center justify-center rounded-r-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-500 transition-colors"
-          >
-            <Plus className="w-3 h-3" />
-          </button>
+        <div className="flex items-stretch h-[32px] rounded-lg shadow-sm flex-1 sm:flex-none">
+          <button onClick={() => setQty(q => Math.max(1, q - 1))} className="flex-1 sm:w-8 flex items-center justify-center rounded-l-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-500"><Minus className="w-3 h-3" /></button>
+          <div className="w-12 sm:w-10 border-y border-gray-200 bg-white flex items-center justify-center text-sm font-bold text-gray-700 select-none">{qty}</div>
+          <button onClick={() => setQty(q => q + 1)} className="flex-1 sm:w-8 flex items-center justify-center rounded-r-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-500"><Plus className="w-3 h-3" /></button>
         </div>
-
         {/* Add btn */}
-        <button
-          style={glassAddBtn}
-          onClick={() => onAdd(product, qty)}
-        >
-          <ShoppingCart className="w-4 h-4" />
+        <button style={glassAddBtn} onClick={() => onAdd(product, qty)} className="flex-1 sm:flex-none justify-center">
+          <ShoppingCart className="w-4 h-4" /> <span className="sm:hidden ml-1 font-bold">Ekle</span>
         </button>
       </div>
     </div>

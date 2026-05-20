@@ -17,6 +17,7 @@ export const MobilePOS = ({
   // Entities
   selectedCustomer, selectedSupplier,
   setCustomerModalOpen, setSupplierSearchOpen,
+  cashRegisters = [], selectedRegisters = {}, setSelectedRegisters,
   // Cart
   items, addItem, removeItem, updateQty, clearCart,
   total,
@@ -223,25 +224,49 @@ export const MobilePOS = ({
               </div>
 
               {/* Payment Area */}
-              <div className="p-5 bg-white border-t border-slate-200 pb-8">
+              <div className="p-5 bg-white border-t border-slate-200 pb-28">
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-slate-500 font-medium">Ödenecek Tutar</span>
                   <span className="text-2xl font-black text-slate-900">{formatCurrency(total)}</span>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-2 mb-4">
-                  {paymentOptions.map(opt => (
-                    <button
-                      key={opt.id}
-                      onClick={() => handlePaymentSelect(opt.id)}
-                      className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all ${
-                        paymentMethod === opt.id ? `${opt.border} ${opt.bg}` : 'border-slate-100 bg-slate-50'
-                      }`}
-                    >
-                      <opt.icon className={`w-5 h-5 mb-1 ${paymentMethod === opt.id ? opt.color : 'text-slate-400'}`} />
-                      <span className={`text-xs font-bold ${paymentMethod === opt.id ? opt.color : 'text-slate-600'}`}>{opt.label}</span>
-                    </button>
-                  ))}
+                  {paymentOptions.map(opt => {
+                    const isActive = paymentMethod === opt.id;
+                    const isMixed = paymentMethod === 'mixed';
+                    const isDimmed = !isActive && !isMixed;
+                    const opts = opt.id === 'cash' ? cashRegisters.filter(r => r.type === 'cash') :
+                                 opt.id === 'card' ? cashRegisters.filter(r => r.type === 'pos') :
+                                 opt.id === 'transfer' ? cashRegisters.filter(r => r.type === 'bank') : [];
+
+                    return (
+                      <div key={opt.id} className="flex flex-col gap-1">
+                        <button
+                          onClick={() => handlePaymentSelect(opt.id)}
+                          className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all ${
+                            isActive ? `${opt.border} ${opt.bg}` : 'border-slate-100 bg-slate-50'
+                          } ${isDimmed ? 'opacity-50' : ''}`}
+                        >
+                          <opt.icon className={`w-5 h-5 mb-1 ${isActive ? opt.color : 'text-slate-400'}`} />
+                          <span className={`text-xs font-bold ${isActive ? opt.color : 'text-slate-600'}`}>{opt.label}</span>
+                        </button>
+                        
+                        {(isActive || isMixed) && opt.id !== 'mixed' && opts.length > 0 && (
+                          <select
+                            value={selectedRegisters?.[opt.id] || ''}
+                            onChange={(e) => setSelectedRegisters && setSelectedRegisters(prev => ({ ...prev, [opt.id]: e.target.value }))}
+                            className="w-full text-[10px] font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <option value="">(Varsayılan Kasa)</option>
+                            {opts.map(r => (
+                              <option key={r.id} value={r.id}>{r.name}</option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <button

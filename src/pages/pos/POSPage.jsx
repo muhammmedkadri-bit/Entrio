@@ -619,7 +619,10 @@ export const POSPage = () => {
 
     setIsProcessing(true);
     try {
-      const paymentData = { method: paymentMethod, cashAmount: pCash, cardAmount: pCard, transferAmount: pTransfer, creditAmount: pCredit };
+      const paymentData = { 
+        method: paymentMethod, cashAmount: pCash, cardAmount: pCard, transferAmount: pTransfer, creditAmount: pCredit,
+        overrideRegisterId: paymentMethod !== 'mixed' && selectedRegisters[paymentMethod] ? selectedRegisters[paymentMethod] : null
+      };
 
       if (posMode === 'purchase') {
         const purchaseData = {
@@ -1354,6 +1357,7 @@ export const POSPage = () => {
           posMode={posMode} setPosMode={setPosMode}
           selectedCustomer={selectedCustomer} selectedSupplier={selectedSupplier}
           setCustomerModalOpen={setCustomerModalOpen} setSupplierSearchOpen={setSupplierSearchOpen}
+          cashRegisters={cashRegisters} selectedRegisters={selectedRegisters} setSelectedRegisters={setSelectedRegisters}
           items={items} addItem={addItem} removeItem={removeItem} updateQty={updateQty} clearCart={clearCart}
           total={total} subtotal={subtotal} discountAmount={discountAmount} discountType={discountType} discountValue={discountValue} discountEnabled={discountEnabled}
           paymentMethod={paymentMethod} handlePaymentSelect={handlePaymentSelect} handleCheckout={handleCheckout} isProcessing={isProcessing}
