@@ -38,6 +38,18 @@ export const MobilePOS = ({
   const [cartOpen, setCartOpen] = useState(false);
   const cartItemCount = items.reduce((acc, item) => acc + item.quantity, 0);
 
+  // Lock background scroll when cart is open
+  useEffect(() => {
+    if (cartOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [cartOpen]);
+
   const paymentOptions = [
     { id: 'cash', label: 'Nakit', icon: Banknote, color: 'text-[#3a8024]', bg: 'bg-[#7ed957]/15', border: 'border-[#7ed957]/40' },
     { id: 'card', label: 'Kredi Kartı', icon: CreditCard, color: 'text-blue-700', bg: 'bg-blue-500/15', border: 'border-blue-500/40' },
@@ -345,7 +357,7 @@ export const MobilePOS = ({
                 >
                   {isProcessing ? 'İşleniyor...' : (
                     <>
-                      <CheckCircle2 className="w-5 h-5" /> Siparişi Tamamla
+                      <CheckCircle2 className="w-5 h-5" /> {posMode === 'return' ? 'İadeyi Tamamla' : posMode === 'purchase' ? 'Alımı Tamamla' : 'Siparişi Tamamla'}
                     </>
                   )}
                 </button>

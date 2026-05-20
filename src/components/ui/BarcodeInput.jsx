@@ -136,16 +136,29 @@ export const BarcodeInput = ({
   return (
     <div className={`flex flex-col ${className}`}>
       {useCamera ? (
-        <div className="relative rounded-lg overflow-hidden border-2 border-brand-500 bg-black aspect-video">
+        <div className="relative rounded-lg overflow-hidden border-2 border-brand-500 bg-black h-64 sm:h-72 w-full flex items-center justify-center">
           <video ref={videoRef} className="w-full h-full object-cover" />
           <button
             onClick={() => setUseCamera(false)}
-            className="absolute top-2 right-2 px-3 py-1 bg-red-500 text-white rounded-md text-xs font-semibold shadow-lg hover:bg-red-600 transition-colors"
+            className="absolute top-3 right-3 px-4 py-2 bg-red-500 text-white rounded-lg text-xs font-bold shadow-xl hover:bg-red-600 transition-colors z-10"
           >
-            İptal
+            Kapat
           </button>
-          <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none">
-            <div className="w-48 h-10 border-2 border-green-500"></div>
+          
+          {/* A large semi-transparent overlay just to indicate the scan area instead of a tiny box */}
+          <div className="absolute inset-0 border-[40px] border-black/30 pointer-events-none"></div>
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-[80%] h-[60%] border-2 border-green-500/50 rounded-xl relative">
+              {/* Corner brackets */}
+              <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-green-500 rounded-tl-xl"></div>
+              <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-green-500 rounded-tr-xl"></div>
+              <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-green-500 rounded-bl-xl"></div>
+              <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-green-500 rounded-br-xl"></div>
+              
+              <div className="absolute -bottom-8 left-0 right-0 text-center text-white text-[10px] font-medium drop-shadow-md">
+                Barkodu çerçevenin içine hizalayın
+              </div>
+            </div>
           </div>
         </div>
       ) : (
