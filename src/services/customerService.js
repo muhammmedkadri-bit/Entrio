@@ -325,6 +325,8 @@ export const customerService = {
 
   async getTransactions(customerId, filters = {}) {
     try {
+      const getTime = (val) => { if (!val) return 0; const n = Number(val); if (!isNaN(n)) return n; return new Date(val).getTime() || 0; };
+
       if (isSupabase()) {
         let query = supabase.from('customer_transactions').select('*').eq('customer_id', customerId).order('created_at', { ascending: false });
         const { data, error } = await query;
@@ -349,7 +351,7 @@ export const customerService = {
                     amount: s.total_amount,
                     balance_after: 0,
                     payment_method: s.payment_method,
-                    transaction_date: new Date(Number(s.created_at)).toISOString(),
+                    transaction_date: new Date(getTime(s.created_at)).toISOString(),
                     reference_id: s.id,
                     sale_number: s.sale_number,
                     notes: isReturn ? 'Peşin Satış İadesi' : 'Peşin Satış',
@@ -366,7 +368,7 @@ export const customerService = {
 
         // Matematik Hesaplama Mantığı Düzeltmesi
         // Önce işlemleri eskiden yeniye sıralıyoruz ki koşu bakiyesini hesaplayabilelim
-        combinedTxs.sort((a, b) => Number(a.created_at) - Number(b.created_at));
+        combinedTxs.sort((a, b) => getTime(a.created_at) - getTime(b.created_at));
 
         let currentBalance = 0;
         for (const t of combinedTxs) {
@@ -388,13 +390,14 @@ export const customerService = {
               return typeof a.id === 'string' && typeof b.id === 'number' ? 1 : 
                      typeof a.id === 'number' && typeof b.id === 'string' ? -1 : 0;
           }
-          return Number(b.created_at) - Number(a.created_at);
+          return getTime(b.created_at) - getTime(a.created_at);
         });
 
         txs = combinedTxs;
+        } // CLOSING salesData block
 
         if (filters.startDate && filters.endDate) {
-          txs = txs.filter(t => isWithinInterval(Number(t.created_at), { start: filters.startDate, end: filters.endDate }));
+          txs = txs.filter(t => isWithinInterval(getTime(t.created_at), { start: filters.startDate, end: filters.endDate }));
         }
         if (filters.type && filters.type !== 'all') txs = txs.filter(t => t.transaction_type === filters.type);
         return txs;
@@ -416,7 +419,7 @@ export const customerService = {
               amount: s.total_amount,
               balance_after: 0, // Geçici olarak 0, aşağıda hesaplanacak
               payment_method: s.payment_method,
-              transaction_date: new Date(Number(s.created_at)).toISOString(),
+              transaction_date: new Date(getTime(s.created_at)).toISOString(),
               reference_id: s.id,
               sale_number: s.sale_number,
               notes: isReturn ? 'Peşin Satış İadesi' : 'Peşin Satış',
@@ -430,7 +433,7 @@ export const customerService = {
 
       // Matematik Hesaplama Mantığı Düzeltmesi (Peşin işlemlerde bakiye sıfırlanmasını engelle)
       // Önce işlemleri eskiden yeniye sıralıyoruz ki koşu bakiyesini hesaplayabilelim
-      combinedTxs.sort((a, b) => Number(a.created_at) - Number(b.created_at));
+      combinedTxs.sort((a, b) => getTime(a.created_at) - getTime(b.created_at));
 
       let currentBalance = 0;
       for (const t of combinedTxs) {
@@ -454,7 +457,7 @@ export const customerService = {
             return typeof a.id === 'string' && typeof b.id === 'number' ? 1 : 
                    typeof a.id === 'number' && typeof b.id === 'string' ? -1 : 0;
         }
-        return Number(b.created_at) - Number(a.created_at);
+        return getTime(b.created_at) - getTime(a.created_at);
       });
       
       txs = combinedTxs;
