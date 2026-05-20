@@ -128,33 +128,27 @@ export const CustomersPage = () => {
         </div>
       </div>
 
-      {/* ── Toolbar ────────────────────────────────────────────────────── */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-2 rounded-xl shadow-sm border border-slate-200">
-        
-        {/* Left Side: Search */}
-        <div className="flex flex-col sm:flex-row items-center justify-start gap-3 w-full lg:w-auto">
-          <div className="relative w-full sm:w-96 group">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-brand-500 transition-colors" />
-            <input 
-              type="text" 
-              placeholder="Müşteri Ara..." 
-              value={search} 
-              onChange={e => setSearch(e.target.value)} 
-              className="block w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg leading-5 bg-white placeholder-slate-500 focus:outline-none focus:placeholder-slate-400 focus:ring-1 focus:ring-brand-500 focus:border-brand-500 sm:text-sm shadow-sm transition-all"
-            />
-          </div>
+      {/* ── Toolbar ────────────────────────────────────────────────── */}
+      <div className="flex flex-row items-center gap-2 bg-white p-2 rounded-xl shadow-sm border border-slate-200">
+        {/* Search */}
+        <div className="relative flex-1 group">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-brand-500 transition-colors" />
+          <input
+            type="text"
+            placeholder="Müşteri Ara..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="block w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-lg leading-5 bg-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-500 text-sm shadow-sm transition-all"
+          />
         </div>
-
-        {/* Right Side: Action Buttons */}
-        <div className="flex items-center gap-2 flex-shrink-0 h-[46px] ml-auto">
-          <button
-            onClick={() => openForm(null)}
-            className="flex items-center gap-2 px-4 py-3 h-full text-sm font-bold bg-white border border-[#7ed957] rounded-lg text-[#7ed957] hover:bg-[#7ed957]/10 shadow-sm active:scale-95 transition-all outline-none whitespace-nowrap"
-          >
-            <Plus className="w-4 h-4" />
-            Müşteri Ekle
-          </button>
-        </div>
+        {/* Add button */}
+        <button
+          onClick={() => openForm(null)}
+          className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold bg-white border border-[#7ed957] rounded-lg text-[#7ed957] hover:bg-[#7ed957]/10 shadow-sm active:scale-95 transition-all outline-none whitespace-nowrap shrink-0"
+        >
+          <Plus className="w-4 h-4" />
+          <span className="hidden sm:inline">Müşteri Ekle</span>
+        </button>
       </div>
 
       {/* ── List / Cards ────────────────────────────────────────────────── */}
