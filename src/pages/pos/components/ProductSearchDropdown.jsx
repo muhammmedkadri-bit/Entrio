@@ -45,28 +45,37 @@ function DropdownRow({ product, onAdd, isHighlighted, rowRef }) {
       className={`flex flex-col sm:flex-row sm:items-center justify-between px-3 py-3 sm:py-2 transition-colors cursor-pointer border-b border-gray-100 last:border-0 ${isHighlighted ? 'bg-brand-50/50' : 'hover:bg-white/60'}`}
       onClick={() => { onAdd(product, 1); }}
     >
-      {/* Top/Left Section: Icon, Name, Price */}
-      <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto flex-1">
-        <div 
-          className="h-9 px-3 rounded-lg flex items-center justify-center transition-all bg-white/40 border border-black/5 backdrop-blur-[4px] shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] flex-shrink-0"
-        >
-          {product.barcode ? (
-            <div className="scale-[0.85] origin-center -my-1">
-              <BarcodeStripes value={product.barcode} color="#000000" />
-            </div>
-          ) : (
-            <Package className="w-5 h-5 text-gray-400" />
-          )}
+      {/* Product Info Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0 w-full sm:w-auto flex-1">
+        {/* Mobile Top Row: Barcode & Stock Pill */}
+        <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto">
+          <div className="h-9 px-3 rounded-lg flex items-center justify-center transition-all bg-white/40 border border-black/5 backdrop-blur-[4px] shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] flex-shrink-0">
+            {product.barcode ? (
+              <div className="scale-[0.85] origin-center -my-1">
+                <BarcodeStripes value={product.barcode} color="#000000" />
+              </div>
+            ) : (
+              <Package className="w-5 h-5 text-gray-400" />
+            )}
+          </div>
+          {/* Mobile-only Stock Pill (Top Right) */}
+          <span
+            className="sm:hidden text-[10px] font-bold px-2.5 py-1 rounded-md flex items-center justify-center whitespace-nowrap shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex-shrink-0"
+            style={{ background: stockStyle.bg, color: stockStyle.text, border: `1px solid ${stockStyle.border}` }}
+          >
+            {stockStyle.label}
+          </span>
         </div>
         
-        <div className="min-w-0 flex-1 flex flex-col justify-center">
-          <div className="text-sm font-bold text-gray-800 line-clamp-1">{product.name}</div>
-          <div className="text-xs font-bold text-brand-600 mt-0.5">{formatCurrency(product.sale_price)}</div>
+        {/* Name & Price */}
+        <div className="min-w-0 flex-1 flex flex-col justify-center w-full">
+          <div className="text-sm font-bold text-gray-800 line-clamp-2 leading-tight">{product.name}</div>
+          <div className="text-[11px] font-bold text-brand-600 mt-1">{formatCurrency(product.sale_price)}</div>
         </div>
 
-        {/* Stock Pill */}
+        {/* Desktop-only Stock Pill */}
         <span
-          className="text-[10px] font-bold px-2.5 py-1 rounded-md flex items-center justify-center whitespace-nowrap shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex-shrink-0"
+          className="hidden sm:flex text-[10px] font-bold px-2.5 py-1 rounded-md items-center justify-center whitespace-nowrap shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex-shrink-0"
           style={{ background: stockStyle.bg, color: stockStyle.text, border: `1px solid ${stockStyle.border}` }}
         >
           {stockStyle.label}

@@ -1358,7 +1358,7 @@ export const POSPage = () => {
           selectedCustomer={selectedCustomer} selectedSupplier={selectedSupplier}
           setCustomerModalOpen={setCustomerModalOpen} setSupplierSearchOpen={setSupplierSearchOpen}
           cashRegisters={cashRegisters} selectedRegisters={selectedRegisters} setSelectedRegisters={setSelectedRegisters}
-          items={items} addItem={addItem} removeItem={removeItem} updateQty={updateQty} clearCart={clearCart}
+          items={items} addItem={addItem} removeItem={removeItem} updateQty={updateQty} clearCart={clearCart} updateItemPrice={updateItemPrice}
           total={total} subtotal={subtotal} discountAmount={discountAmount} discountType={discountType} discountValue={discountValue} discountEnabled={discountEnabled}
           paymentMethod={paymentMethod} handlePaymentSelect={handlePaymentSelect} handleCheckout={handleCheckout} isProcessing={isProcessing}
           searchQuery={searchQuery} setSearchQuery={setSearchQuery} dropdownResults={dropdownResults} showDropdown={showDropdown} setShowDropdown={setShowDropdown}

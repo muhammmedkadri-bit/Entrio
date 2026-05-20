@@ -19,7 +19,7 @@ export const MobilePOS = ({
   setCustomerModalOpen, setSupplierSearchOpen,
   cashRegisters = [], selectedRegisters = {}, setSelectedRegisters,
   // Cart
-  items, addItem, removeItem, updateQty, clearCart,
+  items, addItem, removeItem, updateQty, clearCart, updateItemPrice,
   total,
   // Payments
   paymentMethod, handlePaymentSelect, handleCheckout, isProcessing,
@@ -40,8 +40,9 @@ export const MobilePOS = ({
   const paymentOptions = [
     { id: 'cash', label: 'Nakit', icon: Banknote, color: 'text-[#3a8024]', bg: 'bg-[#7ed957]/15', border: 'border-[#7ed957]/40' },
     { id: 'card', label: 'Kredi Kartı', icon: CreditCard, color: 'text-blue-700', bg: 'bg-blue-500/15', border: 'border-blue-500/40' },
-    { id: 'transfer', label: 'Havale/EFT', icon: Building2, color: 'text-purple-700', bg: 'bg-purple-500/15', border: 'border-purple-500/40' },
+    { id: 'transfer', label: 'Havale', icon: Building2, color: 'text-purple-700', bg: 'bg-purple-500/15', border: 'border-purple-500/40' },
     { id: 'mixed', label: 'Parçalı', icon: SplitSquareHorizontal, color: 'text-orange-700', bg: 'bg-orange-500/15', border: 'border-orange-500/40' },
+    { id: 'credit', label: posMode === 'purchase' ? 'Ted. Öde' : 'Veresiye', icon: UserIcon, color: 'text-rose-700', bg: 'bg-rose-500/15', border: 'border-rose-500/40' },
   ];
 
   return (
@@ -95,16 +96,20 @@ export const MobilePOS = ({
             value={searchQuery}
             onChange={posMode === 'return' ? undefined : e => setSearchQuery(e.target.value)}
             onFocus={posMode === 'return' ? undefined : () => searchQuery && setShowDropdown(true)}
-            onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
             placeholder={posMode === 'return' ? 'İade modunda devre dışı' : 'Barkod okut veya ara...'}
           />
           {showDropdown && (
-            <ProductSearchDropdown
-              query={searchQuery}
-              results={dropdownResults}
-              onAdd={handleAddProduct}
-              onClose={() => { setShowDropdown(false); setSearchQuery(''); }}
-            />
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowDropdown(false)}></div>
+              <div className="relative z-50">
+                <ProductSearchDropdown
+                  query={searchQuery}
+                  results={dropdownResults}
+                  onAdd={handleAddProduct}
+                  onClose={() => { setShowDropdown(false); setSearchQuery(''); }}
+                />
+              </div>
+            </>
           )}
         </div>
         
@@ -131,7 +136,7 @@ export const MobilePOS = ({
              {[...Array(6)].map((_, i) => <ProductSkeleton key={`skeleton-${i}`} />)}
            </div>
         ) : displayedProducts.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pb-[120px]">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pb-[20px]">
             {displayedProducts.map((p, idx) => (
               <div key={p.id} onClick={swapMode ? () => handleGridCardClickForSwap(p, idx) : undefined}>
                 <ProductCard
@@ -185,6 +190,11 @@ export const MobilePOS = ({
             <motion.div
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+              drag="y"
+              dragConstraints={{ top: 0 }}
+              onDragEnd={(e, info) => {
+                if (info.offset.y > 100) setCartOpen(false);
+              }}
               className="fixed inset-x-0 bottom-0 bg-white rounded-t-3xl z-[70] flex flex-col max-h-[90vh]"
             >
               <div className="flex justify-center pt-3 pb-1" onClick={() => setCartOpen(false)}>
@@ -199,23 +209,38 @@ export const MobilePOS = ({
               </div>
 
               {/* Cart Items */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="flex-1 overflow-y-auto p-3 space-y-2">
                 {items.length === 0 ? (
                   <div className="text-center text-slate-400 py-6">Sepetiniz boş</div>
                 ) : (
                   items.map(item => (
-                    <div key={item.id} className="flex gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                      <div className="flex-1">
+                    <div key={item.id} className="flex gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                      <div className="flex-1 min-w-0 flex flex-col justify-center">
                         <div className="font-bold text-sm text-slate-800 line-clamp-1">{item.product.name}</div>
-                        <div className="text-xs text-brand-600 font-bold">{formatCurrency(item.unit_price || item.product.sale_price)}</div>
+                        <div 
+                          className="text-xs text-brand-600 font-bold px-1.5 py-0.5 rounded bg-brand-50 inline-block mt-0.5 w-fit"
+                          onClick={() => {
+                            if (updateItemPrice) {
+                              const newPriceStr = window.prompt('Yeni birim fiyatını girin:', item.unit_price || item.product.sale_price);
+                              if (newPriceStr !== null) {
+                                const newPrice = parseFloat(newPriceStr.replace(',', '.'));
+                                if (!isNaN(newPrice) && newPrice >= 0) {
+                                  updateItemPrice(item.product.id, newPrice);
+                                }
+                              }
+                            }
+                          }}
+                        >
+                          {formatCurrency(item.unit_price || item.product.sale_price)}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <button onClick={() => item.quantity <= 1 ? removeItem(item.product.id) : updateQty(item.product.id, item.quantity - 1)} className="w-8 h-8 flex items-center justify-center bg-white rounded-lg border border-slate-200 shadow-sm">
-                          {item.quantity <= 1 ? <Trash2 className="w-4 h-4 text-red-500" /> : <Minus className="w-4 h-4" />}
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => item.quantity <= 1 ? removeItem(item.product.id) : updateQty(item.product.id, item.quantity - 1)} className="w-7 h-7 flex items-center justify-center bg-white rounded-lg border border-slate-200 shadow-sm">
+                          {item.quantity <= 1 ? <Trash2 className="w-3.5 h-3.5 text-red-500" /> : <Minus className="w-3.5 h-3.5" />}
                         </button>
-                        <span className="font-bold w-4 text-center">{item.quantity}</span>
-                        <button onClick={() => updateQty(item.product.id, item.quantity + 1)} className="w-8 h-8 flex items-center justify-center bg-white rounded-lg border border-slate-200 shadow-sm text-brand-600">
-                          <Plus className="w-4 h-4" />
+                        <span className="font-bold text-sm w-4 text-center">{item.quantity}</span>
+                        <button onClick={() => updateQty(item.product.id, item.quantity + 1)} className="w-7 h-7 flex items-center justify-center bg-white rounded-lg border border-slate-200 shadow-sm text-brand-600">
+                          <Plus className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
@@ -224,13 +249,14 @@ export const MobilePOS = ({
               </div>
 
               {/* Payment Area */}
-              <div className="p-5 bg-white border-t border-slate-200 pb-28">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-slate-500 font-medium">Ödenecek Tutar</span>
-                  <span className="text-2xl font-black text-slate-900">{formatCurrency(total)}</span>
+              <div className="p-4 bg-white border-t border-slate-200 pb-28">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-slate-500 text-sm font-medium">Ödenecek Tutar</span>
+                  <span className="text-xl font-black text-slate-900">{formatCurrency(total)}</span>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-2 mb-4">
+                {/* Horizontal Scrolling Payment Chips */}
+                <div className="flex overflow-x-auto gap-2 mb-3 pb-2 scrollbar-hide">
                   {paymentOptions.map(opt => {
                     const isActive = paymentMethod === opt.id;
                     const isMixed = paymentMethod === 'mixed';
@@ -240,25 +266,25 @@ export const MobilePOS = ({
                                  opt.id === 'transfer' ? cashRegisters.filter(r => r.type === 'bank') : [];
 
                     return (
-                      <div key={opt.id} className="flex flex-col gap-1">
+                      <div key={opt.id} className="flex flex-col gap-1 shrink-0 w-24">
                         <button
                           onClick={() => handlePaymentSelect(opt.id)}
-                          className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all ${
+                          className={`flex flex-col items-center justify-center p-2 rounded-xl border-2 transition-all h-[60px] ${
                             isActive ? `${opt.border} ${opt.bg}` : 'border-slate-100 bg-slate-50'
                           } ${isDimmed ? 'opacity-50' : ''}`}
                         >
-                          <opt.icon className={`w-5 h-5 mb-1 ${isActive ? opt.color : 'text-slate-400'}`} />
-                          <span className={`text-xs font-bold ${isActive ? opt.color : 'text-slate-600'}`}>{opt.label}</span>
+                          <opt.icon className={`w-4 h-4 mb-1 ${isActive ? opt.color : 'text-slate-400'}`} />
+                          <span className={`text-[10px] font-bold ${isActive ? opt.color : 'text-slate-600'} whitespace-nowrap`}>{opt.label}</span>
                         </button>
                         
                         {(isActive || isMixed) && opt.id !== 'mixed' && opts.length > 0 && (
                           <select
                             value={selectedRegisters?.[opt.id] || ''}
                             onChange={(e) => setSelectedRegisters && setSelectedRegisters(prev => ({ ...prev, [opt.id]: e.target.value }))}
-                            className="w-full text-[10px] font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                            className="w-full text-[9px] font-semibold text-slate-600 bg-white border border-slate-200 rounded-md p-1 focus:outline-none focus:ring-1 focus:ring-brand-500 truncate"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <option value="">(Varsayılan Kasa)</option>
+                            <option value="">Kasa Seç</option>
                             {opts.map(r => (
                               <option key={r.id} value={r.id}>{r.name}</option>
                             ))}
@@ -275,11 +301,11 @@ export const MobilePOS = ({
                     setTimeout(() => handleCheckout(), 300);
                   }}
                   disabled={isProcessing || items.length === 0}
-                  className="w-full h-14 bg-brand-500 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg shadow-brand-500/30 active:scale-[0.98] transition-transform disabled:opacity-50 disabled:active:scale-100"
+                  className="w-full h-12 bg-brand-500 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg shadow-brand-500/30 active:scale-[0.98] transition-transform disabled:opacity-50 disabled:active:scale-100"
                 >
                   {isProcessing ? 'İşleniyor...' : (
                     <>
-                      <CheckCircle2 className="w-6 h-6" /> Siparişi Tamamla
+                      <CheckCircle2 className="w-5 h-5" /> Siparişi Tamamla
                     </>
                   )}
                 </button>
