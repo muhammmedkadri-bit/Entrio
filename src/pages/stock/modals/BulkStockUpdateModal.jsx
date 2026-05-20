@@ -213,10 +213,10 @@ export const BulkStockUpdateModal = ({ isOpen, onClose, onSaved }) => {
                   return (
                     <div
                       key={product.id}
-                      className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl hover:border-blue-300 hover:shadow-sm transition-all"
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-white border border-gray-200 rounded-xl hover:border-blue-300 hover:shadow-sm transition-all gap-3 sm:gap-0"
                     >
                       {/* Product Info */}
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="flex items-center gap-3 w-full sm:w-auto sm:flex-1 min-w-0">
                         <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-gray-50 border border-gray-100 flex-shrink-0">
                           <Package className="w-5 h-5 text-gray-400" />
                         </div>
@@ -229,10 +229,10 @@ export const BulkStockUpdateModal = ({ isOpen, onClose, onSaved }) => {
                       </div>
                       
                       {/* Stock Update Controls */}
-                      <div className="flex items-center gap-5 flex-shrink-0">
+                      <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-5 w-full sm:w-auto flex-shrink-0 bg-slate-50/50 sm:bg-transparent p-2 sm:p-0 rounded-lg sm:rounded-none">
                         
                         {/* Current Stock */}
-                        <div className="flex flex-col items-end">
+                        <div className="flex flex-col items-end sm:items-end">
                           <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mb-1">Mevcut</span>
                           <span
                             className="text-sm font-bold px-2.5 py-0.5 rounded-md flex items-center justify-center min-w-[60px]"
@@ -244,26 +244,26 @@ export const BulkStockUpdateModal = ({ isOpen, onClose, onSaved }) => {
                           </span>
                         </div>
 
-                        <ArrowRight className="w-4 h-4 text-gray-300" />
+                        <ArrowRight className="w-4 h-4 text-gray-300 shrink-0" />
 
                         {/* New Stock Input */}
-                        <div className="flex flex-col items-start">
+                        <div className="flex flex-col items-start sm:items-start flex-1 sm:flex-initial">
                            <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mb-1">Yeni Stok</span>
-                           <div className="flex items-center gap-2">
-                             <div className="relative">
+                           <div className="flex items-center gap-2 w-full sm:w-auto">
+                             <div className="relative flex-1 sm:flex-none">
                                <input 
                                  type="number"
                                  placeholder={currentStock}
                                  value={inputValue}
                                  onChange={e => handleInputChange(product.id, e.target.value)}
                                  onKeyDown={e => { if (e.key === 'Enter') handleSave(product); }}
-                                 className="w-20 px-2 py-1 text-center text-sm font-bold text-gray-800 border-2 border-gray-200 rounded-lg focus:ring-0 focus:border-blue-400 outline-none transition-colors"
+                                 className="w-full sm:w-20 px-2 py-1 text-center text-sm font-bold text-gray-800 border-2 border-gray-200 rounded-lg focus:ring-0 focus:border-blue-400 outline-none transition-colors"
                                />
                              </div>
                              <button
                                onClick={() => handleSave(product)}
                                disabled={!isDirty || isSaving}
-                               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 border ${
+                               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 border shrink-0 ${
                                  isDirty && !isSaving
                                    ? 'bg-blue-500 text-white border-blue-600 hover:bg-blue-600 shadow-sm'
                                    : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'

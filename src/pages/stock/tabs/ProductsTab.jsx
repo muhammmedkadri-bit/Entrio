@@ -96,7 +96,7 @@ export const ProductsTab = ({ search, categoryFilter, stockStatus, onEditProduct
         className={`flex items-center justify-center w-7 h-7 text-xs rounded-lg transition-colors ${
           currentPage === i
             ? 'bg-[#7ed957]/10 border border-[#7ed957]/30 text-[#5da83f] font-semibold'
-            : 'bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.7)] text-gray-500 hover:bg-white/40'
+            : 'sm:bg-white/20 bg-white sm:backdrop-blur-md border sm:border-white/40 border-gray-200 sm:shadow-[0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.7)] text-gray-500 hover:bg-gray-50'
         }`}
       >{i}</button>
     ));
@@ -117,7 +117,7 @@ export const ProductsTab = ({ search, categoryFilter, stockStatus, onEditProduct
         Outer card: auto height so it grows to fit exactly the rows present.
         No overflow-y-auto → no internal scroll needed for ≤10 rows.
       */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="hidden sm:block bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         {/* ─── Column header ─── */}
         <div className="grid items-center px-4 py-3 border-b border-slate-100 bg-slate-50/80" style={{ gridTemplateColumns: '2.5fr 1.2fr 1fr 1fr 1fr 32px' }}>
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Ürün</span>
@@ -210,17 +210,90 @@ export const ProductsTab = ({ search, categoryFilter, stockStatus, onEditProduct
         )}
       </div>
 
+      {/* ══════════════════════════════════════════════════════════════
+          MOBILE: Cards (sm:hidden)
+      ══════════════════════════════════════════════════════════════ */}
+      <div className="sm:hidden space-y-2">
+        {loading ? (
+          <div className="space-y-2">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="bg-white rounded-xl border border-slate-200 p-3 h-24 animate-pulse flex items-center gap-3">
+                <div className="w-10 h-10 bg-slate-100 rounded-lg shrink-0"></div>
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 bg-slate-100 rounded w-3/4"></div>
+                  <div className="h-2 bg-slate-100 rounded w-1/2"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : paginatedProducts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-2 text-slate-400">
+            <PackageX className="w-8 h-8 opacity-30" />
+            <p className="text-sm font-medium">Listelenecek ürün bulunamadı.</p>
+          </div>
+        ) : (
+          paginatedProducts.map(product => {
+            const ss = getStockStyle(product);
+            return (
+              <div
+                key={product.id}
+                onClick={() => { startNavigation(); setTimeout(() => navigate(`/stock/product/${product.id}`), 150); }}
+                className="bg-white rounded-xl border border-slate-200 overflow-hidden active:scale-[0.99] cursor-pointer hover:border-[#82e05a]/50 hover:shadow-sm transition-all"
+              >
+                {/* Header: Name, Barcode & Category */}
+                <div className="flex items-start justify-between p-3 border-b border-slate-50 gap-2">
+                  <div className="flex items-start gap-2.5 min-w-0">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#7ed957]/10 border border-[#7ed957]/20 shrink-0">
+                      <Package className="w-5 h-5 text-[#7ed957]" />
+                    </div>
+                    <div className="min-w-0 pt-0.5">
+                      <p className="text-sm font-bold text-slate-800 leading-tight truncate">{product.name}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] text-slate-400 font-mono" onClick={e => { e.stopPropagation(); navigator.clipboard.writeText(product.barcode); toast.success('Barkod kopyalandı.'); }}>{product.barcode}</span>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Category Tag */}
+                  <div className="shrink-0 mt-0.5">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
+                      <Tag className="w-2.5 h-2.5 opacity-70" />
+                      {product.categoryName}
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Body: Price & Stock */}
+                <div className="px-3 py-2.5 flex items-center justify-between bg-slate-50/50">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Satış Fiyatı</span>
+                    <span className="text-sm font-black text-[#5da83f] tabular-nums">{fmt(product.sale_price)}</span>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <div className="flex items-center gap-1.5">
+                      {ss.warn && <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-md tabular-nums" style={{ background: ss.bg, color: ss.text, border: `1px solid ${ss.border}` }}>
+                        Stok: {ss.label}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
       {/* Pagination */}
       {products.length > 0 && (
-        <div className="fixed bottom-5 right-6 flex items-center gap-3 z-20">
-          <span className="text-xs text-gray-400">
-            {products.length} ürün içinde {startItem}–{endItem} gösteriliyor
+        <div className="mt-4 sm:fixed sm:bottom-5 sm:right-6 flex items-center justify-between sm:justify-end gap-3 z-20 print:hidden">
+          <span className="text-xs text-gray-400 font-semibold">
+            {products.length} ürün içinde {startItem}–{endItem}
           </span>
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="flex items-center justify-center w-7 h-7 rounded-lg bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.7)] text-gray-500 hover:bg-white/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center justify-center w-7 h-7 rounded-lg sm:bg-white/20 bg-white sm:backdrop-blur-md border sm:border-white/40 border-gray-200 sm:shadow-[0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.7)] text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -228,7 +301,7 @@ export const ProductsTab = ({ search, categoryFilter, stockStatus, onEditProduct
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="flex items-center justify-center w-7 h-7 rounded-lg bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.7)] text-gray-500 hover:bg-white/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center justify-center w-7 h-7 rounded-lg sm:bg-white/20 bg-white sm:backdrop-blur-md border sm:border-white/40 border-gray-200 sm:shadow-[0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.7)] text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
