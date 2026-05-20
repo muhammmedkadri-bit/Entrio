@@ -33,17 +33,17 @@ export const ReportsPage = () => {
     <div className="flex flex-col h-full gap-3">
 
       {/* ── Single Hero Header ─────────────────────────────────────── */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 hide-on-print shrink-0 flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="bg-white sm:rounded-xl shadow-sm sm:border border-b border-slate-200 p-3 sm:p-4 hide-on-print shrink-0 flex flex-col gap-3 sm:gap-4 -mx-4 sm:mx-0 px-4 sm:px-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
           <div>
-            <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#82e05a]/20 flex items-center justify-center">
-                <BarChart2 className="w-5 h-5 text-[#5da83f]" />
+            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#82e05a]/20 flex items-center justify-center shrink-0">
+                <BarChart2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#5da83f]" />
               </div>
               Raporlar & Analizler
             </h1>
-            <p className="text-sm text-slate-500 mt-1">
-              Sistemdeki tüm verilerinizi gelişmiş grafiklerle izleyebilir, detaylı çıktı alabilirsiniz.
+            <p className="text-xs sm:text-sm text-slate-500 mt-1 sm:mt-1.5 line-clamp-1 sm:line-clamp-none">
+              Sistemdeki tüm verileri grafiklerle izleyin ve çıktı alın.
             </p>
           </div>
         </div>
