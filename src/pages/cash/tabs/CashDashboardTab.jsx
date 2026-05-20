@@ -482,7 +482,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
   };
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-6 pb-[160px] sm:pb-8">
       
       {/* Category Filters & Add Button */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -536,7 +536,58 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
         const visible = regs.slice(safeCardPage * CARDS_PER_PAGE, (safeCardPage + 1) * CARDS_PER_PAGE);
 
         return (
-          <div className="flex items-stretch gap-3">
+          <>
+          {/* Mobile: horizontal scroll snap */}
+          <div className="sm:hidden overflow-x-auto snap-x snap-mandatory flex gap-3 pb-2">
+            {isTableLoading ? (
+              [...Array(2)].map((_, i) => <RegisterCardSkeleton key={`mrs-${i}`} />)
+            ) : regs.length === 0 ? (
+              <div className="w-full p-8 text-center text-slate-400 bg-slate-50 border border-dashed border-slate-200 rounded-2xl text-sm">Bu kategoride tanımlı kasa bulunmamaktadır.</div>
+            ) : (
+              regs.map(reg => (
+                <div key={reg.id} className="snap-start flex-shrink-0" style={{ width: 'calc(100vw - 2rem)' }}>
+                  <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-col cursor-pointer min-h-[200px]" onClick={() => setRegTxModal(reg)}>
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {getRegIcon(reg.type)}
+                        <h3 className="text-sm font-bold text-slate-700 truncate">{reg.name}</h3>
+                        {reg.is_default_for && <span className="bg-[#7ed957]/15 text-[#5da83f] text-[10px] font-bold px-1.5 py-0.5 rounded-md border border-[#7ed957]/30 ml-1 flex-shrink-0">★</span>}
+                      </div>
+                      <button onClick={(e) => { e.stopPropagation(); openMenu(e, reg.id); }} className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 flex-shrink-0 ml-1">
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="flex-1 flex flex-col justify-center py-4 gap-2">
+                      {(() => {
+                        if (reg.type === 'credit_card') {
+                          const limit = reg.credit_limit || 0; const balance = reg.current_balance || 0; const remaining = limit + balance;
+                          return <div className={`text-2xl font-black tracking-tight leading-none ${remaining < 0 ? 'text-red-500' : 'text-slate-800'}`}>{formatCurrency(remaining)}<span className="text-[10px] font-semibold text-slate-400 ml-1.5 align-middle">kalan limit</span></div>;
+                        }
+                        const genBal = reg.general_balance ?? reg.current_balance ?? 0;
+                        const dailyNet = (reg.current_balance ?? 0) - genBal;
+                        return <div className={`text-2xl font-black tracking-tight leading-none ${dailyNet < 0 ? 'text-red-500' : dailyNet === 0 ? 'text-slate-400' : 'text-slate-800'}`}>{formatCurrency(dailyNet)}<span className="text-[10px] font-semibold text-slate-400 ml-1.5 align-middle">bugün</span></div>;
+                      })()}
+                      <div className="text-[11px] font-semibold text-slate-500 bg-slate-50 px-2 py-1.5 rounded-lg border border-slate-100 flex items-center justify-between">
+                        <span>{reg.type === 'credit_card' ? 'Güncel Borç:' : 'Toplam Bakiye:'}</span>
+                        <span className={(reg.current_balance ?? 0) < 0 ? 'text-red-500 font-bold' : 'text-slate-700 font-bold'}>{reg.type === 'credit_card' ? formatCurrency(Math.abs(reg.current_balance ?? 0)) : formatCurrency(reg.current_balance ?? 0)}</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      {reg.type === 'credit_card' ? (
+                        <button onClick={(e) => { e.stopPropagation(); setCreditCardPaymentReg(reg); }} className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-bold bg-[#82e05a]/15 text-[#5da83f] rounded-xl border border-[#82e05a]/30"><ArrowDownLeft className="w-3.5 h-3.5" /> Ödeme Yap</button>
+                      ) : (
+                        <button onClick={(e) => { e.stopPropagation(); openManualTx(reg, 'in'); }} className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-bold bg-[#82e05a]/15 text-[#5da83f] rounded-xl border border-[#82e05a]/30"><ArrowDownLeft className="w-3.5 h-3.5" /> Gelir</button>
+                      )}
+                      <button onClick={(e) => { e.stopPropagation(); openManualTx(reg, 'out'); }} className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-bold bg-rose-50 text-rose-600 rounded-xl border border-rose-200"><ArrowUpRight className="w-3.5 h-3.5" /> Gider</button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop: paged grid */}
+          <div className="hidden sm:flex items-stretch gap-3">
             {/* Left nav */}
             <button
               onClick={() => scrollCards(-1)}
@@ -666,6 +717,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
+          </>
         );
       })()}
 
@@ -852,7 +904,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
         <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
           <h3 className="font-bold text-slate-800 flex items-center gap-2"><History className="w-4 h-4 text-[#5da83f]" /> Son Hareketler</h3>
         </div>
-        <table className="w-full text-left text-sm">
+        <table className="hidden sm:table w-full text-left text-sm">
           <thead className="bg-slate-50 text-slate-500 border-b border-slate-200">
             <tr>
               <th className="p-3">Hareket Tipi</th>
@@ -962,29 +1014,104 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
             )}
           </tbody>
         </table>
+
+        {/* Mobile Card List */}
+        <div className="sm:hidden divide-y divide-slate-100">
+          {isTableLoading ? (
+            [...Array(5)].map((_, i) => (
+              <div key={i} className="p-3 animate-pulse flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-1">
+                  <div className="h-5 w-16 bg-slate-100 rounded-full flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="h-3 bg-slate-100 rounded w-3/4 mb-1" />
+                    <div className="h-3 bg-slate-100 rounded w-1/2" />
+                  </div>
+                </div>
+                <div className="h-4 w-16 bg-slate-100 rounded flex-shrink-0" />
+              </div>
+            ))
+          ) : paginatedTxs.length === 0 ? (
+            <div className="text-center p-8 text-slate-400 text-sm">Bu filtrelere uygun işlem bulunamadı.</div>
+          ) : (
+            paginatedTxs.map(tx => {
+              const isOut = ['purchase_out', 'supplier_payment_out', 'expense_out', 'withdrawal_out'].includes(tx.transaction_type);
+              const isReturn = tx.transaction_type === 'return_out';
+              const isTransfer = tx.transaction_type === 'transfer_out' || tx.transaction_type === 'transfer_in';
+              const isCreditPaymentIn = tx.transaction_type === 'credit_payment_in';
+              const isDayClose = tx.transaction_type === 'day_close';
+              const isAdj = tx.transaction_type === 'balance_adjustment';
+              let pillClass = 'bg-[#82e05a]/15 text-[#5da83f] border border-[#82e05a]/30';
+              let typeLabel = 'Gelir';
+              let IconComponent = ArrowUpRight;
+              if (isDayClose) { pillClass = 'bg-blue-100 text-blue-700 border border-blue-200'; typeLabel = 'Günsonu'; IconComponent = Moon; }
+              else if (isTransfer) { pillClass = 'bg-blue-50 text-blue-600 border border-blue-200'; typeLabel = 'Transfer'; IconComponent = ArrowRightLeft; }
+              else if (isCreditPaymentIn) { pillClass = 'bg-slate-100 text-slate-700 border border-slate-200'; typeLabel = 'K.Kartı'; IconComponent = ArrowDownLeft; }
+              else if (isAdj) { pillClass = 'bg-slate-50 text-slate-600 border border-slate-200'; typeLabel = 'Düzeltme'; IconComponent = Settings2; }
+              else if (isReturn) { pillClass = 'bg-orange-50 text-orange-600 border border-orange-200'; typeLabel = 'İade'; IconComponent = ArrowDownLeft; }
+              else if (isOut) { pillClass = 'bg-rose-50 text-rose-600 border border-rose-200'; typeLabel = 'Gider'; IconComponent = ArrowDownLeft; }
+              let desc = tx.notes || '';
+              if (isReturn) desc = tx._origSaleNumber ? `İade: ${tx._origSaleNumber}` : (tx.notes || 'İade Çıkışı');
+              else if (!desc) {
+                if (tx.transaction_type === 'sale_in') desc = 'Satış Geliri';
+                else if (tx.transaction_type === 'customer_payment_in') desc = 'Cari Tahsilat';
+                else if (tx.transaction_type === 'purchase_out') desc = 'Alış Ödemesi';
+                else if (tx.transaction_type === 'supplier_payment_out') desc = 'Tedarikçi Ödemesi';
+                else if (tx.transaction_type === 'expense_out') desc = 'Gider';
+                else if (tx.transaction_type === 'deposit_in') desc = 'Para Girişi';
+                else if (tx.transaction_type === 'withdrawal_out') desc = 'Para Çıkışı';
+                else if (tx.transaction_type === 'day_close') desc = 'Gün Kapanışı';
+                else desc = 'Diğer İşlem';
+              }
+              const amountClass = isTransfer || isCreditPaymentIn ? 'text-slate-500' : isOut || isReturn || tx.amount < 0 ? 'text-rose-600' : 'text-[#5da83f]';
+              const amountSign = isTransfer || isCreditPaymentIn ? (tx.transaction_type === 'transfer_out' ? '-' : '+') : (isOut || isReturn || tx.amount < 0 ? '-' : '+');
+              return (
+                <div
+                  key={tx.id}
+                  onClick={() => { if (tx.transaction_type === 'day_close') { setDayCloseDetailTx(tx); } else { setDetailModalTx(tx); } }}
+                  className="flex items-center justify-between px-4 py-3 gap-3 active:bg-slate-50 cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className={`flex-shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${pillClass}`}>
+                      <IconComponent className="w-3 h-3" />
+                      <span>{typeLabel}</span>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-slate-700 truncate">{desc}</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">{tx.registerName} • {fmtDate(tx.created_at)}</p>
+                    </div>
+                  </div>
+                  <span className={`font-bold text-sm tabular-nums flex-shrink-0 ${amountClass}`}>{amountSign}{formatCurrency(Math.abs(tx.amount || 0))}</span>
+                </div>
+              );
+            })
+          )}
+        </div>
       </motion.div>
 
-      {/* Pagination Bottom Right relative to table */}
+      {/* Pagination */}
       {recentTxs.length > 0 && (
-        <div className="flex justify-end items-center gap-3 mt-4">
-          <span className="text-xs text-gray-400">
-            {recentTxs.length} kayıt içinde {(page - 1) * ITEMS_PER_PAGE + 1}-{Math.min(page * ITEMS_PER_PAGE, recentTxs.length)} gösteriliyor
+        <div className="fixed bottom-[80px] sm:relative sm:bottom-auto left-4 sm:left-auto right-4 sm:right-auto flex items-center justify-between sm:justify-end gap-3 mt-0 sm:mt-4 z-20 bg-white/80 sm:bg-transparent backdrop-blur-md sm:backdrop-blur-none p-2 sm:p-0 rounded-xl sm:rounded-none border sm:border-none border-slate-200 shadow-sm sm:shadow-none">
+          <span className="text-xs text-gray-400 font-medium ml-1 sm:ml-0">
+            <span className="sm:hidden">Sayfa {page}/{totalPages}</span>
+            <span className="hidden sm:inline">{recentTxs.length} kayıt içinde {(page - 1) * ITEMS_PER_PAGE + 1}-{Math.min(page * ITEMS_PER_PAGE, recentTxs.length)} gösteriliyor</span>
           </span>
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+              className="w-8 h-8 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             
-            {renderPaginationButtons()}
+            <div className="hidden sm:flex items-center gap-1.5">
+              {renderPaginationButtons()}
+            </div>
             
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+              className="w-8 h-8 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
