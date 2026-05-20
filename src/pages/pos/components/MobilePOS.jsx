@@ -23,6 +23,7 @@ export const MobilePOS = ({
   total,
   // Payments
   paymentMethod, handlePaymentSelect, handleCheckout, isProcessing,
+  cashAmount, setCashAmount, cardAmount, setCardAmount, transferAmount, setTransferAmount,
   // Search & Barcode
   searchQuery, setSearchQuery, dropdownResults, showDropdown, setShowDropdown,
   handleAddProduct, handleScan,
@@ -91,17 +92,17 @@ export const MobilePOS = ({
       {/* SEARCH & CHIPS */}
       <div className="px-3 pt-3 pb-2 bg-white shrink-0 relative z-40">
         <div className="relative">
-          <BarcodeInput
-            onScan={posMode === 'return' ? undefined : handleScan}
-            value={searchQuery}
-            onChange={posMode === 'return' ? undefined : e => setSearchQuery(e.target.value)}
-            onFocus={posMode === 'return' ? undefined : () => searchQuery && setShowDropdown(true)}
-            placeholder={posMode === 'return' ? 'İade modunda devre dışı' : 'Barkod okut veya ara...'}
-          />
-          {showDropdown && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowDropdown(false)}></div>
-              <div className="relative z-50">
+          {showDropdown && <div className="fixed inset-0 z-40" onClick={() => setShowDropdown(false)}></div>}
+          <div className="relative z-50">
+            <BarcodeInput
+              onScan={posMode === 'return' ? undefined : handleScan}
+              value={searchQuery}
+              onChange={posMode === 'return' ? undefined : e => setSearchQuery(e.target.value)}
+              onFocus={posMode === 'return' ? undefined : () => searchQuery && setShowDropdown(true)}
+              placeholder={posMode === 'return' ? 'İade modunda devre dışı' : 'Barkod okut veya ara...'}
+            />
+            {showDropdown && (
+              <div className="mt-1">
                 <ProductSearchDropdown
                   query={searchQuery}
                   results={dropdownResults}
@@ -109,8 +110,8 @@ export const MobilePOS = ({
                   onClose={() => { setShowDropdown(false); setSearchQuery(''); }}
                 />
               </div>
-            </>
-          )}
+            )}
+          </div>
         </div>
         
         <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-hide">
@@ -260,6 +261,8 @@ export const MobilePOS = ({
                   {paymentOptions.map(opt => {
                     const isActive = paymentMethod === opt.id;
                     const isMixed = paymentMethod === 'mixed';
+                    const isCreditBtn = opt.id === 'credit';
+                    const isDisabled = isCreditBtn && posMode === 'sale' && selectedCustomer?.id === 1;
                     const isDimmed = !isActive && !isMixed;
                     const opts = opt.id === 'cash' ? cashRegisters.filter(r => r.type === 'cash') :
                                  opt.id === 'card' ? cashRegisters.filter(r => r.type === 'pos') :
@@ -268,10 +271,11 @@ export const MobilePOS = ({
                     return (
                       <div key={opt.id} className="flex flex-col gap-1 shrink-0 w-24">
                         <button
-                          onClick={() => handlePaymentSelect(opt.id)}
+                          onClick={() => !isDisabled && handlePaymentSelect(opt.id)}
+                          disabled={isDisabled}
                           className={`flex flex-col items-center justify-center p-2 rounded-xl border-2 transition-all h-[60px] ${
                             isActive ? `${opt.border} ${opt.bg}` : 'border-slate-100 bg-slate-50'
-                          } ${isDimmed ? 'opacity-50' : ''}`}
+                          } ${isDimmed || isDisabled ? 'opacity-50' : ''} ${isDisabled ? 'cursor-not-allowed grayscale' : ''}`}
                         >
                           <opt.icon className={`w-4 h-4 mb-1 ${isActive ? opt.color : 'text-slate-400'}`} />
                           <span className={`text-[10px] font-bold ${isActive ? opt.color : 'text-slate-600'} whitespace-nowrap`}>{opt.label}</span>
@@ -294,6 +298,42 @@ export const MobilePOS = ({
                     );
                   })}
                 </div>
+
+                {/* Mixed Payment Inputs */}
+                {paymentMethod === 'mixed' && (
+                  <div className="grid grid-cols-3 gap-2 mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 mb-1 block">Nakit</label>
+                      <input 
+                        type="number" 
+                        value={cashAmount} 
+                        onChange={e => setCashAmount(e.target.value)} 
+                        className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-sm font-semibold focus:outline-none focus:border-brand-500"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 mb-1 block">Kredi K.</label>
+                      <input 
+                        type="number" 
+                        value={cardAmount} 
+                        onChange={e => setCardAmount(e.target.value)} 
+                        className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-sm font-semibold focus:outline-none focus:border-brand-500"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 mb-1 block">Havale</label>
+                      <input 
+                        type="number" 
+                        value={transferAmount} 
+                        onChange={e => setTransferAmount(e.target.value)} 
+                        className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-sm font-semibold focus:outline-none focus:border-brand-500"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <button
                   onClick={() => {

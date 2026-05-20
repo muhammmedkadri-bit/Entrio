@@ -231,38 +231,44 @@ export const CustomerSearchModal = ({ isOpen, onClose, onSelect }) => {
                   {paginatedCustomers.map(c => (
                     <li
                       key={c.id}
-                      className="h-[10%] px-3 hover:bg-slate-50 cursor-pointer flex justify-between items-center transition-colors group"
+                      className="p-3 border-b last:border-0 border-slate-100 hover:bg-slate-50 cursor-pointer flex flex-col sm:flex-row justify-between sm:items-center transition-colors group gap-2 sm:gap-0"
                       onClick={() => { onSelect(c); onClose(); }}
                     >
-                      {/* Left: Icon + Name */}
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0 border border-emerald-500/20">
-                          <User className="w-4 h-4 text-emerald-600" />
+                      <div className="flex items-center justify-between sm:justify-start gap-3 sm:flex-1">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0 border border-emerald-500/20">
+                            <User className="w-4 h-4 text-emerald-600" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-semibold text-slate-800 group-hover:text-emerald-600 transition-colors">{c.name}</span>
+                            <span className="text-[11px] text-slate-500 sm:hidden">{c.phone || '-'}</span>
+                          </div>
                         </div>
-                        <div className="text-sm font-semibold text-slate-800 group-hover:text-emerald-600 transition-colors">
-                          {c.name}
+                        {/* Mobile Balance */}
+                        <div className="sm:hidden">
+                          {c.balance > 0 ? (
+                            <span className={`px-2 py-0.5 rounded text-[11px] font-bold tracking-tight ${balanceClass(c.balance)}`}>Borç: {fmt(c.balance)}</span>
+                          ) : c.balance < 0 ? (
+                            <span className={`px-2 py-0.5 rounded text-[11px] font-bold tracking-tight ${balanceClass(c.balance)}`}>Alacak: {fmt(Math.abs(c.balance))}</span>
+                          ) : (
+                            <span className={`px-2 py-0.5 rounded text-[11px] font-bold tracking-tight ${balanceClass(0)}`}>Bakiye: ₺0</span>
+                          )}
                         </div>
                       </div>
 
-                      {/* Center: Phone */}
-                      <div className="flex-1 text-center">
+                      {/* Center: Phone (Desktop) */}
+                      <div className="hidden sm:block flex-1 text-center">
                         <div className="text-xs text-slate-500">{c.phone || '-'}</div>
                       </div>
 
-                      {/* Right: Balance */}
-                      <div className="flex-1 flex justify-end">
+                      {/* Right: Balance (Desktop) */}
+                      <div className="hidden sm:flex flex-1 justify-end">
                         {c.balance > 0 ? (
-                          <span className={`px-2 py-0.5 rounded text-[11px] font-bold tracking-tight ${balanceClass(c.balance)}`}>
-                            Borçlu: {fmt(c.balance)}
-                          </span>
+                          <span className={`px-2 py-0.5 rounded text-[11px] font-bold tracking-tight ${balanceClass(c.balance)}`}>Borçlu: {fmt(c.balance)}</span>
                         ) : c.balance < 0 ? (
-                          <span className={`px-2 py-0.5 rounded text-[11px] font-bold tracking-tight ${balanceClass(c.balance)}`}>
-                            Alacaklı: {fmt(Math.abs(c.balance))}
-                          </span>
+                          <span className={`px-2 py-0.5 rounded text-[11px] font-bold tracking-tight ${balanceClass(c.balance)}`}>Alacaklı: {fmt(Math.abs(c.balance))}</span>
                         ) : (
-                          <span className={`px-2 py-0.5 rounded text-[11px] font-bold tracking-tight ${balanceClass(0)}`}>
-                            Bakiye: ₺0
-                          </span>
+                          <span className={`px-2 py-0.5 rounded text-[11px] font-bold tracking-tight ${balanceClass(0)}`}>Bakiye: ₺0</span>
                         )}
                       </div>
                     </li>

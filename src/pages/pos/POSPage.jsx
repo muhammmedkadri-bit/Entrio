@@ -1361,6 +1361,7 @@ export const POSPage = () => {
           items={items} addItem={addItem} removeItem={removeItem} updateQty={updateQty} clearCart={clearCart} updateItemPrice={updateItemPrice}
           total={total} subtotal={subtotal} discountAmount={discountAmount} discountType={discountType} discountValue={discountValue} discountEnabled={discountEnabled}
           paymentMethod={paymentMethod} handlePaymentSelect={handlePaymentSelect} handleCheckout={handleCheckout} isProcessing={isProcessing}
+          cashAmount={cashAmount} setCashAmount={setCashAmount} cardAmount={cardAmount} setCardAmount={setCardAmount} transferAmount={transferAmount} setTransferAmount={setTransferAmount}
           searchQuery={searchQuery} setSearchQuery={setSearchQuery} dropdownResults={dropdownResults} showDropdown={showDropdown} setShowDropdown={setShowDropdown}
           handleAddProduct={handleAddProduct} handleScan={handleScan} searchInputRef={searchInputRef} focusSearch={focusSearch}
           displayedProducts={displayedProducts} isGridLoading={isGridLoading} ProductSkeleton={ProductSkeleton}
