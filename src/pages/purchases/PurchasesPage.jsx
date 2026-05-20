@@ -402,8 +402,9 @@ export const PurchasesPage = () => {
       </div>
 
       {/* ── Table ──────────────────────────────────────────────────────── */}
-      <div className="relative pb-14 mt-1 flex-1">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="relative pb-24 sm:pb-14 mt-1 flex-1">
+        {/* Desktop Table */}
+        <div className="hidden sm:block bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           {/* Column Header */}
           <div className="grid items-center px-4 py-3 border-b border-slate-100 bg-slate-50/80" style={{ gridTemplateColumns: '1.2fr 2fr 1.2fr 1.2fr 1.5fr 32px' }}>
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Fatura No</span>
@@ -474,25 +475,92 @@ export const PurchasesPage = () => {
           )}
         </div>
 
+        {/* Mobile List */}
+        <div className="sm:hidden space-y-2">
+          {loading ? (
+            [...Array(5)].map((_, i) => (
+              <div key={i} className="bg-white rounded-xl border border-slate-200 p-4 animate-pulse">
+                <div className="flex justify-between mb-2">
+                  <div className="h-4 bg-slate-100 rounded w-24" />
+                  <div className="h-4 bg-slate-100 rounded w-16" />
+                </div>
+                <div className="h-5 bg-slate-100 rounded w-1/2 mb-4" />
+                <div className="flex justify-between">
+                  <div className="h-3 bg-slate-100 rounded w-20" />
+                  <div className="h-3 bg-slate-100 rounded w-20" />
+                </div>
+              </div>
+            ))
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl border border-slate-200 text-slate-400">
+              <ShoppingBag className="w-10 h-10 opacity-30 mb-2" />
+              <span className="text-sm font-medium">Hiç fatura bulunmuyor</span>
+            </div>
+          ) : (
+            paginated.map(p => (
+              <div
+                key={p.id}
+                onClick={() => { startNavigation(); setTimeout(() => navigate(`/purchases/${p.id}`), 150); }}
+                className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-sm active:scale-95 transition-transform cursor-pointer"
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex-1 min-w-0 pr-2">
+                    <div className="flex items-center gap-1.5 mb-1 text-xs text-slate-500">
+                      <span className="font-mono font-semibold text-[#10b981]">
+                        {p.invoice_number || 'Faturasız'}
+                      </span>
+                      <span>•</span>
+                      <span>{fmtDateShort(p.invoice_date)}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Building2 className="w-3.5 h-3.5 text-[#7ed957] flex-shrink-0" />
+                      <span className="font-bold text-slate-800 text-sm truncate">
+                        {p.supplier_name || 'Bilinmeyen Tedarikçi'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-xs text-slate-500 mb-0.5">Kalan</div>
+                    <div className={`font-bold text-sm ${p.remaining === 0 ? 'text-slate-300' : 'text-slate-900'}`}>
+                      {fmt(p.remaining)}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-50">
+                  <div className="text-xs">
+                    <span className="text-slate-500 mr-1">Vade:</span>
+                    {renderDueDate(p)}
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-300" />
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
         {/* Pagination */}
         {filtered.length > 0 && (
-          <div className="fixed bottom-5 right-6 flex items-center gap-3 z-20">
-            <span className="text-xs text-gray-400">
-              {filtered.length} fatura içinde {startItem}–{endItem} gösteriliyor
+          <div className="fixed bottom-[80px] sm:bottom-5 left-4 sm:left-auto right-4 sm:right-6 flex items-center justify-between sm:justify-end gap-3 z-20 bg-white/80 sm:bg-transparent backdrop-blur-md sm:backdrop-blur-none p-2 sm:p-0 rounded-xl sm:rounded-none border sm:border-none border-slate-200 shadow-sm sm:shadow-none">
+            <span className="text-xs text-gray-400 font-medium ml-2 sm:ml-0">
+              <span className="sm:hidden">Sayfa {page}/{totalPages}</span>
+              <span className="hidden sm:inline">{filtered.length} fatura içinde {startItem}–{endItem} gösteriliyor</span>
             </span>
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="flex items-center justify-center w-7 h-7 rounded-lg bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.7)] text-gray-500 hover:bg-white/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-lg bg-white sm:bg-white/20 backdrop-blur-md border border-slate-200 sm:border-white/40 shadow-sm sm:shadow-[0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.7)] text-gray-500 hover:bg-slate-50 sm:hover:bg-white/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              {renderPaginationButtons()}
+              <div className="hidden sm:flex items-center gap-1.5">
+                {renderPaginationButtons()}
+              </div>
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="flex items-center justify-center w-7 h-7 rounded-lg bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.7)] text-gray-500 hover:bg-white/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-lg bg-white sm:bg-white/20 backdrop-blur-md border border-slate-200 sm:border-white/40 shadow-sm sm:shadow-[0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.7)] text-gray-500 hover:bg-slate-50 sm:hover:bg-white/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>

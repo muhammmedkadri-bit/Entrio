@@ -209,9 +209,9 @@ export const ProductDetailPage = () => {
               boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
             }}
           >
-            <div className="flex items-start justify-between gap-6 flex-wrap">
+            <div className="flex items-start justify-between gap-6 flex-wrap relative">
               {/* Left: Identity */}
-              <div className="flex items-start gap-4">
+              <div className="flex items-start gap-4 relative z-[110]">
                 <div 
                   className="p-3 rounded-2xl flex-shrink-0 border"
                   style={{
@@ -237,7 +237,7 @@ export const ProductDetailPage = () => {
                       </span>
                     )}
                     {/* Category Pill Dropdown */}
-                    <div className="relative z-[100]" ref={catPopupRef}>
+                    <div className="relative z-[120]" ref={catPopupRef}>
                       <button
                         onClick={() => { setShowCatPopup(v => !v); setShowOtherMenu(false); setCatSearch(''); }}
                         className={`inline-flex items-center gap-1 text-xs font-medium font-sans px-2 py-0.5 rounded-full border cursor-pointer select-none transition-all ${
@@ -304,7 +304,7 @@ export const ProductDetailPage = () => {
               </div>
 
               {/* Right: Actions */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 relative z-[100]">
                 <button
                   onClick={() => setShowEdit(true)}
                   className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-xl border bg-[#82e05a]/15 text-[#5da83f] border-[#82e05a]/30 backdrop-blur-md shadow-[inset_0_1px_2px_rgba(255,255,255,0.4)] hover:bg-[#82e05a]/25 hover:border-[#82e05a]/40 transition-all"
