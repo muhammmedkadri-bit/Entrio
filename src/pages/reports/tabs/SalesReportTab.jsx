@@ -166,7 +166,7 @@ export const SalesReportTab = ({ startDate, endDate }) => {
   
   const pieData = Object.keys(data.byPaymentMethod).map(k => ({
     name: paymentLabels[k] || k,
-    value: data.byPaymentMethod[k],
+    value: data.byPaymentMethod[k].amount,
     color: PIE_COLORS[k] || '#8884d8'
   })).filter(d => d.value > 0);
 
@@ -211,7 +211,7 @@ export const SalesReportTab = ({ startDate, endDate }) => {
                   axisLine={false} 
                   tickLine={false} 
                   tick={{ fontSize: 10, fill: '#64748b' }} 
-                  interval={0}
+                  minTickGap={20}
                   angle={-45}
                   textAnchor="end"
                   height={60}

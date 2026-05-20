@@ -35,18 +35,18 @@ export const StatCard = ({ title, value, icon: Icon, change, trend = 'neutral', 
 
   return (
     <div className={`overflow-hidden rounded-xl border shadow-sm ${bgColors[colorTheme]}`}>
-      <div className="p-5">
-        <div className="flex items-center">
+      <div className="p-3 sm:p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
           <div className="flex-shrink-0">
-            {Icon && <Icon className={`h-6 w-6 ${iconColors[colorTheme]}`} aria-hidden="true" />}
+            {Icon && <Icon className={`h-5 w-5 sm:h-6 sm:w-6 ${iconColors[colorTheme]}`} aria-hidden="true" />}
           </div>
-          <div className="ml-4 w-0 flex-1">
+          <div className="min-w-0 flex-1">
             <dl>
-              <dt className="truncate text-sm font-medium text-slate-500">{title}</dt>
-              <dd className="flex items-baseline mt-1">
-                <div className="text-2xl font-semibold text-slate-900">{value}</div>
+              <dt className="truncate text-xs sm:text-sm font-medium text-slate-500" title={title}>{title}</dt>
+              <dd className="flex flex-wrap items-baseline mt-0.5 sm:mt-1 gap-1 sm:gap-2">
+                <div className="text-lg sm:text-2xl font-bold sm:font-semibold text-slate-900 truncate" title={value}>{value}</div>
                 {change && (
-                  <div className={`ml-2 flex items-baseline ${trendColors[trend]}`}>
+                  <div className={`flex items-baseline ${trendColors[trend]}`}>
                     {change}
                   </div>
                 )}

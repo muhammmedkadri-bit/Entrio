@@ -222,7 +222,7 @@ export const CashReportTab = ({ startDate, endDate }) => {
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 10, fill: '#64748b' }}
-                  interval={0}
+                  minTickGap={15}
                   angle={data.dailySeries.length > 12 ? -45 : 0}
                   textAnchor={data.dailySeries.length > 12 ? 'end' : 'middle'}
                   height={data.dailySeries.length > 12 ? 55 : 30}
