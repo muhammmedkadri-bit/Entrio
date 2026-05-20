@@ -71,6 +71,7 @@ export const ReportsPage = () => {
               );
             })}
           </div>
+          </div>
           
           <div
             className={`w-full sm:w-auto shrink-0 ${activeTab === 'stock' ? 'opacity-50 pointer-events-none' : ''}`}
