@@ -154,9 +154,10 @@ export const SuppliersPage = () => {
         </div>
       </div>
 
-      {/* ── Table ──────────────────────────────────────────────────────── */}
-      <div className="relative pb-14">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      {/* ── List / Cards ────────────────────────────────────────────────── */}
+      <div className="relative pb-20 sm:pb-14">
+        {/* DESKTOP: Table */}
+        <div className="hidden sm:block bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           {/* Column Header */}
           <div className="grid items-center px-4 py-3 border-b border-slate-100 bg-slate-50/80" style={{ gridTemplateColumns: '1.5fr 1fr 1fr 32px' }}>
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tedarikçi Unvanı</span>
@@ -186,29 +187,20 @@ export const SuppliersPage = () => {
                   className="grid items-center px-4 py-[13px] hover:bg-slate-50/80 cursor-pointer transition-colors group"
                   style={{ gridTemplateColumns: '1.5fr 1fr 1fr 32px' }}
                 >
-                  {/* Left: Icon + Name */}
                   <div className="flex items-center gap-3 min-w-0 pr-4">
                     <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-[#7ed957]/10 border border-[#7ed957]/20 flex-shrink-0">
                       <Building2 className="w-4.5 h-4.5 text-[#7ed957]" style={{ width: 18, height: 18 }} />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-bold text-slate-800 truncate group-hover:text-[#5da83f] transition-colors leading-tight">
-                        {supplier.name}
-                      </p>
+                      <p className="text-sm font-bold text-slate-800 truncate group-hover:text-[#5da83f] transition-colors leading-tight">{supplier.name}</p>
                     </div>
                   </div>
-
-                  {/* Telefon */}
                   <div className="text-center">
                     <span className="text-sm font-bold text-slate-600">{supplier.phone || '—'}</span>
                   </div>
-
-                  {/* Bakiye */}
                   <div className="flex justify-end pr-2">
                     <CariBalanceBadge balance={supplier.balance} entityType="supplier" size="sm" />
                   </div>
-
-                  {/* Chevron */}
                   <div className="flex justify-end">
                     <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#7ed957] transition-colors" />
                   </div>
@@ -218,17 +210,63 @@ export const SuppliersPage = () => {
           )}
         </div>
 
+        {/* MOBILE: Cards */}
+        <div className="sm:hidden space-y-2">
+          {loading ? (
+            [...Array(5)].map((_, i) => (
+              <div key={i} className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-3 animate-pulse">
+                <div className="w-11 h-11 rounded-xl bg-slate-100 shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-slate-100 rounded w-36" />
+                  <div className="h-3 bg-slate-100 rounded w-24" />
+                </div>
+                <div className="h-6 bg-slate-100 rounded-full w-20" />
+              </div>
+            ))
+          ) : paginated.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400">
+              <Building className="w-10 h-10 opacity-30" />
+              <span className="text-sm font-medium">Listelenecek tedarikçi bulunamadı.</span>
+            </div>
+          ) : (
+            paginated.map(supplier => (
+              <button
+                key={supplier.id}
+                onClick={() => { startNavigation(); setTimeout(() => navigate(`/suppliers/${supplier.id}`), 150); }}
+                className="w-full bg-white rounded-xl border border-slate-200 hover:border-blue-300/60 hover:shadow-md active:scale-[0.99] transition-all text-left group"
+              >
+                <div className="flex items-center gap-3 p-3.5">
+                  <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 group-hover:bg-blue-100 transition-colors">
+                    <Building2 className="w-5 h-5 text-blue-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-sm text-slate-800 group-hover:text-blue-600 transition-colors truncate">{supplier.name}</div>
+                    <div className="text-xs text-slate-400 mt-0.5">{supplier.phone || 'Telefon yok'}</div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <CariBalanceBadge balance={supplier.balance} entityType="supplier" size="sm" />
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-400 transition-colors shrink-0" />
+                </div>
+              </button>
+            ))
+          )}
+        </div>
+
         {/* Pagination */}
         {suppliers.length > 0 && (
-          <div className="fixed bottom-5 right-6 flex items-center gap-3 z-20">
-            <span className="text-xs text-gray-400">
+          <div className="mt-4 flex items-center justify-between">
+            <span className="text-xs text-gray-400 hidden sm:block">
               {suppliers.length} tedarikçi içinde {startItem}–{endItem} gösteriliyor
+            </span>
+            <span className="text-xs text-gray-400 sm:hidden font-semibold">
+              {suppliers.length} tedarikçi — Sayfa {currentPage}/{totalPages}
             </span>
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="flex items-center justify-center w-7 h-7 rounded-lg bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.7)] text-gray-500 hover:bg-white/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -236,7 +274,7 @@ export const SuppliersPage = () => {
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="flex items-center justify-center w-7 h-7 rounded-lg bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.7)] text-gray-500 hover:bg-white/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
