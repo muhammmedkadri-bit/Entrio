@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/appStore';
 import { useCartStore } from '../../store/cartStore';
@@ -725,9 +726,10 @@ export const SaleDetailPage = () => {
             </div>
           </div>
 
-          {/* ── PRINTABLE RECEIPT ──────────────────────────────────────── */}
-          <div id="receipt-print-area" className="hidden print:block mx-auto max-w-sm bg-white p-4 font-mono text-sm leading-tight text-slate-800">
-            <div className="text-center mb-2">
+          {/* ── PRINTABLE RECEIPT (Portaled to body to fix layout height) ──────────────────────────────────────── */}
+          {createPortal(
+            <div id="receipt-print-area" className="font-mono leading-tight text-slate-800">
+              <div className="text-center mb-2">
               <h1 className="font-bold text-base print:text-[12px]">ENTRIO</h1>
               <p className="text-xs print:text-[9px] mt-1">Merkez Şube</p>
             </div>
@@ -761,7 +763,9 @@ export const SaleDetailPage = () => {
               <p>BİZİ TERCİH ETTİĞİNİZ İÇİN</p>
               <p>TEŞEKKÜR EDERİZ</p>
             </div>
-          </div>
+          </div>,
+          document.body
+          )}
 
           {/* ── Payment Modal ──────────────────────────────────────────────── */}
           <Modal isOpen={paymentModal} onClose={() => setPaymentModal(false)} title="Tahsilat Ekle" size="md">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Printer, CheckCircle, RotateCcw } from 'lucide-react';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
@@ -51,8 +52,8 @@ export const ReceiptModal = ({ isOpen, onClose, saleDetails }) => {
     </div>
   );
 
-  const renderTemplate1 = () => (
-    <div id="receipt-print-area" className="mx-auto max-w-sm bg-white p-4 border border-dashed border-slate-300 print:border-none print:w-full print:max-w-none print:p-0 font-mono text-sm leading-tight text-slate-800">
+  const renderTemplate1 = (isPreview = false) => (
+    <div id={isPreview ? undefined : "receipt-print-area"} className="mx-auto max-w-sm bg-white p-4 border border-dashed border-slate-300 print:border-none print:w-full print:max-w-none print:p-0 font-mono text-sm leading-tight text-slate-800">
       <div className="text-center mb-2">
         {companyInfo.logo && <img src={companyInfo.logo} alt="Logo" className="w-12 h-12 object-contain mx-auto mb-1 grayscale" />}
         <h1 className="font-bold text-base print:text-[12px]">{companyInfo.name || 'ENTRIO POS LTD. ŞTİ.'}</h1>
@@ -104,8 +105,8 @@ export const ReceiptModal = ({ isOpen, onClose, saleDetails }) => {
     </div>
   );
 
-  const renderTemplate2 = () => (
-    <div id="receipt-print-area" className="mx-auto max-w-sm bg-white p-6 border border-slate-200 shadow-sm print:border-none print:shadow-none print:w-full font-sans text-sm print:text-[9px] text-slate-800">
+  const renderTemplate2 = (isPreview = false) => (
+    <div id={isPreview ? undefined : "receipt-print-area"} className="mx-auto max-w-sm bg-white p-6 border border-slate-200 shadow-sm print:border-none print:shadow-none print:w-full font-sans text-sm print:text-[9px] text-slate-800">
       <div className="flex justify-between items-start border-b border-slate-200 pb-2 mb-2">
         <div className="min-w-0 pr-2">
           <h1 className="font-black text-xl print:text-[12px] text-slate-900 uppercase break-words leading-tight">{companyInfo.name || 'ENTRIO POS'}</h1>
@@ -177,7 +178,16 @@ export const ReceiptModal = ({ isOpen, onClose, saleDetails }) => {
         <p className="text-slate-500">Satış <span className="font-mono font-semibold text-indigo-600">{saleDetails.sale_number || `#${saleDetails.id}`}</span> başarıyla kaydedildi.</p>
       </div>
 
-      {template === 'template_2' || template === 'template_4' ? renderTemplate2() : renderTemplate1()}
+      {/* Ekrandaki önizleme (Baskıda gizlenecek) */}
+      <div className="print:hidden">
+        {template === 'template_2' || template === 'template_4' ? renderTemplate2(true) : renderTemplate1(true)}
+      </div>
+
+      {/* Body'e takılı olan asıl yazdırılacak termal fiş (Gizli, sadece print'te açılır) */}
+      {createPortal(
+        template === 'template_2' || template === 'template_4' ? renderTemplate2(false) : renderTemplate1(false),
+        document.body
+      )}
     </Modal>
   );
 };

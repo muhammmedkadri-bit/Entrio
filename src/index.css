@@ -86,44 +86,34 @@
 }
 
 /* ─── THERMAL PRINTER (50mm/58mm) OPTIMIZATIONS ─── */
+#receipt-print-area {
+  display: none; /* Ekranda her zaman gizli */
+}
+
 @media print {
   @page {
     margin: 0;
-    size: 50mm auto;
   }
 
-  body * {
-    visibility: hidden !important;
-  }
-
-  /* Genel sıfırlamalar - Modal sorununu çözmek için */
+  /* Sayfa boyutlandırma sorunlarını çöz (Boş sayfa çıkartmayı önler) */
   body, html {
     height: auto !important;
+    min-height: 0 !important;
     overflow: visible !important;
     background-color: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
-  /* Modal ve portal bileşenlerinin baskıyı bozmasını engelle */
-  .fixed, .absolute, .relative, .sticky {
-    position: static !important;
-    transform: none !important;
-    animation: none !important;
-  }
-  .overflow-hidden, .overflow-y-auto, .overflow-auto {
-    overflow: visible !important;
-  }
-  [style*="max-height"] {
-    max-height: none !important;
-  }
-  .backdrop-blur-sm, [class*="bg-slate-900"] {
+  /* Ana uygulamayı TAMAMEN gizle. Bu sayede sayfa yüksekliği 0'a iner */
+  #root {
     display: none !important;
   }
 
-  #receipt-print-area, #receipt-print-area * {
-    visibility: visible !important;
-  }
-
+  /* Portal ile body'e eklenen sadece bu fiş alanı render edilecek */
   #receipt-print-area {
+    display: block !important;
+    position: static !important;
     width: 48mm !important; /* 50mm kağıt için güvenli baskı alanı genelde 48mm'dir */
     margin: 0 !important;
     padding: 1mm !important;
@@ -131,12 +121,5 @@
     line-height: 1.2 !important;
     color: black !important;
     background: white !important;
-    display: block !important;
-  }
-
-  /* Fazladan boşlukları ve gereksiz çerçeveleri gizle */
-  #receipt-print-area .print\:hidden {
-    display: none !important;
-    visibility: hidden !important;
   }
 }
