@@ -139,8 +139,8 @@ export const QuickBarcodesModal = ({ isOpen, onClose, onAddToCart }) => {
       onClick={onClose}
     >
       <div
-        className="flex flex-col bg-slate-50 overflow-hidden relative shadow-2xl"
-        style={{ border: '1px solid rgba(255,255,255,0.6)', borderRadius: '24px', width: '1200px', height: '85vh', maxWidth: '95vw' }}
+        className="flex flex-col bg-slate-50 overflow-hidden relative shadow-2xl w-full h-full sm:w-[95vw] sm:h-[85vh] lg:w-[1200px] sm:rounded-[24px]"
+        style={{ border: '1px solid rgba(255,255,255,0.6)' }}
         onClick={e => e.stopPropagation()}
       >
         {/* ── FULLSCREEN BARCODE VIEW ───────────────────────────────────── */}
@@ -166,10 +166,10 @@ export const QuickBarcodesModal = ({ isOpen, onClose, onAddToCart }) => {
                 </button>
               </div>
             </div>
-            <div className="flex-1 flex flex-col items-center justify-center p-10">
-              <h2 className="text-4xl font-black text-slate-800 text-center mb-12 max-w-4xl">{selectedProduct.name}</h2>
-              <div className="bg-white p-8 rounded-3xl border-2 border-slate-200 shadow-2xl">
-                <Barcode value={selectedProduct.barcode} width={4} height={150} fontSize={24} background="#ffffff" lineColor="#000000" margin={20} displayValue={true} />
+            <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-10">
+              <h2 className="text-2xl lg:text-4xl font-black text-slate-800 text-center mb-8 lg:mb-12 max-w-4xl">{selectedProduct.name}</h2>
+              <div className="bg-white p-6 lg:p-8 rounded-3xl border-2 border-slate-200 shadow-2xl overflow-hidden w-full max-w-md flex justify-center">
+                <Barcode value={selectedProduct.barcode} width={2.5} height={100} fontSize={20} background="#ffffff" lineColor="#000000" margin={10} displayValue={true} />
               </div>
             </div>
           </div>
@@ -177,24 +177,28 @@ export const QuickBarcodesModal = ({ isOpen, onClose, onAddToCart }) => {
           /* ── ÜRÜN SEÇİCİ VIEW ─────────────────────────────────────────── */
           <div className="flex flex-col h-full">
             {/* Picker Header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200 bg-white shadow-sm">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-200 bg-white shadow-sm gap-4 sm:gap-0">
+              <div className="flex items-center gap-3 w-full sm:w-auto">
                 <button
                   onClick={() => { setShowPicker(false); setPickerQuery(''); setPickerPage(1); }}
                   className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-semibold transition-colors"
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </button>
-                <div className="w-10 h-10 bg-[#7ed957]/15 rounded-xl flex items-center justify-center border border-[#7ed957]/30">
+                <div className="w-10 h-10 bg-[#7ed957]/15 rounded-xl flex items-center justify-center border border-[#7ed957]/30 shrink-0">
                   <Package className="w-5 h-5 text-[#5da83f]" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <h2 className="text-lg font-black text-slate-800 tracking-tight">Ürün Seç</h2>
-                  <p className="text-xs text-slate-500 font-medium">Hızlı barkodlar listesine ürün ekleyin</p>
+                  <p className="text-xs text-slate-500 font-medium">Hızlı barkodlar listesine ekle</p>
                 </div>
+                {/* Mobile close button at top right */}
+                <button onClick={onClose} className="sm:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors shrink-0">
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="relative w-64">
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="relative flex-1 sm:w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
                     autoFocus
@@ -205,7 +209,7 @@ export const QuickBarcodesModal = ({ isOpen, onClose, onAddToCart }) => {
                     className="w-full pl-9 pr-4 py-2 text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:border-[#7ed957] focus:bg-white transition-all font-semibold"
                   />
                 </div>
-                <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors">
+                <button onClick={onClose} className="hidden sm:flex w-10 h-10 items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors shrink-0">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -231,7 +235,7 @@ export const QuickBarcodesModal = ({ isOpen, onClose, onAddToCart }) => {
                       return (
                         <div
                           key={product.id}
-                          className="flex items-center justify-between bg-white rounded-xl border border-slate-200 px-4 py-3 hover:border-[#7ed957]/50 hover:shadow-sm transition-all"
+                          className="flex flex-col sm:flex-row sm:items-center justify-between bg-white rounded-xl border border-slate-200 p-3 hover:border-[#7ed957]/50 hover:shadow-sm transition-all gap-3 sm:gap-0"
                         >
                           <div className="flex items-center gap-3 min-w-0 flex-1">
                             <div className="w-9 h-9 bg-slate-50 rounded-lg flex items-center justify-center border border-slate-100 flex-shrink-0">
@@ -242,14 +246,14 @@ export const QuickBarcodesModal = ({ isOpen, onClose, onAddToCart }) => {
                               <p className="text-[10px] font-mono text-slate-400 mt-0.5">{product.barcode}</p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+                          <div className="flex items-center justify-between sm:justify-end gap-3 flex-shrink-0 sm:ml-4 w-full sm:w-auto">
                             <span className="text-sm font-black text-[#5da83f]">
                               {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(product.sale_price || 0)}
                             </span>
                             <button
                               onClick={() => handlePickerAdd(product)}
                               disabled={alreadyPinned}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                              className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all w-24 sm:w-auto ${
                                 alreadyPinned
                                   ? 'bg-[#7ed957]/15 text-[#5da83f] border border-[#7ed957]/30 cursor-default'
                                   : 'bg-white border border-[#7ed957]/40 text-[#5da83f] hover:bg-[#7ed957]/10 active:scale-95'
@@ -288,35 +292,41 @@ export const QuickBarcodesModal = ({ isOpen, onClose, onAddToCart }) => {
         ) : (
           /* ── BARKOD GRID VIEW ─────────────────────────────────────────── */
           <>
-            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200 bg-white shadow-sm z-10">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[#7ed957]/15 rounded-xl flex items-center justify-center border border-[#7ed957]/30">
-                  <ScanBarcode className="w-5 h-5 text-[#5da83f]" />
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-200 bg-white shadow-sm z-10 gap-4 sm:gap-0">
+              <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-[#7ed957]/15 rounded-xl flex items-center justify-center border border-[#7ed957]/30 shrink-0">
+                    <ScanBarcode className="w-5 h-5 text-[#5da83f]" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-black text-slate-800 tracking-tight">Hızlı Barkodlar</h2>
+                    <p className="text-[10px] sm:text-xs text-slate-500 font-medium line-clamp-1">Ürüne tıklayarak barkodunu görüntüleyin</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-lg font-black text-slate-800 tracking-tight">Hızlı Barkodlar</h2>
-                  <p className="text-xs text-slate-500 font-medium">Ürüne tıklayarak barkodunu büyük ekranda görüntüleyin</p>
-                </div>
+                {/* Mobile close button */}
+                <button onClick={onClose} className="sm:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors shrink-0">
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 w-full sm:w-auto">
                 <button
                   onClick={() => { setShowPicker(true); setPickerQuery(''); setPickerPage(1); }}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#7ed957] text-white rounded-xl font-bold hover:bg-[#6cc549] transition-colors shadow-sm"
+                  className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-[#7ed957] text-white rounded-xl font-bold hover:bg-[#6cc549] transition-colors shadow-sm shrink-0 text-sm"
                 >
-                  <Plus className="w-4 h-4" /> Ürün Ekle
+                  <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Ürün Ekle</span><span className="sm:hidden">Ekle</span>
                 </button>
-                <div className="relative w-64">
+                <div className="relative flex-1 sm:w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
                     autoFocus
                     type="text"
-                    placeholder="Ürün adı veya barkod..."
+                    placeholder="Ara..."
                     value={query}
                     onChange={e => setQuery(e.target.value)}
                     className="w-full pl-9 pr-4 py-2 text-sm border-2 border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:border-[#7ed957] focus:bg-white transition-all font-semibold"
                   />
                 </div>
-                <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors">
+                <button onClick={onClose} className="hidden sm:flex w-10 h-10 items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors shrink-0">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -337,23 +347,25 @@ export const QuickBarcodesModal = ({ isOpen, onClose, onAddToCart }) => {
                   <p className="text-slate-400 text-sm mt-1">Ürün eklemek için "Ürün Ekle" butonuna tıklayın</p>
                 </div>
               ) : (
-                <div className="flex-1 grid grid-cols-5 grid-rows-5 gap-3">
-                  {currentItems.map(product => (
-                    <div
-                      key={product.id}
-                      onClick={() => setSelectedProduct(product)}
-                      className={`bg-white border-2 hover:border-[#7ed957] rounded-2xl flex flex-col items-center justify-center p-3 transition-all cursor-pointer hover:shadow-lg group ${
-                        pinnedIds.has(product.id) ? 'border-[#7ed957]/40 bg-[#7ed957]/5' : 'border-slate-100'
-                      }`}
-                    >
-                      <h3 className="text-sm font-bold text-slate-800 text-center leading-tight line-clamp-2 group-hover:text-[#5da83f] transition-colors">
-                        {product.name}
-                      </h3>
-                      <div className="mt-2 text-[10px] font-bold tracking-wider text-slate-400 bg-slate-50 px-2 py-1 rounded-md border border-slate-100 group-hover:bg-[#7ed957]/10 group-hover:border-[#7ed957]/30 group-hover:text-[#5da83f] transition-colors">
-                        {product.barcode}
+                <div className="flex-1 overflow-y-auto sm:overflow-visible">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 h-full content-start lg:grid-rows-5">
+                    {currentItems.map(product => (
+                      <div
+                        key={product.id}
+                        onClick={() => setSelectedProduct(product)}
+                        className={`bg-white border-2 hover:border-[#7ed957] rounded-2xl flex flex-col items-center justify-center p-3 transition-all cursor-pointer hover:shadow-lg group min-h-[100px] ${
+                          pinnedIds.has(product.id) ? 'border-[#7ed957]/40 bg-[#7ed957]/5' : 'border-slate-100'
+                        }`}
+                      >
+                        <h3 className="text-sm font-bold text-slate-800 text-center leading-tight line-clamp-2 group-hover:text-[#5da83f] transition-colors">
+                          {product.name}
+                        </h3>
+                        <div className="mt-2 text-[10px] font-bold tracking-wider text-slate-400 bg-slate-50 px-2 py-1 rounded-md border border-slate-100 group-hover:bg-[#7ed957]/10 group-hover:border-[#7ed957]/30 group-hover:text-[#5da83f] transition-colors max-w-full truncate">
+                          {product.barcode}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
 

@@ -137,16 +137,12 @@ export const QuickProductManagerModal = ({
       }}
     >
       <div
-        className="h-[85vh] max-h-[85vh] flex flex-col overflow-hidden"
+        className="h-full sm:h-[85vh] sm:max-h-[85vh] w-full sm:w-[820px] sm:max-w-[95vw] flex flex-col overflow-hidden sm:rounded-2xl shadow-2xl"
         style={{
           background: 'rgba(255,255,255,0.95)',
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
           border: '1px solid rgba(255,255,255,0.6)',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.15)',
-          borderRadius: '16px',
-          width: '820px',
-          maxWidth: '95vw',
         }}
         onClick={e => e.stopPropagation()}
       >
@@ -244,9 +240,10 @@ export const QuickProductManagerModal = ({
                 </div>
              ) : (
                 /* Grid Content */
-                <div className="flex-1 grid grid-cols-3 grid-rows-2 gap-3 pb-2">
-                  {currentItems.map(product => {
-                    const isInGrid = displayedIds.has(product.id);
+                <div className="flex-1 overflow-y-auto sm:overflow-visible pb-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 content-start h-full">
+                    {currentItems.map(product => {
+                      const isInGrid = displayedIds.has(product.id);
                     
                     // Formatting Product Name: Limit to 2 lines naturally via line-clamp-2
                     const getFormattedName = (name) => {
@@ -382,6 +379,7 @@ export const QuickProductManagerModal = ({
                     );
                   })}
                 </div>
+              </div>
              )}
 
              {/* Pagination Bar */}
