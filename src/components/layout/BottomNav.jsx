@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, ShoppingCart, Package, Menu, Plus, FileText, ArrowLeftRight, PackagePlus, X } from 'lucide-react';
+import { LayoutDashboard, Users, Briefcase, Menu, Plus, FileText, ArrowLeftRight, PackagePlus, X } from 'lucide-react';
 import { useAppStore } from '../../store/appStore';
 import { useCartStore } from '../../store/cartStore';
 
@@ -45,10 +45,10 @@ export const BottomNav = () => {
 
   const leftItems = [
     { name: 'Ana Sayfa', to: '/dashboard', icon: LayoutDashboard },
-    { name: 'Satış',     to: '/pos',       icon: ShoppingCart },
+    { name: 'Müşteriler',     to: '/customers',       icon: Users },
   ];
   const rightItems = [
-    { name: 'Stok', to: '/stock', icon: Package },
+    { name: 'Tedarikçiler', to: '/suppliers', icon: Briefcase },
   ];
 
   const NavBtn = ({ item }) => {

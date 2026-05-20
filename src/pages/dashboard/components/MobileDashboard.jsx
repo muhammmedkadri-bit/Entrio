@@ -37,17 +37,17 @@ const getTxDescription = (tx) => {
     return tx.invoiceNumber ? `Fatura: ${tx.invoiceNumber}` : (tx.entityName || '-');
   }
   if (type === 'expense_out') {
-    return tx.description || 'Gider';
+    return tx.notes || tx.description || 'Gider';
   }
   if (type === 'supplier_payment_out') {
-    return tx.entityName || 'Tedarikçi Ödemesi';
+    return tx.entityName || tx.notes || 'Tedarikçi Ödemesi';
   }
   if (type === 'customer_payment_in') {
-    return tx.entityName || 'Müşteri Tahsilatı';
+    return tx.entityName || tx.notes || 'Müşteri Tahsilatı';
   }
-  if (type === 'deposit_in') return tx.description || 'Para Girişi';
-  if (type === 'withdrawal_out') return tx.description || 'Para Çıkışı';
-  return tx.description || '-';
+  if (type === 'deposit_in') return tx.notes || tx.description || 'Para Girişi';
+  if (type === 'withdrawal_out') return tx.notes || tx.description || 'Para Çıkışı';
+  return tx.notes || tx.description || '-';
 };
 
 /* ─── Tooltip (Günlük Analiz) ─────────────────────────────── */
@@ -108,6 +108,7 @@ const MobileTransactionCard = ({ tx, onClick }) => {
 /* ─── Ana bileşen ─────────────────────────────────────────── */
 export const MobileDashboard = ({
   companyName,
+  companyLogo,
   currentTime,
   salesSummary,
   cashReport,
@@ -143,9 +144,13 @@ export const MobileDashboard = ({
           <h1 className="text-xl font-black text-slate-900 tracking-tight">{companyName}</h1>
           <p className="text-sm text-slate-500 font-medium">{format(currentTime, 'd MMMM yyyy, EEEE', { locale: tr })}</p>
         </div>
-        <div className="bg-[#5da83f]/10 text-[#5da83f] p-2 rounded-xl">
-          <Banknote className="w-6 h-6" />
-        </div>
+        {companyLogo ? (
+          <img src={companyLogo} alt="Logo" className="h-10 object-contain drop-shadow-sm" />
+        ) : (
+          <div className="bg-[#5da83f]/10 text-[#5da83f] p-2 rounded-xl">
+            <Banknote className="w-6 h-6" />
+          </div>
+        )}
       </div>
 
       {/* ── SWIPEABLE STATS ── */}
@@ -295,7 +300,6 @@ export const MobileDashboard = ({
           <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
             <ArrowRightLeft className="w-4 h-4 text-slate-400" /> Son İşlemler
           </h3>
-          <button onClick={() => handleNav('/cash')} className="text-xs text-[#5da83f] font-semibold">Tümü</button>
         </div>
         <div>
           {recentTransactions?.filter(t => !t.isEmpty).length > 0 ? (

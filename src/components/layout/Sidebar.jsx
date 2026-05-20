@@ -105,11 +105,11 @@ export const Sidebar = () => {
       {/* Sidebar */}
       <div
         className={`
-          fixed inset-y-0 left-0 z-50 bg-white border-r border-slate-200
+          fixed inset-y-0 right-0 lg:left-0 lg:right-auto z-50 bg-white border-l lg:border-l-0 lg:border-r border-slate-200
           lg:translate-x-0 lg:static lg:inset-0 flex flex-col print:hidden
           transition-[width,transform] duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]
           will-change-[width,transform]
-          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          ${sidebarOpen ? 'translate-x-0' : 'translate-x-full lg:-translate-x-full'}
           ${collapsed ? 'w-14 overflow-visible' : 'w-60 overflow-hidden'}
         `}
       >

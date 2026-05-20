@@ -418,6 +418,7 @@ export const Dashboard = () => {
       <div className="block lg:hidden h-full">
         <MobileDashboard 
           companyName={companyName}
+          companyLogo={companyLogo}
           currentTime={currentTime}
           salesSummary={salesSummary}
           cashReport={cashReport}
