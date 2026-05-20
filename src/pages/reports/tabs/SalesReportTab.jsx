@@ -247,7 +247,8 @@ export const SalesReportTab = ({ startDate, endDate }) => {
           <h3 className="font-bold text-slate-800">En Çok Satan 10 Ürün</h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+          {/* Desktop Table */}
+          <table className="w-full text-left text-sm hidden sm:table">
             <thead className="text-slate-500 border-b border-slate-100">
               <tr>
                 <th className="p-3 font-semibold">Sıra</th>
@@ -282,6 +283,33 @@ export const SalesReportTab = ({ startDate, endDate }) => {
               ))}
             </tbody>
           </table>
+
+          {/* Mobile Card List */}
+          <div className="sm:hidden divide-y divide-slate-100">
+            {data.topProducts.map((p, idx) => (
+              <div 
+                key={p.id} 
+                onClick={() => navigate(`/stock/product/${p.id}`)}
+                className="p-4 hover:bg-slate-50 transition-colors cursor-pointer flex items-center gap-3"
+              >
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0 font-bold text-xs">
+                  #{idx + 1}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-semibold text-slate-800 text-sm truncate pr-2">{p.name}</span>
+                    <span className="font-bold text-brand-600 text-sm">{formatCurrency(p.revenue)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-500">{p.quantity} Adet</span>
+                    <span className={`text-xs font-bold ${p.profit < 0 ? 'text-red-500' : 'text-emerald-600'}`}>
+                      {formatCurrency(p.profit)} ({p.margin.toFixed(0)}%)
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
