@@ -357,13 +357,41 @@ export const customerService = {
                 };
             });
             
-            // Eğer aynı sale_number'a sahip customer_transactions varsa (örneğin partial payment), 
-            // duplicate olmaması için salesTxs'den ayıklayalım
-            const existingSaleNumbers = new Set(txs.map(t => t.sale_number).filter(Boolean));
-            const uniqueSalesTxs = salesTxs.filter(st => !existingSaleNumbers.has(st.sale_number));
+        // Eğer aynı sale_number'a sahip customer_transactions varsa (örneğin partial payment), 
+        // duplicate olmaması için salesTxs'den ayıklayalım
+        const existingSaleNumbers = new Set(txs.map(t => t.sale_number).filter(Boolean));
+        const uniqueSalesTxs = salesTxs.filter(st => !existingSaleNumbers.has(st.sale_number));
 
-            txs = [...txs, ...uniqueSalesTxs].sort((a, b) => Number(b.created_at) - Number(a.created_at));
+        let combinedTxs = [...txs, ...uniqueSalesTxs];
+
+        // Matematik Hesaplama Mantığı Düzeltmesi
+        // Önce işlemleri eskiden yeniye sıralıyoruz ki koşu bakiyesini hesaplayabilelim
+        combinedTxs.sort((a, b) => Number(a.created_at) - Number(b.created_at));
+
+        let currentBalance = 0;
+        for (const t of combinedTxs) {
+            if (typeof t.id === 'string' && t.id.startsWith('sale_')) {
+                t.balance_after = currentBalance;
+            } else {
+                currentBalance = t.balance_after || 0;
+            }
         }
+
+        // UI için işlemleri yeniden sondan başa sıralıyoruz
+        combinedTxs.sort((a, b) => {
+          const dayA = new Date(a.created_at).setHours(0, 0, 0, 0);
+          const dayB = new Date(b.created_at).setHours(0, 0, 0, 0);
+          if (dayA === dayB) {
+              const idA = typeof a.id === 'number' ? a.id : 0;
+              const idB = typeof b.id === 'number' ? b.id : 0;
+              if (idA && idB) return idB - idA;
+              return typeof a.id === 'string' && typeof b.id === 'number' ? 1 : 
+                     typeof a.id === 'number' && typeof b.id === 'string' ? -1 : 0;
+          }
+          return Number(b.created_at) - Number(a.created_at);
+        });
+
+        txs = combinedTxs;
 
         if (filters.startDate && filters.endDate) {
           txs = txs.filter(t => isWithinInterval(Number(t.created_at), { start: filters.startDate, end: filters.endDate }));
@@ -386,7 +414,7 @@ export const customerService = {
               customer_id: s.customer_id,
               transaction_type: isReturn ? 'return' : 'sale',
               amount: s.total_amount,
-              balance_after: 0,
+              balance_after: 0, // Geçici olarak 0, aşağıda hesaplanacak
               payment_method: s.payment_method,
               transaction_date: new Date(Number(s.created_at)).toISOString(),
               reference_id: s.id,
@@ -397,14 +425,39 @@ export const customerService = {
       });
       const existingSaleNumbers = new Set(txs.map(t => t.sale_number).filter(Boolean));
       const uniqueSalesTxs = salesTxs.filter(st => !existingSaleNumbers.has(st.sale_number));
-      txs = [...txs, ...uniqueSalesTxs];
+      
+      let combinedTxs = [...txs, ...uniqueSalesTxs];
 
-      txs.sort((a, b) => {
+      // Matematik Hesaplama Mantığı Düzeltmesi (Peşin işlemlerde bakiye sıfırlanmasını engelle)
+      // Önce işlemleri eskiden yeniye sıralıyoruz ki koşu bakiyesini hesaplayabilelim
+      combinedTxs.sort((a, b) => Number(a.created_at) - Number(b.created_at));
+
+      let currentBalance = 0;
+      for (const t of combinedTxs) {
+          if (typeof t.id === 'string' && t.id.startsWith('sale_')) {
+              // Peşin ödemeli işlem net bakiyeyi değiştirmediği için anlık bakiye aynı kalır
+              t.balance_after = currentBalance;
+          } else {
+              // Gerçek bir cari işlem, sistemdeki hesaplanmış bakiyeyi günceller
+              currentBalance = t.balance_after || 0;
+          }
+      }
+
+      // UI için işlemleri yeniden sondan başa (en yeni en üstte) sıralıyoruz
+      combinedTxs.sort((a, b) => {
         const dayA = new Date(a.created_at).setHours(0, 0, 0, 0);
         const dayB = new Date(b.created_at).setHours(0, 0, 0, 0);
-        if (dayA === dayB) return (b.id && a.id && typeof b.id === 'number' && typeof a.id === 'number') ? b.id - a.id : 0;
+        if (dayA === dayB) {
+            const idA = typeof a.id === 'number' ? a.id : 0;
+            const idB = typeof b.id === 'number' ? b.id : 0;
+            if (idA && idB) return idB - idA;
+            return typeof a.id === 'string' && typeof b.id === 'number' ? 1 : 
+                   typeof a.id === 'number' && typeof b.id === 'string' ? -1 : 0;
+        }
         return Number(b.created_at) - Number(a.created_at);
       });
+      
+      txs = combinedTxs;
       
       if (filters.startDate && filters.endDate) txs = txs.filter(t => isWithinInterval(t.created_at, { start: filters.startDate, end: filters.endDate }));
       if (filters.type && filters.type !== 'all') txs = txs.filter(t => t.transaction_type === filters.type);
