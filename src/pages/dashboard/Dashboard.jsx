@@ -382,6 +382,7 @@ export const Dashboard = () => {
           originalSaleNumber: originalSaleRecord?.sale_number || null,
           saleNumber: parentRecord?.sale_number || null,
           invoiceNumber: parentRecord?.invoice_number || null,
+          items: parentRecord?.items || null,
         });
       }
 

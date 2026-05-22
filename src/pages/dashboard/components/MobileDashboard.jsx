@@ -383,24 +383,44 @@ export const MobileDashboard = ({
                     )}
                   </div>
 
+                  {/* Receipt Preview (If items exist) */}
+                  {tx.items && tx.items.length > 0 && (
+                    <div className="mb-6 bg-slate-50 border border-slate-100 rounded-xl p-4">
+                      <span className="text-[11px] font-bold text-slate-400 uppercase mb-3 block">Fiş İçeriği ({tx.items.length} Ürün)</span>
+                      <div className="flex flex-col gap-2 max-h-[150px] overflow-y-auto pr-1">
+                        {tx.items.map((item, idx) => (
+                          <div key={idx} className="flex justify-between items-start border-b border-slate-200/60 pb-2 last:border-0 last:pb-0">
+                            <span className="text-[13px] font-semibold text-slate-700 flex-1 pr-2 leading-tight">
+                              {item.productName}
+                              <span className="block text-[11px] text-slate-400 mt-0.5 font-medium">{item.quantity} x {fmt(item.unit_price)}</span>
+                            </span>
+                            <span className="text-[13px] font-bold text-slate-800 whitespace-nowrap">
+                              {fmt(item.line_total)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Actions */}
-                  <div className="flex gap-3 mt-2">
-                    <button 
-                      onClick={() => setSelectedMobileTx(null)}
-                      className="flex-1 py-3.5 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 active:scale-[0.98] transition-all"
-                    >
-                      Kapat
-                    </button>
-                    
-                    {navPath && (
+                  <div className="mt-2">
+                    {navPath ? (
                       <button 
                         onClick={() => {
                           setSelectedMobileTx(null);
                           handleNav(navPath);
                         }}
-                        className="flex-1 py-3.5 rounded-xl font-bold text-white bg-[#5da83f] shadow-lg shadow-green-500/30 active:scale-[0.98] transition-all"
+                        className="w-full py-4 rounded-xl font-bold text-white bg-[#5da83f] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                       >
-                        Tüm Detayları Gör
+                        <Receipt size={18} /> Detaylı Fişi Gör
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => setSelectedMobileTx(null)}
+                        className="w-full py-4 rounded-xl font-bold text-slate-600 bg-slate-100 active:scale-[0.98] transition-all"
+                      >
+                        Kapat
                       </button>
                     )}
                   </div>
