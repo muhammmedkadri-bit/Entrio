@@ -249,7 +249,7 @@ export const Login = () => {
     <>
       {showForgot && <ForgotPasswordModal onClose={() => setShowForgot(false)} />}
 
-      <div className="min-h-screen grid lg:grid-cols-2">
+      <div className="min-h-[100dvh] grid lg:grid-cols-2 bg-slate-50 lg:bg-white">
 
         {/* ── Left Brand Panel ── */}
         <div className="relative hidden lg:flex flex-col justify-between p-10 overflow-hidden"
@@ -361,16 +361,19 @@ export const Login = () => {
         </div>
 
         {/* ── Right Form Panel ── */}
-        <div className="flex items-center justify-center p-8 bg-white">
-          <div className="w-full max-w-[420px]">
+        <div className="flex flex-col items-center justify-center p-4 sm:p-8 bg-slate-50 lg:bg-white min-h-[100dvh] lg:min-h-0 relative overflow-hidden">
+          {/* Mobile decorative background */}
+          <div className="absolute top-0 left-0 w-full h-80 bg-gradient-to-b from-[#7ed957]/20 to-transparent lg:hidden pointer-events-none" />
+          
+          <div className="w-full max-w-[420px] bg-white lg:bg-transparent rounded-[2.5rem] lg:rounded-none shadow-2xl shadow-[#7ed957]/10 lg:shadow-none p-8 sm:p-10 lg:p-0 relative z-10 ring-1 ring-slate-100 lg:ring-0">
 
             {/* Mobile logo */}
-            <div className="lg:hidden flex justify-center mb-10">
-              <img src={EntrioLogoPng} alt="Entrio" className="h-10 w-auto" />
+            <div className="lg:hidden flex justify-center mb-8">
+              <img src={EntrioLogoPng} alt="Entrio" className="h-14 w-auto drop-shadow-sm" />
             </div>
 
-            <div className="text-center mb-10">
-              <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-2">Hoş Geldiniz!</h1>
+            <div className="text-center mb-8 lg:mb-10">
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 mb-2">Hoş Geldiniz!</h1>
               <p className="text-sm text-slate-500">Devam etmek için bilgilerinizi giriniz.</p>
             </div>
 
