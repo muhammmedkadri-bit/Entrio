@@ -285,7 +285,7 @@ export const ProductsTab = ({ search, categoryFilter, stockStatus, onEditProduct
 
       {/* Pagination */}
       {products.length > 0 && (
-        <div className="mt-4 sm:fixed sm:bottom-5 sm:right-6 flex items-center justify-between sm:justify-end gap-3 z-20 print:hidden">
+        <div className="mt-4 mb-6 sm:mb-0 sm:fixed sm:bottom-5 sm:right-6 flex items-center justify-between sm:justify-end gap-3 z-20 print:hidden">
           <span className="text-xs text-gray-400 font-semibold">
             {products.length} ürün içinde {startItem}–{endItem}
           </span>

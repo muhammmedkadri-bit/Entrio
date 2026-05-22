@@ -300,12 +300,6 @@ export const SaleDetailPage = () => {
                   Geri
                 </button>
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={handlePrint}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 active:bg-gray-100 transition-colors"
-                  >
-                    <Printer className="w-4 h-4" />
-                  </button>
                   <div className="relative" ref={otherMenuRef}>
                     <button
                       onClick={() => setShowOtherMenu(v => !v)}
@@ -414,14 +408,14 @@ export const SaleDetailPage = () => {
                 </span>
               </div>
 
-              <div className="flex flex-col gap-2 mb-3">
+              <div className="bg-white rounded-xl border border-gray-100 shadow-sm mb-3 divide-y divide-gray-100">
                 {sale.items?.map((item, idx) => {
                   const itemSubtotal = item.unit_price * item.quantity;
                   const itemDiscount = itemSubtotal - (item.line_total || itemSubtotal);
                   return (
                     <div
                       key={idx}
-                      className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 active:bg-gray-50 transition-colors"
+                      className="p-3 active:bg-gray-50 transition-colors"
                       onClick={() => { startNavigation(); setTimeout(() => navigate(`/stock/product/${item.product_id}`), 150); }}
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -464,12 +458,6 @@ export const SaleDetailPage = () => {
                   <div className="flex justify-between items-center px-4 py-2.5 border-b border-gray-50">
                     <span className="text-sm text-red-500 font-medium">İskonto</span>
                     <span className="text-sm font-semibold text-red-500">-₺{fmt(discount)}</span>
-                  </div>
-                )}
-                {kdvTotal > 0 && (
-                  <div className="flex justify-between items-center px-4 py-2.5 border-b border-gray-50">
-                    <span className="text-sm text-gray-500">KDV Toplamı</span>
-                    <span className="text-sm font-medium text-gray-700">₺{fmt(kdvTotal)}</span>
                   </div>
                 )}
                 <div className="flex justify-between items-center px-4 py-3">

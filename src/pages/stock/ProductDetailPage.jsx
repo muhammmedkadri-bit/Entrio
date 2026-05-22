@@ -368,7 +368,7 @@ export const ProductDetailPage = () => {
           </div>
 
           {/* Tab Navigation — no badges */}
-          <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md pt-2 pb-1 mb-2 flex gap-1 border-b border-gray-100 overflow-x-auto scrollbar-hide whitespace-nowrap -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md pt-2 pb-0 sm:pb-1 mb-2 grid grid-cols-2 sm:flex sm:flex-nowrap gap-1 sm:gap-1 border-b border-gray-100">
             {TABS.map(tab => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -378,7 +378,7 @@ export const ProductDetailPage = () => {
                   onClick={() => !tab.disabled && setActiveTab(tab.id)}
                   disabled={tab.disabled}
                   title={tab.disabled ? 'Yakında aktif edilecek' : ''}
-                  className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-all duration-150 border-b-2 -mb-px shrink-0 ${
+                  className={`flex items-center justify-center gap-1.5 sm:gap-2 px-1 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-t-lg transition-all duration-150 border-b-2 -mb-px ${
                     tab.disabled
                       ? 'text-gray-300 border-transparent cursor-not-allowed opacity-50'
                       : isActive
@@ -386,8 +386,8 @@ export const ProductDetailPage = () => {
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  {tab.label}
+                  <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                  <span className="truncate">{tab.label}</span>
                 </button>
               );
             })}
