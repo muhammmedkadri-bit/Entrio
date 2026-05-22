@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from '../../components/ui/CustomToast';
 import { Eye as EyeIcon, EyeOff, Mail, Lock, LogIn, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
-import EntrioLogoPng from '../../assets/Entriologop.png';
+import EntrioLogoSvg from '../../assets/Entriologo.svg';
 
 /* ─── Unified Eye Component (DRY & Perf Optimized) ────────── */
 // globalMouse prop is passed down to prevent 8 different event listeners
@@ -265,7 +265,7 @@ export const Login = () => {
           {/* Slogan + Characters — full width centered column */}
           <div className="relative z-20 flex flex-col items-center w-full">
             {/* Logo centered */}
-            <img src={EntrioLogoPng} alt="Entrio" className="h-32 w-auto mb-6" style={{ filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.9)) drop-shadow(0 0 20px rgba(255,255,255,0.7)) drop-shadow(0 0 35px rgba(255,255,255,0.5))' }} />
+            <img src={EntrioLogoSvg} alt="Entrio" className="h-32 w-auto mb-6" style={{ filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.9)) drop-shadow(0 0 20px rgba(255,255,255,0.7)) drop-shadow(0 0 35px rgba(255,255,255,0.5))' }} />
             
             {/* Slogan (Responsive Typography applied) */}
             <div className="text-center mb-16 px-6 w-full max-w-2xl">
@@ -369,7 +369,7 @@ export const Login = () => {
 
             {/* Mobile logo */}
             <div className="lg:hidden flex justify-center mb-8">
-              <img src={EntrioLogoPng} alt="Entrio" className="h-14 w-auto drop-shadow-sm" />
+              <img src={EntrioLogoSvg} alt="Entrio" className="h-14 w-auto drop-shadow-sm" />
             </div>
 
             <div className="text-center mb-8 lg:mb-10">
