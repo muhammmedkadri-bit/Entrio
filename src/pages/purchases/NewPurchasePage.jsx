@@ -494,7 +494,7 @@ export const NewPurchasePage = () => {
   /* ══════════════════════════════════════════════════════════════════════ */
   return (
     <FormProvider {...methods}>
-      <div className="flex flex-col h-full gap-4">
+      <div className="flex flex-col h-full gap-4 pb-24 lg:pb-6">
         {/* ── BACK BUTTON PILL ────────────────────────────────────────────── */}
         <div className="flex">
           <button
@@ -507,18 +507,18 @@ export const NewPurchasePage = () => {
         </div>
 
         {/* ── PAGE HEADER SETTINGS ────────────────────────────────────────── */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5 flex items-start justify-between">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-             <div className="w-12 h-12 rounded-xl bg-[#82e05a]/15 text-[#5da83f] flex items-center justify-center shrink-0 border border-[#82e05a]/30">
-               <FileText className="w-6 h-6" />
+             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#82e05a]/15 text-[#5da83f] flex items-center justify-center shrink-0 border border-[#82e05a]/30">
+               <FileText className="w-5 h-5 sm:w-6 sm:h-6" />
              </div>
              <div>
-               <h1 className="text-xl font-bold text-gray-900">Yeni Alış Faturası</h1>
-               <p className="text-sm text-gray-500 mt-0.5">Tedarikçi faturanızı kaydedin ve stoğu güncelleyin</p>
+               <h1 className="text-lg sm:text-xl font-bold text-gray-900">Yeni Alış Faturası</h1>
+               <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Tedarikçi faturanızı kaydedin ve stoğu güncelleyin</p>
              </div>
           </div>
           {/* Right actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             <button
               type="button"
               onClick={() => navigate('/purchases')}
@@ -546,10 +546,10 @@ export const NewPurchasePage = () => {
         </div>
 
         {/* ── TWO COLUMN LAYOUT ─────────────────────────────────────────── */}
-        <div className="flex gap-5 items-start">
+        <div className="flex flex-col lg:flex-row gap-5 items-start">
 
           {/* ── LEFT COLUMN ──────────────────────────────────────────────── */}
-          <div className="flex-1 min-w-0 flex flex-col gap-4">
+          <div className="flex-1 w-full min-w-0 flex flex-col gap-4">
             
             <div className="bg-white rounded-xl p-4 sm:p-5" style={{ border: '1px solid rgba(229,231,235,0.8)' }}>
               {/* Card Header */}
@@ -561,8 +561,8 @@ export const NewPurchasePage = () => {
               </div>
 
               {/* Row 1: Fatura İsmi & Tedarikçi */}
-              <div className="grid grid-cols-4 gap-4 mb-4">
-                <div className="col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                <div className="col-span-1 md:col-span-2">
                   <label className={labelCls}>
                     <span className="flex items-center gap-1">
                       <Hash className="w-3 h-3" /> Fatura İsmi
@@ -575,7 +575,7 @@ export const NewPurchasePage = () => {
                     className={`${inputCls} h-[40px] bg-white`}
                   />
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-1 md:col-span-2">
                   <label className={labelCls}>
                     <span className="flex items-center gap-1">
                       <Building2 className="w-3 h-3" /> Tedarikçi Arama
@@ -593,8 +593,8 @@ export const NewPurchasePage = () => {
               </div>
 
               {/* Row 2: Invoice No + Invoice Date + Due Date */}
-              <div className="grid grid-cols-4 gap-4 mb-4">
-                <div className="col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                <div className="col-span-1 md:col-span-2">
                   <label className={labelCls}>
                     <span className="flex items-center gap-1">
                       <Hash className="w-3 h-3" /> Fiş / Fatura No
@@ -655,7 +655,7 @@ export const NewPurchasePage = () => {
               </div>
 
               {/* Row 3: İskonto, Para Birimi, Stok Girişi — 3 equal cols, Ödeme Durumu moved to totals */}
-              <div className="grid grid-cols-3 gap-4 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                 <div>
                   <label className={labelCls}>İskonto Listeleri</label>
                   <SelectDropdown
@@ -691,8 +691,8 @@ export const NewPurchasePage = () => {
               <div className="flex flex-col gap-2 pt-2">
                 
                 {/* E-Fatura Row */}
-                <div className="flex gap-4 items-center">
-                  <div className="w-40 shrink-0">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:items-center">
+                  <div className="w-full sm:w-40 shrink-0">
                     <button
                       type="button"
                       onClick={() => setExtraInfoState(p => ({ ...p, efatura: !p.efatura }))}
@@ -724,8 +724,8 @@ export const NewPurchasePage = () => {
                 </div>
 
                 {/* Sipariş Row */}
-                <div className="flex gap-4 items-center">
-                  <div className="w-40 shrink-0">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:items-center">
+                  <div className="w-full sm:w-40 shrink-0">
                     <button
                       type="button"
                       onClick={() => setExtraInfoState(p => ({ ...p, siparis: !p.siparis }))}
@@ -776,8 +776,8 @@ export const NewPurchasePage = () => {
                 </div>
 
                 {/* İrsaliye Row */}
-                <div className="flex gap-4 items-center">
-                  <div className="w-40 shrink-0">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:items-center">
+                  <div className="w-full sm:w-40 shrink-0">
                     <button
                       type="button"
                       onClick={() => setExtraInfoState(p => ({ ...p, irsaliye: !p.irsaliye }))}
@@ -848,33 +848,38 @@ export const NewPurchasePage = () => {
                 </span>
               </div>
 
-              {/* Table header */}
-              <div
-                className="grid items-center text-[10px] font-bold text-gray-400 uppercase tracking-widest pb-3 border-b border-gray-100 mb-2"
-                style={{ gridTemplateColumns: '1fr 75px 90px 110px 110px 80px 120px 40px', gap: '0.75rem' }}
-              >
-                <span className="text-left">Ürün / Hizmet</span>
-                <span className="text-center">Miktar</span>
-                <span className="text-center">Birim</span>
-                <span className="text-center">Birim Fiyat (₺)</span>
-                <span className="text-center">İskonto</span>
-                <span className="text-center">KDV %</span>
-                <div className="text-right">Toplam</div>
-                <span />
-              </div>
+              {/* Table wrapper for mobile scrolling */}
+              <div className="overflow-x-auto -mx-5 px-5 sm:mx-0 sm:px-0 pb-4">
+                <div className="min-w-[800px]">
+                  {/* Table header */}
+                  <div
+                    className="grid items-center text-[10px] font-bold text-gray-400 uppercase tracking-widest pb-3 border-b border-gray-100 mb-2"
+                    style={{ gridTemplateColumns: '1fr 75px 90px 110px 110px 80px 120px 40px', gap: '0.75rem' }}
+                  >
+                    <span className="text-left">Ürün / Hizmet</span>
+                    <span className="text-center">Miktar</span>
+                    <span className="text-center">Birim</span>
+                    <span className="text-center">Birim Fiyat (₺)</span>
+                    <span className="text-center">İskonto</span>
+                    <span className="text-center">KDV %</span>
+                    <div className="text-right">Toplam</div>
+                    <span />
+                  </div>
 
-              {/* Rows */}
-              {fields.map((field, index) => (
-                <LineItemRow
-                  key={field.id}
-                  field={field}
-                  index={index}
-                  onRemove={() => remove(index)}
-                  canRemove={fields.length > 1}
-                  isLast={index === fields.length - 1}
-                  onTabFromLast={addRow}
-                />
-              ))}
+                  {/* Rows */}
+                  {fields.map((field, index) => (
+                    <LineItemRow
+                      key={field.id}
+                      field={field}
+                      index={index}
+                      onRemove={() => remove(index)}
+                      canRemove={fields.length > 1}
+                      isLast={index === fields.length - 1}
+                      onTabFromLast={addRow}
+                    />
+                  ))}
+                </div>
+              </div>
 
               {/* Add row */}
               <button
@@ -887,11 +892,11 @@ export const NewPurchasePage = () => {
               </button>
 
               {/* ── INSIDE LINE ITEMS CARD: Notes + Totals Footer ───────────────────────── */}
-              <div className="mt-8 pt-6 border-t border-gray-200 flex justify-between items-start gap-6">
+              <div className="mt-8 pt-6 border-t border-gray-200 flex flex-col lg:flex-row justify-between items-start gap-6">
                 {/* Left: Notes + Payment Details */}
-                <div className="flex-1 flex flex-col gap-4">
+                <div className="flex-1 w-full flex flex-col gap-4">
                   {/* Ödeme Durumu Dropdown */}
-                  <div className="w-1/2">
+                  <div className="w-full sm:w-1/2">
                     <label className={labelCls}>
                       <span className="flex items-center gap-1">
                         <Wallet className="w-3 h-3 text-emerald-500" /> Ödeme Durumu
@@ -930,8 +935,8 @@ export const NewPurchasePage = () => {
                       {paymentMethod !== 'split' ? (
                         <div className="space-y-4 relative z-10">
                           {/* Top Row: Ödeme Yöntemi ve Tarih */}
-                          <div className="flex items-start gap-6">
-                            <div className="w-48 shrink-0">
+                          <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+                            <div className="w-full sm:w-48 shrink-0">
                               <label className={labelCls}>Ödeme Yöntemi</label>
                               <Controller
                                 control={control}
@@ -946,7 +951,7 @@ export const NewPurchasePage = () => {
                                 )}
                               />
                             </div>
-                            <div className="w-48 shrink-0">
+                            <div className="w-full sm:w-48 shrink-0">
                               <label className={labelCls}>Ödeme Tarihi</label>
                               <Controller
                                 control={control}
@@ -968,8 +973,8 @@ export const NewPurchasePage = () => {
                           </div>
 
                           {/* Bottom Row: Kasa, Tutar, Açıklama */}
-                          <div className="flex items-start gap-4">
-                            <div className="w-64 shrink-0">
+                          <div className="flex flex-col md:flex-row items-start gap-4">
+                            <div className="w-full md:w-64 shrink-0">
                               <label className={labelCls}>
                                 {paymentMethod === 'cash' ? 'Kasa Seçin' :
                                  paymentMethod === 'bank_transfer' ? 'Banka Seçin' :
@@ -997,7 +1002,7 @@ export const NewPurchasePage = () => {
                                 }}
                               />
                             </div>
-                            <div className="w-40 shrink-0">
+                            <div className="w-full md:w-40 shrink-0">
                               <label className={labelCls}>Tutar (₺)</label>
                               <input
                                 {...register('paid_amount')}
@@ -1021,8 +1026,8 @@ export const NewPurchasePage = () => {
                       ) : (
                         <div className="space-y-4 relative z-10">
                           {/* Top Row: Dropdown, Date */}
-                          <div className="flex items-start gap-6">
-                            <div className="w-48 shrink-0">
+                          <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+                            <div className="w-full sm:w-48 shrink-0">
                               <label className={labelCls}>Ödeme Yöntemi</label>
                               <Controller
                                 control={control}
@@ -1037,7 +1042,7 @@ export const NewPurchasePage = () => {
                                 )}
                               />
                             </div>
-                            <div className="w-48 shrink-0">
+                            <div className="w-full sm:w-48 shrink-0">
                               <label className={labelCls}>Ödeme Tarihi</label>
                               <DatePicker compact allowClear={false}
                                 value={{ start: splitState.date ? new Date(splitState.date) : new Date(), end: splitState.date ? new Date(splitState.date) : new Date() }}
@@ -1060,14 +1065,14 @@ export const NewPurchasePage = () => {
                                 <Banknote className="w-4 h-4 text-emerald-600" />
                                 <span className="font-semibold text-gray-700 text-sm">Nakit</span>
                               </div>
-                              <div className="flex-1 flex items-center gap-3 w-full">
-                                <div className="w-32 shrink-0">
+                              <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-3 w-full">
+                                <div className="w-full sm:w-32 shrink-0">
                                   <input type="text" placeholder="Tutar (₺)" value={splitState.cash.amount} onChange={(e) => updateSplit('cash', 'amount', e.target.value)} className={`${inputCls} text-right font-semibold`} />
                                 </div>
-                                <div className="w-56 shrink-0">
+                                <div className="w-full sm:w-56 shrink-0">
                                   <SelectDropdown placeholder="Kasa Seçin" value={splitState.cash.account_id ? String(splitState.cash.account_id) : ''} onChange={(v) => updateSplit('cash', 'account_id', v ? parseInt(v) : null)} options={cashRegisters.filter(r => r.type === 'cash' || r.type === 'general').map(r => ({ value: String(r.id), label: r.name }))} className="w-full shadow-sm text-[13px]" />
                                 </div>
-                                <div className="flex-1">
+                                <div className="w-full sm:flex-1">
                                   <input type="text" placeholder="Açıklama..." value={splitState.cash.notes} onChange={(e) => updateSplit('cash', 'notes', e.target.value)} className={inputCls} />
                                 </div>
                               </div>
@@ -1079,14 +1084,14 @@ export const NewPurchasePage = () => {
                                 <Landmark className="w-4 h-4 text-blue-600" />
                                 <span className="font-semibold text-gray-700 text-sm">Havale / EFT</span>
                               </div>
-                              <div className="flex-1 flex items-center gap-3 w-full">
-                                <div className="w-32 shrink-0">
+                              <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-3 w-full">
+                                <div className="w-full sm:w-32 shrink-0">
                                   <input type="text" placeholder="Tutar (₺)" value={splitState.bank_transfer.amount} onChange={(e) => updateSplit('bank_transfer', 'amount', e.target.value)} className={`${inputCls} text-right font-semibold`} />
                                 </div>
-                                <div className="w-56 shrink-0">
+                                <div className="w-full sm:w-56 shrink-0">
                                   <SelectDropdown placeholder="Banka Seçin" value={splitState.bank_transfer.account_id ? String(splitState.bank_transfer.account_id) : ''} onChange={(v) => updateSplit('bank_transfer', 'account_id', v ? parseInt(v) : null)} options={cashRegisters.filter(r => r.type === 'bank').map(r => ({ value: String(r.id), label: r.name }))} className="w-full shadow-sm text-[13px]" />
                                 </div>
-                                <div className="flex-1">
+                                <div className="w-full sm:flex-1">
                                   <input type="text" placeholder="Açıklama..." value={splitState.bank_transfer.notes} onChange={(e) => updateSplit('bank_transfer', 'notes', e.target.value)} className={inputCls} />
                                 </div>
                               </div>
@@ -1098,14 +1103,14 @@ export const NewPurchasePage = () => {
                                 <CreditCard className="w-4 h-4 text-purple-600" />
                                 <span className="font-semibold text-gray-700 text-sm">K.Kartı / Mail Order</span>
                               </div>
-                              <div className="flex-1 flex items-center gap-3 w-full">
-                                <div className="w-32 shrink-0">
+                              <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-3 w-full">
+                                <div className="w-full sm:w-32 shrink-0">
                                   <input type="text" placeholder="Tutar (₺)" value={splitState.credit_card.amount} onChange={(e) => updateSplit('credit_card', 'amount', e.target.value)} className={`${inputCls} text-right font-semibold`} />
                                 </div>
-                                <div className="w-56 shrink-0">
+                                <div className="w-full sm:w-56 shrink-0">
                                   <SelectDropdown placeholder="POS Seçin" value={splitState.credit_card.account_id ? String(splitState.credit_card.account_id) : ''} onChange={(v) => updateSplit('credit_card', 'account_id', v ? parseInt(v) : null)} options={cashRegisters.filter(r => r.type === 'pos').map(r => ({ value: String(r.id), label: r.name }))} className="w-full shadow-sm text-[13px]" />
                                 </div>
-                                <div className="flex-1">
+                                <div className="w-full sm:flex-1">
                                   <input type="text" placeholder="Açıklama..." value={splitState.credit_card.notes} onChange={(e) => updateSplit('credit_card', 'notes', e.target.value)} className={inputCls} />
                                 </div>
                               </div>
@@ -1141,7 +1146,7 @@ export const NewPurchasePage = () => {
                 </div>
 
                 {/* Right: Totals */}
-                <div className="flex-shrink-0 flex flex-col gap-1.5" style={{ width: 'calc(110px + 80px + 120px + 40px + (3 * 0.75rem))' }}>
+                <div className="w-full lg:w-auto flex-shrink-0 flex flex-col gap-1.5 lg:min-w-[360px]">
                   <div 
                     className="grid items-center text-sm text-gray-600 py-1"
                     style={{ gridTemplateColumns: '1fr 120px 40px', gap: '0.75rem' }}
@@ -1223,7 +1228,7 @@ export const NewPurchasePage = () => {
           </div>
 
           {/* ── RIGHT COLUMN (sticky) ────────────────────────────────────── */}
-          <div className="w-72 flex-shrink-0 sticky top-4 flex flex-col gap-3">
+          <div className="w-full lg:w-72 flex-shrink-0 lg:sticky top-4 flex flex-col gap-3">
 
             {/* Supplier Card */}
             <div
