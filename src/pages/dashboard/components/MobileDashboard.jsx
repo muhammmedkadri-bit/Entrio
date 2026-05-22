@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import {
@@ -10,6 +10,7 @@ import {
   BarChart, Bar, ResponsiveContainer, Tooltip, XAxis, Cell
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
+import { QuickTransactionModal } from '../modals/QuickTransactionModal';
 
 /* ─── Transaction tipi → görsel bilgiler ──────────────────── */
 const TX_META = {
@@ -117,12 +118,14 @@ export const MobileDashboard = ({
   quickNotes,
   onAddNote,
   onDeleteNote,
+  onTxSaved,
   charts,
   onTxClick // We might still use this as fallback, but let's handle click locally
 }) => {
   const navigate = useNavigate();
   const handleNav = (path) => navigate(path);
 
+  const [showQuickTx, setShowQuickTx] = useState(false);
   const [selectedMobileTx, setSelectedMobileTx] = React.useState(null);
   const [translateY, setTranslateY] = React.useState(0);
   const [isDragging, setIsDragging] = React.useState(false);
@@ -268,7 +271,7 @@ export const MobileDashboard = ({
           <span className="font-semibold text-sm text-slate-800">Hızlı Satış</span>
         </button>
         <button
-          onClick={() => handleNav('/cash')}
+          onClick={() => setShowQuickTx(true)}
           className="flex flex-col items-center justify-center bg-white p-4 rounded-2xl border border-slate-100 shadow-sm active:scale-95 transition-transform"
         >
           <div className="w-12 h-12 bg-brand-50 text-brand-600 rounded-full flex items-center justify-center mb-2">
@@ -532,6 +535,17 @@ export const MobileDashboard = ({
           </div>
         </div>
       )}
+
+      {/* ── QUICK TRANSACTION MODAL ── */}
+      <QuickTransactionModal
+        isOpen={showQuickTx}
+        onClose={() => setShowQuickTx(false)}
+        allRegisters={allRegisters}
+        onSaved={() => {
+          setShowQuickTx(false);
+          onTxSaved?.();
+        }}
+      />
 
     </div>
   );

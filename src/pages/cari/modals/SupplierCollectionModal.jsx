@@ -56,6 +56,8 @@ export const SupplierCollectionModal = ({ isOpen, onClose, supplier, onSaved }) 
   const afterBalance = -receivable + parsedAmount; // supplier balance goes from negative toward 0
   const isAmountValid = parsedAmount > 0 && parsedAmount <= receivable;
 
+  const showRegisterSelect = type === 'cash_collection' && ['cash', 'credit_card', 'bank_transfer'].includes(method);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isAmountValid) {
@@ -69,7 +71,7 @@ export const SupplierCollectionModal = ({ isOpen, onClose, supplier, onSaved }) 
         parsedAmount,
         type,
         method,
-        type === 'cash_collection' ? parseInt(registerId) : null,
+        showRegisterSelect ? parseInt(registerId) : null,
         date,
         description
       );
@@ -215,7 +217,7 @@ export const SupplierCollectionModal = ({ isOpen, onClose, supplier, onSaved }) 
                 </div>
 
                 {/* Kasa Seçimi */}
-                {(method === 'cash' || method === 'credit_card') && (
+                {showRegisterSelect && (
                   <div className="animate-in fade-in slide-in-from-top-2 duration-200">
                     <label className={labelCls}>Hangi Kasaya</label>
                     <div className="relative">

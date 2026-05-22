@@ -170,7 +170,7 @@ export const Dashboard = () => {
   const [charts, setCharts] = useState({ dailyIncomeExpense: [], todayPie: [] });
 
   // ── Cache-aware dashboard data hook ─────────────────────────────────
-  const { cashReport, salesSummary, allTxs, registers: hookRegisters, loading } = useDashboardData();
+  const { cashReport, salesSummary, allTxs, registers: hookRegisters, loading, refetch } = useDashboardData();
   useGlobalLoader(loading);
 
   // Track per-section readiness so skeletons show even on cached (loading=false) loads
@@ -429,6 +429,7 @@ export const Dashboard = () => {
           onAddNote={handleMobileAddNote}
           onDeleteNote={removeNote}
           onEditNote={saveEditedNote}
+          onTxSaved={() => refetch(true)}
           charts={charts}
           onTxClick={(tx) => setSelectedTransaction(tx)}
         />

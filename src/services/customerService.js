@@ -163,7 +163,7 @@ export const customerService = {
           .from('sales')
           .select('*')
           .eq('customer_id', customerId)
-          .or('status.eq.pending,paid_amount.lt.total_amount')
+          .in('status', ['pending', 'partial'])
           .order('created_at', { ascending: true });
 
         let remaining = amount;
@@ -177,21 +177,19 @@ export const customerService = {
             paid_amount: newPaidAmount,
             status: newPaidAmount >= Number(sale.total_amount) ? 'completed' : 'pending'
           }).eq('id', sale.id);
-          if (registerId) {
-            await supabase.from('cash_transactions').insert([{
-              reference_id: sale.id, register_id: registerId,
-              transaction_type: 'customer_payment_in', amount: applyAmt,
-              notes: description || `Tahsilat (${method}) - Toplu Dağılım`,
-              created_at: Date.now()
-            }]);
-          }
+          await supabase.from('cash_transactions').insert([{
+            reference_id: sale.id, register_id: registerId || null,
+            transaction_type: 'customer_payment_in', amount: applyAmt,
+            notes: description || `Tahsilat (${method}) - Toplu Dağılım`,
+            created_at: Date.now()
+          }]);
           remaining -= applyAmt;
         }
 
         // 4. Fazla avans kasa kaydı
-        if (remaining > 0 && registerId) {
+        if (remaining > 0) {
           await supabase.from('cash_transactions').insert([{
-            register_id: registerId, transaction_type: 'customer_payment_in',
+            register_id: registerId || null, transaction_type: 'customer_payment_in',
             amount: remaining, notes: description || `Tahsilat: ${customer.name} (Fazla/Avans Ödeme)`,
             created_at: Date.now()
           }]);
@@ -235,18 +233,16 @@ export const customerService = {
             paid_amount: newPaidAmount,
             status: newPaidAmount >= sale.total_amount ? 'completed' : 'pending'
           });
-          if (registerId) {
-            await db.cash_transactions.add({
-              reference_id: sale.id, register_id: registerId,
-              transaction_type: 'customer_payment_in', amount: applyAmt,
-              notes: description || `Tahsilat (${method}) - Toplu Dağılım`, created_at: Date.now()
-            });
-          }
+          await db.cash_transactions.add({
+            reference_id: sale.id, register_id: registerId ? Number(registerId) : null,
+            transaction_type: 'customer_payment_in', amount: applyAmt,
+            notes: description || `Tahsilat (${method}) - Toplu Dağılım`, created_at: Date.now()
+          });
           remainingToDistribute -= applyAmt;
         }
-        if (remainingToDistribute > 0 && registerId) {
+        if (remainingToDistribute > 0) {
           await db.cash_transactions.add({
-            register_id: registerId, transaction_type: 'customer_payment_in',
+            register_id: registerId ? Number(registerId) : null, transaction_type: 'customer_payment_in',
             amount: remainingToDistribute, notes: description || `Tahsilat: ${customer.name} (Fazla/Avans Ödeme)`,
             created_at: Date.now()
           });
@@ -379,19 +375,8 @@ export const customerService = {
             }
         }
 
-        // UI için işlemleri yeniden sondan başa sıralıyoruz
-        combinedTxs.sort((a, b) => {
-          const dayA = new Date(a.created_at).setHours(0, 0, 0, 0);
-          const dayB = new Date(b.created_at).setHours(0, 0, 0, 0);
-          if (dayA === dayB) {
-              const idA = typeof a.id === 'number' ? a.id : 0;
-              const idB = typeof b.id === 'number' ? b.id : 0;
-              if (idA && idB) return idB - idA;
-              return typeof a.id === 'string' && typeof b.id === 'number' ? 1 : 
-                     typeof a.id === 'number' && typeof b.id === 'string' ? -1 : 0;
-          }
-          return getTime(b.created_at) - getTime(a.created_at);
-        });
+        // UI için işlemleri yeniden sondan başa (en yeni en üstte) sıralıyoruz
+        combinedTxs.sort((a, b) => getTime(b.created_at) - getTime(a.created_at));
 
         txs = combinedTxs;
         } // CLOSING salesData block
@@ -447,18 +432,7 @@ export const customerService = {
       }
 
       // UI için işlemleri yeniden sondan başa (en yeni en üstte) sıralıyoruz
-      combinedTxs.sort((a, b) => {
-        const dayA = new Date(a.created_at).setHours(0, 0, 0, 0);
-        const dayB = new Date(b.created_at).setHours(0, 0, 0, 0);
-        if (dayA === dayB) {
-            const idA = typeof a.id === 'number' ? a.id : 0;
-            const idB = typeof b.id === 'number' ? b.id : 0;
-            if (idA && idB) return idB - idA;
-            return typeof a.id === 'string' && typeof b.id === 'number' ? 1 : 
-                   typeof a.id === 'number' && typeof b.id === 'string' ? -1 : 0;
-        }
-        return getTime(b.created_at) - getTime(a.created_at);
-      });
+      combinedTxs.sort((a, b) => getTime(b.created_at) - getTime(a.created_at));
       
       txs = combinedTxs;
       

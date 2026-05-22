@@ -61,7 +61,7 @@ export const CollectionModal = ({ isOpen, onClose, customer, onSaved }) => {
     const val = parseFloat(amount);
     setLoading(true);
     try {
-      const regId = ['Nakit', 'Kredi Kartı'].includes(method) ? parseInt(registerId) : null;
+      const regId = ['Nakit', 'Kredi Kartı', 'Banka Havalesi / EFT'].includes(method) ? parseInt(registerId) : null;
       await customerService.collectPayment(customer.id, val, method, regId, description);
       toast.success('Tahsilat başarıyla kaydedildi.');
       onSaved();
@@ -75,7 +75,7 @@ export const CollectionModal = ({ isOpen, onClose, customer, onSaved }) => {
     }
   };
 
-  const showRegisterSelect = ['Nakit', 'Kredi Kartı'].includes(method);
+  const showRegisterSelect = ['Nakit', 'Kredi Kartı', 'Banka Havalesi / EFT'].includes(method);
 
   const inputCls = "w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-400 transition-all";
   const labelCls = "flex items-center gap-1.5 text-sm font-semibold text-slate-700 mb-1.5";
