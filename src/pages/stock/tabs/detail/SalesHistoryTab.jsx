@@ -192,7 +192,7 @@ export const SalesHistoryTab = ({ salesHistory = [], product }) => {
 
       {/* Pagination */}
       {salesHistory.length > 0 && (
-        <div className="fixed bottom-[72px] sm:bottom-5 left-4 sm:left-auto right-4 sm:right-6 flex items-center justify-between sm:justify-end gap-3 z-20 bg-white/80 sm:bg-transparent backdrop-blur-md sm:backdrop-blur-none p-2 sm:p-0 rounded-xl sm:rounded-none border sm:border-none border-slate-200 shadow-sm sm:shadow-none">
+        <div className="mt-4 mb-6 sm:mb-0 sm:fixed sm:bottom-5 sm:right-6 flex items-center justify-between sm:justify-end gap-3 z-20 print:hidden">
           <span className="text-xs text-gray-400 font-medium ml-2 sm:ml-0">
             <span className="sm:hidden">Sayfa {page}/{totalPages}</span>
             <span className="hidden sm:inline">{salesHistory.length} kayıt içinde {(page - 1) * ITEMS_PER_PAGE + 1}-{Math.min(page * ITEMS_PER_PAGE, salesHistory.length)}</span>

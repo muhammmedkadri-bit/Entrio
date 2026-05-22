@@ -181,7 +181,7 @@ export const ProductDetailPage = () => {
   );
 
   return (
-    <div className="flex flex-col h-full gap-4 relative">
+    <div className="flex flex-col min-h-full gap-4 relative pb-6">
       
 
       {product && (
