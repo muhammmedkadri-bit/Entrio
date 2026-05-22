@@ -34,6 +34,14 @@ export const Layout = () => {
     document.title = title;
   }, [location.pathname]);
 
+  // Reset scroll to top on every route change so users always
+  // start at the top of a new page (also prevents scroll-smooth
+  // from animating the position change visually).
+  React.useEffect(() => {
+    const mainEl = document.querySelector('main');
+    if (mainEl) mainEl.scrollTop = 0;
+  }, [location.pathname]);
+
   // isNavigating flag controls the initial mount overlay.
   // It stops quickly so that the page mounts, but isPageLoading keeps it open until data is fully loaded.
   React.useEffect(() => {
@@ -45,10 +53,10 @@ export const Layout = () => {
   }, [isNavigating, location.pathname, stopNavigation]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 font-sans print:bg-white print:h-auto print:overflow-visible">
+    <div className="flex h-dvh overflow-hidden bg-slate-50 font-sans print:bg-white print:h-auto print:overflow-visible">
       <Sidebar />
       <div className="flex flex-col flex-1 overflow-hidden relative print:overflow-visible">
-        <main className={`flex-1 overflow-y-auto ${isPos ? 'p-2' : 'p-3'} pb-20 lg:pb-3 scroll-smooth z-0 print:p-0 print:overflow-visible`}>
+        <main className={`flex-1 overflow-y-auto overscroll-y-none ${isPos ? 'p-2' : 'p-3'} pb-20 lg:pb-3 z-0 print:p-0 print:overflow-visible`}>
           <div className={`relative ${isPos ? 'h-full flex flex-col' : 'h-full animate-in fade-in duration-300'} print:max-w-none`}>
             <Outlet />
           </div>

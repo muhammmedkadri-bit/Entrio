@@ -30,8 +30,15 @@
     --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   }
 
+  html {
+    height: 100%;
+    overscroll-behavior: none; /* Stop iOS rubber-band at root level */
+  }
+
   body {
+    height: 100%;
     font-family: var(--font-sans);
+    overscroll-behavior: none; /* Belt-and-suspenders: also lock body */
     @apply bg-gray-50 text-slate-900 antialiased;
   }
 
