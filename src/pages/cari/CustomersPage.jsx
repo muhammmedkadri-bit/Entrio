@@ -252,7 +252,7 @@ export const CustomersPage = () => {
 
         {/* Pagination */}
         {customers.length > 0 && (
-          <div className="mt-4 flex items-center justify-between">
+          <div className="mt-4 mb-6 sm:mb-0 sm:fixed sm:bottom-5 sm:right-6 flex items-center justify-between sm:justify-end gap-3 z-20 print:hidden">
             <span className="text-xs text-gray-400 hidden sm:block">
               {customers.length} müşteri içinde {startItem}–{endItem} gösteriliyor
             </span>

@@ -1090,7 +1090,7 @@ export const CashDashboardTab = ({ registers = [], onRegisterChanged, onLoadingC
 
       {/* Pagination */}
       {recentTxs.length > 0 && (
-        <div className="flex items-center justify-between sm:justify-end gap-3 mt-4 sm:mt-4 p-2 sm:p-0">
+        <div className="mt-4 mb-6 sm:mb-0 sm:fixed sm:bottom-5 sm:right-6 flex items-center justify-between sm:justify-end gap-3 z-20 print:hidden">
           <span className="text-xs text-gray-400 font-medium ml-1 sm:ml-0">
             <span className="sm:hidden">Sayfa {page}/{totalPages}</span>
             <span className="hidden sm:inline">{recentTxs.length} kayıt içinde {(page - 1) * ITEMS_PER_PAGE + 1}-{Math.min(page * ITEMS_PER_PAGE, recentTxs.length)} gösteriliyor</span>
