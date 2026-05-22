@@ -118,10 +118,12 @@ export const MobileDashboard = ({
   onAddNote,
   onDeleteNote,
   charts,
-  onTxClick
+  onTxClick // We might still use this as fallback, but let's handle click locally
 }) => {
   const navigate = useNavigate();
   const handleNav = (path) => navigate(path);
+
+  const [selectedMobileTx, setSelectedMobileTx] = React.useState(null);
 
   /* Bugünkü gelir/gider (son eleman = bugün) */
   const todayData = charts?.dailyIncomeExpense?.[charts.dailyIncomeExpense.length - 1] || { income: 0, expense: 0 };
@@ -136,7 +138,7 @@ export const MobileDashboard = ({
   const fmt = (v) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(v || 0);
 
   return (
-    <div className="flex flex-col gap-4 pb-4">
+    <div className="flex flex-col gap-4 pb-4 relative">
 
       {/* ── HEADER ── */}
       <div className="flex justify-between items-end px-1 pt-2">
@@ -304,7 +306,7 @@ export const MobileDashboard = ({
         <div>
           {recentTransactions?.filter(t => !t.isEmpty).length > 0 ? (
             recentTransactions.map((tx, idx) => (
-              <MobileTransactionCard key={tx.id || idx} tx={tx} onClick={() => !tx.isEmpty && onTxClick(tx)} />
+              <MobileTransactionCard key={tx.id || idx} tx={tx} onClick={() => !tx.isEmpty && setSelectedMobileTx(tx)} />
             ))
           ) : (
             <div className="text-center py-6 bg-white border border-slate-100 rounded-xl">
@@ -313,6 +315,101 @@ export const MobileDashboard = ({
           )}
         </div>
       </div>
+
+      {/* ── MOBILE QUICK VIEW MODAL ── */}
+      {selectedMobileTx && (
+        <div className="fixed inset-0 z-[100] flex flex-col justify-end">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in"
+            onClick={() => setSelectedMobileTx(null)}
+          />
+          
+          {/* Bottom Sheet Modal */}
+          <div className="relative bg-white w-full rounded-t-3xl shadow-2xl p-5 pb-8 animate-in slide-in-from-bottom duration-300">
+            <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-5" />
+            
+            {(() => {
+              const tx = selectedMobileTx;
+              const meta = TX_META[tx.transaction_type] || { label: 'İşlem', icon: Receipt, color: 'bg-slate-100 text-slate-600', sign: '' };
+              const Icon = meta.icon;
+              const desc = getTxDescription(tx);
+              const amountColor = meta.sign === '+' ? 'text-green-600' : meta.sign === '-' ? 'text-rose-600' : 'text-slate-800';
+              
+              // Define navigation paths based on type
+              let navPath = null;
+              if (tx.transaction_type === 'sale_in') navPath = tx.sale_id || tx.reference_id ? `/sales/${tx.sale_id || tx.reference_id}` : '/sales';
+              else if (tx.transaction_type === 'purchase_out') navPath = tx.purchase_id || tx.reference_id ? `/purchases/${tx.purchase_id || tx.reference_id}` : '/purchases';
+              else if (tx.transaction_type === 'return_in' || tx.transaction_type === 'return_out') navPath = tx.originalSaleId ? `/sales/${tx.originalSaleId}` : null;
+              
+              return (
+                <div className="flex flex-col">
+                  {/* Header: Icon & Type */}
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${meta.color}`}>
+                      <Icon size={24} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-900 text-lg">{meta.label} Detayı</h3>
+                      <p className="text-sm font-medium text-slate-500">{format(new Date(tx.created_at || new Date()), 'd MMMM yyyy HH:mm', { locale: tr })}</p>
+                    </div>
+                  </div>
+
+                  {/* Amount Card */}
+                  <div className="bg-slate-50 rounded-2xl p-5 flex flex-col items-center justify-center mb-6 border border-slate-100">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">İşlem Tutarı</span>
+                    <span className={`text-4xl font-black tracking-tight ${amountColor}`}>
+                      {meta.sign}{fmt(tx.displayAmount)}
+                    </span>
+                    {tx.paymentMethodLabel && (
+                      <span className="mt-2 bg-white border border-slate-200 text-slate-600 text-[11px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wide">
+                        {tx.paymentMethodLabel}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Info List */}
+                  <div className="flex flex-col gap-4 mb-6 px-1">
+                    <div className="flex flex-col">
+                      <span className="text-[11px] font-bold text-slate-400 uppercase">Açıklama / Not</span>
+                      <span className="text-sm font-semibold text-slate-800 mt-0.5 leading-snug">{desc}</span>
+                    </div>
+                    
+                    {tx.entityName && (
+                      <div className="flex flex-col">
+                        <span className="text-[11px] font-bold text-slate-400 uppercase">Cari Hesap</span>
+                        <span className="text-sm font-semibold text-slate-800 mt-0.5">{tx.entityName}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-3 mt-2">
+                    <button 
+                      onClick={() => setSelectedMobileTx(null)}
+                      className="flex-1 py-3.5 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 active:scale-[0.98] transition-all"
+                    >
+                      Kapat
+                    </button>
+                    
+                    {navPath && (
+                      <button 
+                        onClick={() => {
+                          setSelectedMobileTx(null);
+                          handleNav(navPath);
+                        }}
+                        className="flex-1 py-3.5 rounded-xl font-bold text-white bg-[#5da83f] shadow-lg shadow-green-500/30 active:scale-[0.98] transition-all"
+                      >
+                        Tüm Detayları Gör
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
 
     </div>
   );
