@@ -40,6 +40,40 @@ export const QuickTransactionModal = ({ isOpen, onClose, allRegisters = [], onSa
   const dropdownRef = useRef(null);
   const amountRef = useRef(null);
 
+  // Swipe-to-close state
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+  const [dragY, setDragY] = useState(0);
+
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientY);
+  };
+
+  const onTouchMove = (e) => {
+    const currentY = e.targetTouches[0].clientY;
+    setTouchEnd(currentY);
+    if (touchStart && currentY > touchStart) {
+      setDragY(currentY - touchStart);
+    }
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) {
+      setDragY(0);
+      return;
+    }
+    const distance = touchEnd - touchStart;
+    if (distance > minSwipeDistance) {
+      onClose();
+    }
+    setDragY(0);
+    setTouchStart(null);
+    setTouchEnd(null);
+  };
+
   // Aktif kasalar (kredi kartı hariç gelir, tümü gider için)
   const activeRegisters = allRegisters.filter(r =>
     r.is_active !== false && r.type !== 'credit_card'
@@ -80,11 +114,20 @@ export const QuickTransactionModal = ({ isOpen, onClose, allRegisters = [], onSa
 
   // Scroll lock
   useEffect(() => {
-    const mainEl = document.querySelector('main');
-    if (!mainEl) return;
-    if (isOpen) mainEl.style.overflowY = 'hidden';
-    else mainEl.style.overflowY = '';
-    return () => { mainEl.style.overflowY = ''; };
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      const mainEl = document.querySelector('main');
+      if (mainEl) mainEl.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+      const mainEl = document.querySelector('main');
+      if (mainEl) mainEl.style.overflow = '';
+    }
+    return () => { 
+      document.body.style.overflow = '';
+      const mainEl = document.querySelector('main');
+      if (mainEl) mainEl.style.overflow = ''; 
+    };
   }, [isOpen]);
 
   const selectedRegister = activeRegisters.find(r => String(r.id) === String(registerId));
@@ -166,15 +209,24 @@ export const QuickTransactionModal = ({ isOpen, onClose, allRegisters = [], onSa
       <div
         className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-200"
         onClick={onClose}
+        style={{ touchAction: 'none' }}
       />
 
       {/* Bottom Sheet */}
-      <div className="relative w-full bg-white rounded-t-3xl shadow-2xl animate-in slide-in-from-bottom duration-300 max-h-[92vh] flex flex-col overflow-hidden">
+      <div 
+        className="relative w-full bg-white rounded-t-3xl shadow-2xl animate-in slide-in-from-bottom duration-300 max-h-[92vh] flex flex-col overflow-hidden"
+        style={{ transform: `translateY(${dragY > 0 ? dragY : 0}px)` }}
+      >
 
         {/* ── Header Gradient ── */}
-        <div className={`bg-gradient-to-r ${palette.gradFrom} ${palette.gradTo} px-5 pt-5 pb-6 flex-shrink-0`}>
+        <div 
+          className={`bg-gradient-to-r ${palette.gradFrom} ${palette.gradTo} px-5 pt-5 pb-6 flex-shrink-0 touch-none`}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
           {/* Drag handle */}
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center mb-4 cursor-grab active:cursor-grabbing">
             <div className="w-10 h-1 bg-white/40 rounded-full" />
           </div>
 
@@ -350,7 +402,7 @@ export const QuickTransactionModal = ({ isOpen, onClose, allRegisters = [], onSa
           </div>
 
           {/* Submit Butonu */}
-          <div className="pt-2 pb-safe">
+          <div className="pt-4 pb-20">
             <button
               type="submit"
               disabled={loading || !amount || !registerId}
