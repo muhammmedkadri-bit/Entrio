@@ -286,7 +286,7 @@ export const SaleDetailPage = () => {
       {sale && (
         <>
           {/* MOBILE LAYOUT (default, hidden on lg+) */}
-          <div className="flex flex-col gap-0 lg:hidden print:hidden">
+          <div className="flex flex-col gap-0 lg:hidden print:hidden pb-28">
 
             {/* ── Mobile Hero Header ── */}
             <div className="bg-white border-b border-gray-100 px-4 pt-4 pb-3">
@@ -623,8 +623,8 @@ export const SaleDetailPage = () => {
               </div>
             )}
 
-            {/* ── Sticky Bottom Action Bar ── */}
-            <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 flex gap-2 z-30 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
+            {/* ── Bottom Action Bar (Static) ── */}
+            <div className="bg-white border border-gray-200 px-4 py-3 flex gap-2 rounded-xl mx-4 mb-4 shadow-sm">
               {remaining > 0 && sale.status !== 'cancelled' && (
                 <button
                   onClick={() => { setPayAmount(remaining); setPaymentModal(true); }}

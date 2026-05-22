@@ -124,6 +124,72 @@ export const MobileDashboard = ({
   const handleNav = (path) => navigate(path);
 
   const [selectedMobileTx, setSelectedMobileTx] = React.useState(null);
+  const [translateY, setTranslateY] = React.useState(0);
+  const [isDragging, setIsDragging] = React.useState(false);
+  const dragStartY = React.useRef(0);
+  const currentTranslateY = React.useRef(0);
+  const isDraggingRef = React.useRef(false);
+  const handleRef = React.useRef(null);
+
+  /* ── Scroll lock: target <main> (the real scroll container), not body ── */
+  React.useEffect(() => {
+    const mainEl = document.querySelector('main');
+    if (!mainEl) return;
+    if (selectedMobileTx) {
+      mainEl.style.overflowY = 'hidden';
+    } else {
+      mainEl.style.overflowY = '';
+    }
+    return () => {
+      mainEl.style.overflowY = '';
+    };
+  }, [selectedMobileTx]);
+
+  /* ── Non-passive drag handlers for the notch handle ── */
+  React.useEffect(() => {
+    const handle = handleRef.current;
+    if (!handle || !selectedMobileTx) return;
+
+    const onStart = (e) => {
+      dragStartY.current = e.touches[0].clientY;
+      isDraggingRef.current = true;
+      setIsDragging(true);
+    };
+
+    const onMove = (e) => {
+      if (!isDraggingRef.current) return;
+      // Must call preventDefault() to stop iOS from scrolling behind the sheet.
+      // This only works with a non-passive listener.
+      if (e.cancelable) e.preventDefault();
+      const diff = e.touches[0].clientY - dragStartY.current;
+      if (diff > 0) {
+        currentTranslateY.current = diff;
+        setTranslateY(diff);
+      }
+    };
+
+    const onEnd = () => {
+      isDraggingRef.current = false;
+      setIsDragging(false);
+      if (currentTranslateY.current > 100) {
+        setSelectedMobileTx(null);
+      }
+      setTranslateY(0);
+      currentTranslateY.current = 0;
+      dragStartY.current = 0;
+    };
+
+    handle.addEventListener('touchstart', onStart, { passive: true });
+    handle.addEventListener('touchmove', onMove, { passive: false }); // non-passive!
+    handle.addEventListener('touchend', onEnd);
+
+    return () => {
+      handle.removeEventListener('touchstart', onStart);
+      handle.removeEventListener('touchmove', onMove);
+      handle.removeEventListener('touchend', onEnd);
+    };
+  }, [selectedMobileTx]); // Re-attach every time the sheet opens (handle remounts)
+
 
   /* Bugünkü gelir/gider (son eleman = bugün) */
   const todayData = charts?.dailyIncomeExpense?.[charts.dailyIncomeExpense.length - 1] || { income: 0, expense: 0 };
@@ -326,127 +392,143 @@ export const MobileDashboard = ({
           />
           
           {/* Bottom Sheet Modal */}
-          <div className="relative bg-white w-full rounded-t-3xl shadow-2xl p-5 pb-28 animate-in slide-in-from-bottom duration-300 max-h-[90vh] overflow-y-auto">
-            <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-5 shrink-0" />
+          <div 
+            className="relative bg-white w-full rounded-t-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom duration-300"
+            style={{
+              transform: `translateY(${translateY}px)`,
+              transition: isDragging ? 'none' : 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+            }}
+          >
+            {/* Handle / drag notch — listeners attached imperatively (non-passive) */}
+            <div
+              ref={handleRef}
+              className="w-full py-3 cursor-grab active:cursor-grabbing flex justify-center shrink-0 bg-white select-none"
+              style={{ touchAction: 'none' }}
+            >
+              <div className="w-12 h-1.5 bg-slate-200 rounded-full" />
+            </div>
             
-            {(() => {
-              const tx = selectedMobileTx;
-              const meta = TX_META[tx.transaction_type] || { label: 'İşlem', icon: Receipt, color: 'bg-slate-100 text-slate-600', sign: '' };
-              const Icon = meta.icon;
-              const desc = getTxDescription(tx);
-              const amountColor = meta.sign === '+' ? 'text-green-600' : meta.sign === '-' ? 'text-rose-600' : 'text-slate-800';
-              
-              // Define navigation paths based on type
-              let navPath = null;
-              if (tx.transaction_type === 'sale_in') navPath = tx.sale_id || tx.reference_id ? `/sales/${tx.sale_id || tx.reference_id}` : '/sales';
-              else if (tx.transaction_type === 'purchase_out') navPath = tx.purchase_id || tx.reference_id ? `/purchases/${tx.purchase_id || tx.reference_id}` : '/purchases';
-              else if (tx.transaction_type === 'return_in' || tx.transaction_type === 'return_out') navPath = tx.originalSaleId ? `/sales/${tx.originalSaleId}` : null;
-              
-              return (
-                <div className="flex flex-col">
-                  {/* Header: Icon & Type */}
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${meta.color}`}>
-                      <Icon size={24} />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-900 text-lg">{meta.label} Detayı</h3>
-                      <p className="text-sm font-medium text-slate-500">{format(new Date(tx.created_at || new Date()), 'd MMMM yyyy HH:mm', { locale: tr })}</p>
-                    </div>
-                  </div>
-
-                  {/* Info List & Amount Card container */}
-                  <div className="grid grid-cols-2 gap-3 mb-4">
-                    <div className="bg-slate-50 rounded-2xl p-4 flex flex-col justify-center border border-slate-100">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">İşlem Tutarı</span>
-                      <span className={`text-2xl font-black tracking-tight ${amountColor}`}>
-                        {meta.sign}{fmt(tx.displayAmount)}
-                      </span>
-                    </div>
-                    <div className="bg-slate-50 rounded-2xl p-4 flex flex-col justify-center border border-slate-100">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase mb-1">Ödeme / Yöntem</span>
-                      <span className="text-sm font-bold text-slate-700 leading-tight uppercase tracking-wide">
-                        {tx.paymentMethodLabel || '-'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-3 mb-6 px-1">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">Açıklama / Not</span>
-                      <span className="text-sm font-semibold text-slate-800 mt-0.5 leading-snug">{desc}</span>
-                    </div>
-                    {tx.entityName && (
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">Cari Hesap</span>
-                        <span className="text-sm font-semibold text-slate-800 mt-0.5">{tx.entityName}</span>
+            {/* Scrollable Container */}
+            <div className="flex-1 overflow-y-auto px-5 pb-28 pt-2">
+              {(() => {
+                const tx = selectedMobileTx;
+                const meta = TX_META[tx.transaction_type] || { label: 'İşlem', icon: Receipt, color: 'bg-slate-100 text-slate-600', sign: '' };
+                const Icon = meta.icon;
+                const desc = getTxDescription(tx);
+                const amountColor = meta.sign === '+' ? 'text-green-600' : meta.sign === '-' ? 'text-rose-600' : 'text-slate-800';
+                
+                // Define navigation paths based on type
+                let navPath = null;
+                if (tx.transaction_type === 'sale_in') navPath = tx.sale_id || tx.reference_id ? `/sales/${tx.sale_id || tx.reference_id}` : '/sales';
+                else if (tx.transaction_type === 'purchase_out') navPath = tx.purchase_id || tx.reference_id ? `/purchases/${tx.purchase_id || tx.reference_id}` : '/purchases';
+                else if (tx.transaction_type === 'return_in' || tx.transaction_type === 'return_out') navPath = tx.originalSaleId ? `/sales/${tx.originalSaleId}` : null;
+                
+                return (
+                  <div className="flex flex-col">
+                    {/* Header: Icon & Type */}
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${meta.color}`}>
+                        <Icon size={24} />
                       </div>
-                    )}
-                  </div>
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-lg">{meta.label} Detayı</h3>
+                        <p className="text-sm font-medium text-slate-500">{format(new Date(tx.created_at || new Date()), 'd MMMM yyyy HH:mm', { locale: tr })}</p>
+                      </div>
+                    </div>
 
-                  {/* Thermal Receipt Preview (If items exist) */}
-                  {tx.items && tx.items.length > 0 && (
-                    <div className="mb-6 relative mx-1 drop-shadow-sm">
-                      <div className="bg-[#fdfbf7] border border-slate-300 rounded-sm p-4 font-mono text-slate-800 relative z-10">
-                        {/* Header */}
-                        <div className="text-center mb-3">
-                          <h4 className="font-bold text-[13px] tracking-widest">{companyName?.toUpperCase() || 'ENTRIO'}</h4>
-                          <p className="text-[10px] mt-1 text-slate-500 font-semibold">Fiş Önizlemesi</p>
+                    {/* Info List & Amount Card container */}
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="bg-slate-50 rounded-2xl p-4 flex flex-col justify-center border border-slate-100">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">İşlem Tutarı</span>
+                        <span className={`text-2xl font-black tracking-tight ${amountColor}`}>
+                          {meta.sign}{fmt(tx.displayAmount)}
+                        </span>
+                      </div>
+                      <div className="bg-slate-50 rounded-2xl p-4 flex flex-col justify-center border border-slate-100">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase mb-1">Ödeme / Yöntem</span>
+                        <span className="text-sm font-bold text-slate-700 leading-tight uppercase tracking-wide">
+                          {tx.paymentMethodLabel || '-'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3 mb-6 px-1">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">Açıklama / Not</span>
+                        <span className="text-sm font-semibold text-slate-800 mt-0.5 leading-snug">{desc}</span>
+                      </div>
+                      {tx.entityName && (
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase">Cari Hesap</span>
+                          <span className="text-sm font-semibold text-slate-800 mt-0.5">{tx.entityName}</span>
                         </div>
-                        
-                        <div className="border-b border-dashed border-slate-400 pb-2 mb-2 text-[10px] flex justify-between font-semibold">
-                          <span>{format(new Date(tx.created_at || new Date()), 'dd/MM/yyyy HH:mm')}</span>
-                          <span>Fiş: {tx.saleNumber || tx.invoiceNumber || '-'}</span>
-                        </div>
-                        
-                        {/* Items */}
-                        <div className="flex flex-col max-h-[180px] overflow-y-auto mb-2 pr-1">
-                          {tx.items.map((item, idx) => (
-                            <div key={idx} className="flex flex-col text-[11px] mb-2 last:mb-0">
-                              <span className="font-bold leading-tight truncate">{item.productName}</span>
-                              <div className="flex justify-between items-end mt-0.5">
-                                <span className="text-slate-600 font-medium">{item.quantity} x {fmt(item.unit_price)}</span>
-                                <span className="font-bold">{fmt(item.line_total)}</span>
+                      )}
+                    </div>
+
+                    {/* Thermal Receipt Preview (If items exist) */}
+                    {tx.items && tx.items.length > 0 && (
+                      <div className="mb-6 relative mx-1 drop-shadow-sm">
+                        <div className="bg-[#fdfbf7] border border-slate-300 rounded-sm p-4 font-mono text-slate-800 relative z-10">
+                          {/* Header */}
+                          <div className="text-center mb-3">
+                            <h4 className="font-bold text-[13px] tracking-widest">{companyName?.toUpperCase() || 'ENTRIO'}</h4>
+                            <p className="text-[10px] mt-1 text-slate-500 font-semibold">Fiş Önizlemesi</p>
+                          </div>
+                          
+                          <div className="border-b border-dashed border-slate-400 pb-2 mb-2 text-[10px] flex justify-between font-semibold">
+                            <span>{format(new Date(tx.created_at || new Date()), 'dd/MM/yyyy HH:mm')}</span>
+                            <span>Fiş: {tx.saleNumber || tx.invoiceNumber || '-'}</span>
+                          </div>
+                          
+                          {/* Items */}
+                          <div className="flex flex-col max-h-[180px] overflow-y-auto mb-2 pr-1">
+                            {tx.items.map((item, idx) => (
+                              <div key={idx} className="flex flex-col text-[11px] mb-2 last:mb-0">
+                                <span className="font-bold leading-tight truncate">{item.productName}</span>
+                                <div className="flex justify-between items-end mt-0.5">
+                                  <span className="text-slate-600 font-medium">{item.quantity} x {fmt(item.unit_price)}</span>
+                                  <span className="font-bold">{fmt(item.line_total)}</span>
+                                </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
+                            ))}
+                          </div>
 
-                        {/* Totals */}
-                        <div className="border-t border-dashed border-slate-400 pt-2 mt-2">
-                          <div className="flex justify-between text-[13px] font-black">
-                            <span>TOPLAM</span>
-                            <span>{fmt(tx.displayAmount)}</span>
+                          {/* Totals */}
+                          <div className="border-t border-dashed border-slate-400 pt-2 mt-2">
+                            <div className="flex justify-between text-[13px] font-black">
+                              <span>TOPLAM</span>
+                              <span>{fmt(tx.displayAmount)}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="mt-2">
-                    {navPath ? (
-                      <button 
-                        onClick={() => {
-                          setSelectedMobileTx(null);
-                          handleNav(navPath);
-                        }}
-                        className="w-full py-4 rounded-xl font-bold text-white bg-[#5da83f] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20"
-                      >
-                        <Receipt size={18} /> Detaylı Fişi Gör
-                      </button>
-                    ) : (
-                      <button 
-                        onClick={() => setSelectedMobileTx(null)}
-                        className="w-full py-4 rounded-xl font-bold text-slate-600 bg-slate-100 active:scale-[0.98] transition-all"
-                      >
-                        Kapat
-                      </button>
                     )}
+
+                    {/* Actions */}
+                    <div className="mt-2">
+                      {navPath ? (
+                        <button 
+                          onClick={() => {
+                            setSelectedMobileTx(null);
+                            handleNav(navPath);
+                          }}
+                          className="w-full py-4 rounded-xl font-bold text-white bg-[#5da83f] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20"
+                        >
+                          <Receipt size={18} /> Detaylı Fişi Gör
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={() => setSelectedMobileTx(null)}
+                          className="w-full py-4 rounded-xl font-bold text-slate-600 bg-slate-100 active:scale-[0.98] transition-all"
+                        >
+                          Kapat
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })()}
+                );
+              })()}
+            </div>
           </div>
         </div>
       )}
