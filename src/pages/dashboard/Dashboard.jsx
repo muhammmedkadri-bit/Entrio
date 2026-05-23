@@ -616,9 +616,9 @@ export const Dashboard = () => {
               <h3 className="font-bold text-slate-800 flex items-center gap-2"><ListChecks className="w-4 h-4 text-[#7ed957]"/> Son 5 İşlem</h3>
             </div>
             {/* Header row */}
-            <div className="grid grid-cols-[110px_1fr_180px_60px_120px] bg-slate-50/80 border-b border-slate-100 px-0 flex-shrink-0">
+            <div className="grid grid-cols-[110px_1fr_180px_60px_120px] bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-100 px-0 flex-shrink-0">
               {['Hareket Türü','Hareket Açıklaması','Müşteri / Kasa','Saat','Meblağ'].map((h, i) => (
-                <div key={h} className={`px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider ${i === 4 ? 'text-right' : ''}`}>{h}</div>
+                <div key={h} className={`px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider ${i === 0 ? 'whitespace-nowrap' : ''} ${i === 4 ? 'text-right' : ''}`}>{h}</div>
               ))}
             </div>
             {/* Rows */}
@@ -644,16 +644,16 @@ export const Dashboard = () => {
                 if (tx.transaction_type === 'sale_in') IconComponent = ShoppingCart;
 
                 if (tx.transaction_type === 'sale_in' || tx.transaction_type === 'customer_payment_in' || tx.transaction_type === 'deposit_in') {
-                  pillClass = 'bg-[#82e05a]/15 text-[#5da83f] border border-[#82e05a]/30 backdrop-blur-md shadow-[inset_0_1px_2px_rgba(255,255,255,0.4)]';
+                  pillClass = 'bg-[#82e05a]/15 text-[#5da83f] dark:text-[#82e05a] border border-[#82e05a]/30 backdrop-blur-md shadow-[inset_0_1px_2px_rgba(255,255,255,0.4)] dark:shadow-none';
                   typeLabel = tx.transaction_type === 'sale_in' ? 'Satış' : 'Gelir';
                 } else if (tx.transaction_type === 'purchase_out' || tx.transaction_type === 'supplier_payment_out' || tx.transaction_type === 'expense_out' || tx.transaction_type === 'withdrawal_out') {
-                  pillClass = 'bg-rose-50 text-rose-600 border border-rose-200';
+                  pillClass = 'bg-rose-500/15 text-rose-600 dark:text-rose-500 border border-rose-500/30 backdrop-blur-md shadow-[inset_0_1px_2px_rgba(255,255,255,0.4)] dark:shadow-none';
                   typeLabel = tx.transaction_type === 'purchase_out' ? 'Alış' : 'Gider';
                 } else if (tx.transaction_type === 'return_in') {
-                  pillClass = 'bg-cyan-50 text-cyan-600 border border-cyan-200';
+                  pillClass = 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-500 border border-cyan-500/30 backdrop-blur-md shadow-[inset_0_1px_2px_rgba(255,255,255,0.4)] dark:shadow-none';
                   typeLabel = 'İade Girişi';
                 } else if (tx.transaction_type === 'return_out') {
-                  pillClass = 'bg-orange-50 text-orange-600 border border-orange-200';
+                  pillClass = 'bg-orange-500/15 text-orange-600 dark:text-orange-500 border border-orange-500/30 backdrop-blur-md shadow-[inset_0_1px_2px_rgba(255,255,255,0.4)] dark:shadow-none';
                   typeLabel = 'İade Çıkışı';
                 }
 
@@ -745,39 +745,39 @@ export const Dashboard = () => {
 
         </div>
         
-        <div className="xl:col-span-2 flex flex-col h-full">
-            <div className="bg-[#fef9c3] rounded-2xl shadow-sm border border-[#fef08a] overflow-hidden flex flex-col h-full min-h-[380px]">
-            <div className="p-4 border-b border-[#fde047] bg-[#fef08a]/50">
-              <h3 className="font-bold text-[#854d0e] text-sm tracking-wide">Hızlı Notlar</h3>
+          <div className="xl:col-span-2 flex flex-col h-full">
+            <div className="bg-[#fef9c3] dark:bg-slate-800/80 rounded-2xl shadow-sm border border-[#fef08a] dark:border-slate-700/60 overflow-hidden flex flex-col h-full min-h-[380px]">
+            <div className="p-4 border-b border-[#fde047] dark:border-slate-700/60 bg-[#fef08a]/50 dark:bg-slate-800/50">
+              <h3 className="font-bold text-[#854d0e] dark:text-amber-500 text-sm tracking-wide">Hızlı Notlar</h3>
             </div>
             <div className="p-4 flex-1 flex flex-col overflow-y-auto">
-              <form onSubmit={addNote} className="mb-4 flex flex-shrink-0 bg-white/60 border border-[#fde047] rounded-lg focus-within:ring-2 focus-within:ring-[#eab308] overflow-hidden shadow-sm">
+              <form onSubmit={addNote} className="mb-4 flex flex-shrink-0 bg-white/60 dark:bg-slate-900/50 border border-[#fde047] dark:border-slate-600 rounded-lg focus-within:ring-2 focus-within:ring-[#eab308] dark:focus-within:ring-amber-500 overflow-hidden shadow-sm">
                 <input 
                   type="text" 
                   value={newNote}
                   onChange={e => setNewNote(e.target.value)}
                   placeholder="Hızlı not ekle..."
-                  className="flex-1 bg-transparent px-4 py-2.5 text-sm font-medium text-[#713f12] placeholder-[#a16207]/50 focus:outline-none"
+                  className="flex-1 bg-transparent px-4 py-2.5 text-sm font-medium text-[#713f12] dark:text-slate-200 placeholder-[#a16207]/50 dark:placeholder-slate-500 focus:outline-none"
                 />
-                <button type="submit" className="px-4 flex items-center justify-center bg-[#fde047]/30 text-[#a16207] hover:text-[#713f12] hover:bg-[#fde047]/70 transition-colors border-l border-[#fde047]/50">
+                <button type="submit" className="px-4 flex items-center justify-center bg-[#fde047]/30 dark:bg-slate-700/50 text-[#a16207] dark:text-amber-500 hover:text-[#713f12] dark:hover:text-amber-400 hover:bg-[#fde047]/70 dark:hover:bg-slate-700 transition-colors border-l border-[#fde047]/50 dark:border-slate-600">
                   <Plus className="w-5 h-5" />
                 </button>
               </form>
               <ul className="flex-1 flex flex-col gap-2">
                 {!isNotesReady ? <NotesSkeleton /> : quickNotes.length === 0 ? (
-                  <div className="flex-1 flex flex-col items-center justify-center text-[#a16207]/50 min-h-[160px]">
-                    <div className="w-12 h-12 bg-[#fde047]/30 rounded-2xl flex items-center justify-center mb-3">
-                      <Edit2 className="w-6 h-6 text-[#ca8a04]" />
+                  <div className="flex-1 flex flex-col items-center justify-center text-[#a16207]/50 dark:text-slate-500 min-h-[160px]">
+                    <div className="w-12 h-12 bg-[#fde047]/30 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-3">
+                      <Edit2 className="w-6 h-6 text-[#ca8a04] dark:text-slate-400" />
                     </div>
-                    <p className="text-sm font-semibold text-[#854d0e]">Henüz not eklenmemiş</p>
-                    <p className="text-xs text-[#a16207]/70 mt-0.5">Gündelik notlarınızı buradan takip edin</p>
+                    <p className="text-sm font-semibold text-[#854d0e] dark:text-slate-400">Henüz not eklenmemiş</p>
+                    <p className="text-xs text-[#a16207]/70 dark:text-slate-500 mt-0.5">Gündelik notlarınızı buradan takip edin</p>
                   </div>
                 ) : [...quickNotes, ...Array(Math.max(0, 5 - quickNotes.length)).fill({ isEmpty: true })].map((n, idx) => {
                   if (n.isEmpty) {
                     return <li key={`empty_${idx}`} className="flex-1 bg-transparent p-3 rounded-lg border border-transparent min-h-[46px]"></li>;
                   }
                   return (
-                    <li key={n.id} className="w-full bg-white/60 px-3 py-2 rounded-lg flex items-center justify-between group border border-[#fde047] hover:border-[#eab308] transition-colors min-h-[46px]">
+                    <li key={n.id} className="w-full bg-white/60 dark:bg-slate-800/80 px-3 py-2 rounded-lg flex items-center justify-between group border border-[#fde047] dark:border-slate-600 hover:border-[#eab308] dark:hover:border-slate-500 transition-colors min-h-[46px]">
                       {editingNoteId === n.id ? (
                         <div className="flex-1 w-full mr-2">
                           <input 
@@ -787,12 +787,12 @@ export const Dashboard = () => {
                             onChange={(e) => setEditingNoteText(e.target.value)}
                             onKeyDown={(e) => { if(e.key === 'Enter') saveEditedNote(n.id); if(e.key === 'Escape') setEditingNoteId(null); }}
                             onBlur={() => saveEditedNote(n.id)}
-                            className="w-full bg-white border border-[#fde047] rounded-md px-2 py-1 text-sm font-medium text-[#713f12] outline-none focus:ring-2 focus:ring-[#eab308]"
+                            className="w-full bg-white dark:bg-slate-900 border border-[#fde047] dark:border-slate-500 rounded-md px-2 py-1 text-sm font-medium text-[#713f12] dark:text-slate-200 outline-none focus:ring-2 focus:ring-[#eab308] dark:focus:ring-amber-500"
                           />
                         </div>
                       ) : (
                         <p 
-                          className="flex-1 text-sm font-medium text-[#854d0e] whitespace-pre-wrap leading-tight cursor-pointer px-2 py-1 min-h-[28px] flex items-center"
+                          className="flex-1 text-sm font-medium text-[#854d0e] dark:text-slate-300 whitespace-pre-wrap leading-tight cursor-pointer px-2 py-1 min-h-[28px] flex items-center"
                           onClick={() => { setEditingNoteId(n.id); setEditingNoteText(n.text); }}
                           title="Düzenlemek için tıkla"
                         >

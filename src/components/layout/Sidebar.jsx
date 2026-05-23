@@ -179,8 +179,8 @@ export const Sidebar = () => {
                       'flex items-center py-2.5 text-sm font-medium rounded-xl transition-colors duration-100 relative',
                       collapsed ? 'justify-center px-0' : 'px-3 gap-3',
                       active
-                        ? 'bg-brand-50 text-brand-600 border border-brand-100'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-transparent',
+                        ? 'bg-brand-50 text-brand-600 border border-brand-100 dark:bg-brand-500/10 dark:text-brand-500 dark:border-brand-500/20'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-transparent dark:text-slate-400 dark:hover:bg-slate-800/50 dark:hover:text-slate-200',
                     ].join(' ');
                   }}
                 >
