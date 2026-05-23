@@ -294,6 +294,7 @@ export const Dashboard = () => {
     const purchaseIds = new Set();
     const customerIds = new Set();
     const supplierIds = new Set();
+    const registerIds = new Set();
 
     for (const t of rawFiltered) {
       if (t.sale_id)     saleIds.add(t.sale_id);
@@ -304,6 +305,7 @@ export const Dashboard = () => {
       if (t.purchase_id) purchaseIds.add(t.purchase_id);
       if (t.customer_id) customerIds.add(t.customer_id);
       if (t.supplier_id) supplierIds.add(t.supplier_id);
+      if (t.register_id) registerIds.add(t.register_id);
     }
 
     const fetchBulk = async (table, ids) => {
@@ -316,17 +318,19 @@ export const Dashboard = () => {
     };
 
     const enrichTxs = async () => {
-      const [salesArr, purchasesArr, customersArr, suppliersArr] = await Promise.all([
+      const [salesArr, purchasesArr, customersArr, suppliersArr, registersArr] = await Promise.all([
         fetchBulk('sales', [...saleIds]),
         fetchBulk('purchases', [...purchaseIds]),
         fetchBulk('customers', [...customerIds]),
         fetchBulk('suppliers', [...supplierIds]),
+        fetchBulk('registers', [...registerIds]),
       ]);
 
       const salesMap     = Object.fromEntries(salesArr.filter(Boolean).map(s => [s.id, s]));
       const purchasesMap = Object.fromEntries(purchasesArr.filter(Boolean).map(p => [p.id, p]));
       const custMap      = Object.fromEntries(customersArr.filter(Boolean).map(c => [c.id, c.name]));
       const supMap       = Object.fromEntries(suppliersArr.filter(Boolean).map(s => [s.id, s.name]));
+      const regMap       = Object.fromEntries(registersArr.filter(Boolean).map(r => [r.id, r.name]));
 
       const uniqueTxsMap = new Map();
       const uniqueTxs = [];
@@ -360,9 +364,9 @@ export const Dashboard = () => {
         let displayAmount = Math.abs(t.amount);
         if (parentRecord) {
           displayAmount = parentRecord.total_amount || Math.abs(t.amount);
-          pMethodLabel = PAYMENT_LABEL[parentRecord.payment_method] || 'Parçalı';
+          pMethodLabel = PAYMENT_LABEL[parentRecord.payment_method] || 'Parçalı Ödeme';
         } else {
-          pMethodLabel = PAYMENT_LABEL[t.payment_method] || 'Kasa';
+          pMethodLabel = PAYMENT_LABEL[t.payment_method] || '';
         }
 
         let eName = '';
@@ -376,6 +380,12 @@ export const Dashboard = () => {
           const cId = t.customer_id || parentRecord?.customer_id || originalSaleRecord?.customer_id;
           eName = cId ? (custMap[cId] || '') : (t.supplier_id ? (supMap[t.supplier_id] || '') : '');
         }
+        // expense_out / deposit_in / withdrawal_out — resolve register name via regMap
+        if (!eName && t.register_id) eName = regMap[t.register_id] || '';
+        if (!eName && t.register_name) eName = t.register_name;
+        // Last resort: try any unresolved customer/supplier link
+        if (!eName && t.customer_id) eName = custMap[t.customer_id] || '';
+        if (!eName && t.supplier_id) eName = supMap[t.supplier_id] || '';
 
         uniqueTxs.push({ ...t, displayAmount, paymentMethodLabel: pMethodLabel, entityName: eName,
           originalSaleId: originalSaleRecord?.id || null,
@@ -605,15 +615,15 @@ export const Dashboard = () => {
             <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
               <h3 className="font-bold text-slate-800 flex items-center gap-2"><ListChecks className="w-4 h-4 text-[#7ed957]"/> Son 5 İşlem</h3>
             </div>
-            <div className="overflow-auto flex-1 relative">
-              <table className="w-full text-left text-sm whitespace-nowrap">
+            <div className="flex-1 flex flex-col min-h-0">
+              <table className="w-full text-left text-sm whitespace-nowrap table-fixed">
                 <thead className="bg-slate-50/80 sticky top-0 z-10 backdrop-blur-sm">
                   <tr>
-                    <th className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100">Hareket Türü</th>
+                    <th className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100 w-[110px]">Hareket Türü</th>
                     <th className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100">Hareket Açıklaması</th>
-                    <th className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100">Müşteri / Kasa</th>
-                    <th className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100">Saat</th>
-                    <th className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100 text-right">Meblağ</th>
+                    <th className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100 w-[200px]">Müşteri / Kasa</th>
+                    <th className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100 w-[60px]">Saat</th>
+                    <th className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100 text-right w-[120px]">Meblağ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -677,11 +687,11 @@ export const Dashboard = () => {
                     };
 
                     return tx.isEmpty ? (
-                      <tr key={tx.id} className="h-[46px] border-b border-transparent">
-                        <td colSpan="5"></td>
+                      <tr key={tx.id} className="border-b border-transparent">
+                        <td colSpan="5" className="h-[56px]"></td>
                       </tr>
                     ) : (
-                      <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors cursor-pointer border-b border-slate-100 last:border-0" onClick={handleRowClick}>
+                      <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors cursor-pointer border-b border-slate-100 last:border-0 h-[56px]" onClick={handleRowClick}>
                         <td className="px-4 py-2">
                           <div className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${pillClass}`}>
                             <IconComponent className="w-3 h-3 flex-shrink-0" />
