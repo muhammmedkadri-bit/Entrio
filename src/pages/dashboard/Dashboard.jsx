@@ -323,7 +323,7 @@ export const Dashboard = () => {
         fetchBulk('purchases', [...purchaseIds]),
         fetchBulk('customers', [...customerIds]),
         fetchBulk('suppliers', [...supplierIds]),
-        fetchBulk('registers', [...registerIds]),
+        fetchBulk('cash_registers', [...registerIds]),
       ]);
 
       const salesMap     = Object.fromEntries(salesArr.filter(Boolean).map(s => [s.id, s]));
@@ -615,120 +615,131 @@ export const Dashboard = () => {
             <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
               <h3 className="font-bold text-slate-800 flex items-center gap-2"><ListChecks className="w-4 h-4 text-[#7ed957]"/> Son 5 İşlem</h3>
             </div>
+            {/* Header row */}
+            <div className="grid grid-cols-[110px_1fr_180px_60px_120px] bg-slate-50/80 border-b border-slate-100 px-0 flex-shrink-0">
+              {['Hareket Türü','Hareket Açıklaması','Müşteri / Kasa','Saat','Meblağ'].map((h, i) => (
+                <div key={h} className={`px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider ${i === 4 ? 'text-right' : ''}`}>{h}</div>
+              ))}
+            </div>
+            {/* Rows */}
             <div className="flex-1 flex flex-col min-h-0">
-              <table className="w-full text-left text-sm whitespace-nowrap table-fixed">
-                <thead className="bg-slate-50/80 sticky top-0 z-10 backdrop-blur-sm">
-                  <tr>
-                    <th className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100 w-[110px]">Hareket Türü</th>
-                    <th className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100">Hareket Açıklaması</th>
-                    <th className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100 w-[200px]">Müşteri / Kasa</th>
-                    <th className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100 w-[60px]">Saat</th>
-                    <th className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100 text-right w-[120px]">Meblağ</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {!isTxReady ? (
-                    [...Array(5)].map((_, i) => <TxRowSkeleton key={`skeleton-${i}`} />)
-                  ) : recentTransactions.map(tx => {
-                    const isOut = ['purchase_out', 'return_out', 'expense_out', 'supplier_payment_out', 'withdrawal_out'].includes(tx.transaction_type);
-                    
-                    let pillClass = '';
-                    let typeLabel = '';
-                    let IconComponent = isOut ? ArrowDownLeft : ArrowUpRight;
-                    if (tx.transaction_type === 'sale_in') IconComponent = ShoppingCart;
-                    
-                    if (tx.transaction_type === 'sale_in' || tx.transaction_type === 'customer_payment_in' || tx.transaction_type === 'deposit_in') {
-                      pillClass = 'bg-[#82e05a]/15 text-[#5da83f] border border-[#82e05a]/30 backdrop-blur-md shadow-[inset_0_1px_2px_rgba(255,255,255,0.4)]';
-                      typeLabel = tx.transaction_type === 'sale_in' ? 'Satış' : 'Gelir';
-                    } else if (tx.transaction_type === 'purchase_out' || tx.transaction_type === 'supplier_payment_out' || tx.transaction_type === 'expense_out' || tx.transaction_type === 'withdrawal_out') {
-                      pillClass = 'bg-rose-50 text-rose-600 border border-rose-200';
-                      typeLabel = tx.transaction_type === 'purchase_out' ? 'Alış' : 'Gider';
-                    } else if (tx.transaction_type === 'return_in') {
-                      pillClass = 'bg-cyan-50 text-cyan-600 border border-cyan-200';
-                      typeLabel = 'İade Girişi';
-                    } else if (tx.transaction_type === 'return_out') {
-                      pillClass = 'bg-orange-50 text-orange-600 border border-orange-200';
-                      typeLabel = 'İade Çıkışı';
-                    }
+              {!isTxReady ? (
+                [...Array(5)].map((_, i) => (
+                  <div key={`sk-${i}`} className="flex-1 grid grid-cols-[110px_1fr_180px_60px_120px] items-center border-b border-slate-100 animate-pulse px-0">
+                    <div className="px-4"><div className="w-14 h-5 bg-slate-200/60 rounded-full"/></div>
+                    <div className="px-4"><div className="w-32 h-4 bg-slate-200/60 rounded"/></div>
+                    <div className="px-4"><div className="w-20 h-5 bg-slate-100 rounded-md"/></div>
+                    <div className="px-4"><div className="w-9 h-4 bg-slate-100 rounded"/></div>
+                    <div className="px-4 flex justify-end"><div className="w-16 h-5 bg-slate-200/80 rounded"/></div>
+                  </div>
+                ))
+              ) : isTxReady && recentTransactions.filter(t => !t.isEmpty).length === 0 ? (
+                <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">Son işlem kaydı yok.</div>
+              ) : recentTransactions.map(tx => {
+                const isOut = ['purchase_out', 'return_out', 'expense_out', 'supplier_payment_out', 'withdrawal_out'].includes(tx.transaction_type);
 
-                    let desc = tx.notes || '';
-                    if (!desc) {
-                      if (tx.transaction_type === 'sale_in') desc = 'Satış Geliri';
-                      else if (tx.transaction_type === 'purchase_out') desc = 'Alış Ödemesi';
-                      else if (tx.transaction_type === 'return_in') desc = 'İade Girişi';
-                      else if (tx.transaction_type === 'return_out') desc = 'İade Çıkışı';
-                      else if (tx.transaction_type === 'expense_out') desc = 'Gider';
-                      else if (tx.transaction_type === 'supplier_payment_out') desc = 'Tedarikçi Ödemesi';
-                      else if (tx.transaction_type === 'customer_payment_in') desc = 'Cari Tahsilat';
-                      else if (tx.transaction_type === 'withdrawal_out') desc = 'Para Çıkışı';
-                      else if (tx.transaction_type === 'deposit_in') desc = 'Para Girişi';
-                      else desc = 'İşlem';
-                    }
-                    // For return_out: show original sale number in description
-                    if (tx.transaction_type === 'return_out' || tx.transaction_type === 'return_in') {
-                      desc = `İade: ${tx.originalSaleNumber || tx.notes || 'İade Çıkışı'}`;
-                    }
+                let pillClass = '';
+                let typeLabel = '';
+                let IconComponent = isOut ? ArrowDownLeft : ArrowUpRight;
+                if (tx.transaction_type === 'sale_in') IconComponent = ShoppingCart;
 
-                    const handleRowClick = () => {
-                      if (tx.transaction_type === 'sale_in') {
-                        startNavigation();
-                        const sId = tx.sale_id || tx.reference_id;
-                        navigate(sId ? `/sales/${sId}` : '/sales');
-                      } else if (tx.transaction_type === 'purchase_out') {
-                        startNavigation();
-                        const pId = tx.purchase_id || tx.reference_id;
-                        navigate(pId ? `/purchases/${pId}` : '/cash');
-                      } else if (tx.transaction_type === 'return_out' || tx.transaction_type === 'return_in') {
-                        startNavigation();
-                        navigate(tx.originalSaleId ? `/sales/${tx.originalSaleId}` : '/cash');
-                      } else {
-                        setSelectedTransaction(tx);
-                      }
-                    };
+                if (tx.transaction_type === 'sale_in' || tx.transaction_type === 'customer_payment_in' || tx.transaction_type === 'deposit_in') {
+                  pillClass = 'bg-[#82e05a]/15 text-[#5da83f] border border-[#82e05a]/30 backdrop-blur-md shadow-[inset_0_1px_2px_rgba(255,255,255,0.4)]';
+                  typeLabel = tx.transaction_type === 'sale_in' ? 'Satış' : 'Gelir';
+                } else if (tx.transaction_type === 'purchase_out' || tx.transaction_type === 'supplier_payment_out' || tx.transaction_type === 'expense_out' || tx.transaction_type === 'withdrawal_out') {
+                  pillClass = 'bg-rose-50 text-rose-600 border border-rose-200';
+                  typeLabel = tx.transaction_type === 'purchase_out' ? 'Alış' : 'Gider';
+                } else if (tx.transaction_type === 'return_in') {
+                  pillClass = 'bg-cyan-50 text-cyan-600 border border-cyan-200';
+                  typeLabel = 'İade Girişi';
+                } else if (tx.transaction_type === 'return_out') {
+                  pillClass = 'bg-orange-50 text-orange-600 border border-orange-200';
+                  typeLabel = 'İade Çıkışı';
+                }
 
-                    return tx.isEmpty ? (
-                      <tr key={tx.id} className="border-b border-transparent">
-                        <td colSpan="5" className="h-[56px]"></td>
-                      </tr>
-                    ) : (
-                      <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors cursor-pointer border-b border-slate-100 last:border-0 h-[56px]" onClick={handleRowClick}>
-                        <td className="px-4 py-2">
-                          <div className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${pillClass}`}>
-                            <IconComponent className="w-3 h-3 flex-shrink-0" />
-                            <span>{typeLabel}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-2">
-                          <div className="font-bold text-slate-700 max-w-[200px] truncate">{desc}</div>
-                        </td>
-                        <td className="px-4 py-2 text-xs">
-                          <div className="flex items-center gap-2">
-                            {tx.entityName ? (
-                              <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/60">{tx.entityName}</span>
-                            ) : (
-                              <span className="font-medium text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">—</span>
-                            )}
-                            {tx.paymentMethodLabel && (
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-white border border-slate-200 px-1.5 py-0.5 rounded">
-                                {tx.paymentMethodLabel}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-4 py-2 text-xs font-medium text-slate-500">
-                           {safeFormat(tx.created_at, 'HH:mm')}
-                        </td>
-                        <td className={`px-4 py-2 text-right font-bold tabular-nums ${isOut || tx.amount < 0 ? 'text-rose-600' : 'text-[#5da83f]'}`}>
-                          {isOut || tx.amount < 0 ? '-' : '+'}{formatCurrency(tx.displayAmount)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {isTxReady && recentTransactions.filter(t => !t.isEmpty).length === 0 && (
-                    <tr><td colSpan="5" className="p-8 text-center text-slate-400 text-sm">Son işlem kaydı yok.</td></tr>
-                  )}
-                </tbody>
-              </table>
+                let desc = tx.notes || '';
+                if (!desc) {
+                  if (tx.transaction_type === 'sale_in') desc = 'Satış Geliri';
+                  else if (tx.transaction_type === 'purchase_out') desc = 'Alış Ödemesi';
+                  else if (tx.transaction_type === 'return_in') desc = 'İade Girişi';
+                  else if (tx.transaction_type === 'return_out') desc = 'İade Çıkışı';
+                  else if (tx.transaction_type === 'expense_out') desc = 'Gider';
+                  else if (tx.transaction_type === 'supplier_payment_out') desc = 'Tedarikçi Ödemesi';
+                  else if (tx.transaction_type === 'customer_payment_in') desc = 'Cari Tahsilat';
+                  else if (tx.transaction_type === 'withdrawal_out') desc = 'Para Çıkışı';
+                  else if (tx.transaction_type === 'deposit_in') desc = 'Para Girişi';
+                  else desc = 'İşlem';
+                }
+                if (tx.transaction_type === 'return_out' || tx.transaction_type === 'return_in') {
+                  desc = `İade: ${tx.originalSaleNumber || tx.notes || 'İade Çıkışı'}`;
+                }
+
+                const handleRowClick = () => {
+                  if (tx.transaction_type === 'sale_in') {
+                    startNavigation();
+                    const sId = tx.sale_id || tx.reference_id;
+                    navigate(sId ? `/sales/${sId}` : '/sales');
+                  } else if (tx.transaction_type === 'purchase_out') {
+                    startNavigation();
+                    const pId = tx.purchase_id || tx.reference_id;
+                    navigate(pId ? `/purchases/${pId}` : '/cash');
+                  } else if (tx.transaction_type === 'return_out' || tx.transaction_type === 'return_in') {
+                    startNavigation();
+                    navigate(tx.originalSaleId ? `/sales/${tx.originalSaleId}` : '/cash');
+                  } else {
+                    setSelectedTransaction(tx);
+                  }
+                };
+
+                if (tx.isEmpty) {
+                  return (
+                    <div key={tx.id} className="flex-1 border-b border-slate-50 last:border-0" />
+                  );
+                }
+
+                return (
+                  <div
+                    key={tx.id}
+                    className="flex-1 grid grid-cols-[110px_1fr_180px_60px_120px] items-center hover:bg-slate-50/60 transition-colors cursor-pointer border-b border-slate-100 last:border-0"
+                    onClick={handleRowClick}
+                  >
+                    {/* Tür */}
+                    <div className="px-4">
+                      <div className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${pillClass}`}>
+                        <IconComponent className="w-3 h-3 flex-shrink-0" />
+                        <span>{typeLabel}</span>
+                      </div>
+                    </div>
+                    {/* Açıklama */}
+                    <div className="px-4">
+                      <div className="font-bold text-slate-700 truncate text-sm">{desc}</div>
+                    </div>
+                    {/* Müşteri / Kasa */}
+                    <div className="px-4">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {tx.entityName ? (
+                          <span className="text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/60 truncate max-w-[100px]">{tx.entityName}</span>
+                        ) : (
+                          <span className="text-xs font-medium text-slate-400">—</span>
+                        )}
+                        {tx.paymentMethodLabel && (
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-white border border-slate-200 px-1.5 py-0.5 rounded whitespace-nowrap">
+                            {tx.paymentMethodLabel}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {/* Saat */}
+                    <div className="px-4 text-xs font-medium text-slate-500">
+                      {safeFormat(tx.created_at, 'HH:mm')}
+                    </div>
+                    {/* Meblağ */}
+                    <div className={`px-4 text-right font-bold tabular-nums text-sm ${isOut || tx.amount < 0 ? 'text-rose-600' : 'text-[#5da83f]'}`}>
+                      {isOut || tx.amount < 0 ? '-' : '+'}{formatCurrency(tx.displayAmount)}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 

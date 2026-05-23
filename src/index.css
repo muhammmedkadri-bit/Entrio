@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
+@custom-variant dark (&:is(.dark *));
 
 @theme {
   --color-brand-50: #f4fbf0;
@@ -39,7 +40,11 @@
     height: 100%;
     font-family: var(--font-sans);
     overscroll-behavior: none; /* Belt-and-suspenders: also lock body */
-    @apply bg-gray-50 text-slate-900 antialiased;
+    @apply bg-slate-50 text-slate-900 antialiased;
+  }
+
+  .dark body {
+    @apply bg-slate-900 text-slate-50;
   }
 
   /* Hide number input spinners globally */
@@ -48,8 +53,18 @@
     -webkit-appearance: none;
     margin: 0;
   }
+}
 
 @layer utilities {
+  /* Comprehensive Dark Mode Overrides */
+  .dark .bg-white { background-color: #1e293b !important; }
+  .dark .bg-slate-50 { background-color: #0f172a !important; }
+  .dark .bg-slate-100 { background-color: #1e293b !important; }
+  .dark .text-slate-900, .dark .text-slate-800 { color: #f8fafc !important; }
+  .dark .text-slate-700 { color: #e2e8f0 !important; }
+  .dark .text-slate-600, .dark .text-slate-500 { color: #94a3b8 !important; }
+  .dark .border-slate-100, .dark .border-slate-200 { border-color: #334155 !important; }
+  
   .hide-scrollbar {
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */

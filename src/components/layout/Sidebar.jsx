@@ -13,7 +13,9 @@ import {
   Settings as SettingsIcon,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { useAppStore } from '../../store/appStore';
 import { useAuthStore } from '../../store/authStore';
@@ -32,7 +34,7 @@ const navItems = [
 ];
 
 export const Sidebar = () => {
-  const { sidebarOpen, toggleSidebar, sidebarCollapsed, toggleCollapsed, startNavigation } = useAppStore();
+  const { sidebarOpen, toggleSidebar, sidebarCollapsed, toggleCollapsed, startNavigation, theme, toggleTheme } = useAppStore();
   const { user, logout } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
@@ -208,6 +210,27 @@ export const Sidebar = () => {
             );
           })}
         </nav>
+
+        {/* ── Theme Toggle ── */}
+        <div className="border-t border-slate-200 px-2 py-2 flex-shrink-0">
+          <button
+            onClick={toggleTheme}
+            className={`w-full flex items-center rounded-lg py-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors text-sm ${
+              collapsed ? 'justify-center' : 'gap-2 px-3'
+            }`}
+            title={theme === 'dark' ? 'Açık Mod' : 'Koyu Mod'}
+          >
+            <div className="transition-transform duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]">
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </div>
+            <span
+              className="whitespace-nowrap transition-[opacity,max-width] duration-150 ease-in-out overflow-hidden"
+              style={{ maxWidth: collapsed ? 0 : 120, opacity: collapsed ? 0 : 1 }}
+            >
+              {theme === 'dark' ? 'Açık Mod' : 'Koyu Mod'}
+            </span>
+          </button>
+        </div>
 
         {/* ── Collapse Toggle ── */}
         <div className="hidden lg:block border-t border-slate-200 px-2 py-2 flex-shrink-0">

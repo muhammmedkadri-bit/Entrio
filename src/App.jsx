@@ -38,6 +38,7 @@ const ProtectedRoute = ({ children }) => {
 function App() {
   const { initAuth } = useAuthStore();
   const clearCache = useCacheStore(s => s.clearAll);
+  const theme = useAppStore(state => state.theme);
 
   // Start Supabase Realtime — single WebSocket for all table changes
   useRealtimeSync();
@@ -45,6 +46,15 @@ function App() {
   useEffect(() => {
     initAuth();
   }, [initAuth]);
+
+  // Apply theme class to HTML element
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
 
   // Clear in-memory cache when user logs out
   useEffect(() => {

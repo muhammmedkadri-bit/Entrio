@@ -18,6 +18,18 @@ export const useAppStore = create((set) => ({
     return { sidebarCollapsed: next };
   }),
 
+  theme: localStorage.getItem('entrio_theme') || 'light',
+  toggleTheme: () => set((state) => {
+    const nextTheme = state.theme === 'light' ? 'dark' : 'light';
+    localStorage.setItem('entrio_theme', nextTheme);
+    if (nextTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    return { theme: nextTheme };
+  }),
+
   startNavigation: () => set({ isNavigating: true }),
   stopNavigation: () => set({ isNavigating: false }),
   setPageLoading: (loading) => set({ isPageLoading: loading }),
