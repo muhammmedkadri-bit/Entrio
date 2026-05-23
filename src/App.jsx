@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import { useRealtimeSync } from './hooks/useRealtimeSync';
 import { useCacheStore } from './store/cacheStore';
+import { useAppStore } from './store/appStore';
 import { Layout } from './components/layout/Layout';
 import { Login } from './pages/auth/Login';
 import { Dashboard } from './pages/dashboard/Dashboard';
