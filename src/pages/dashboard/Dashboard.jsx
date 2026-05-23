@@ -606,7 +606,16 @@ export const Dashboard = () => {
               <h3 className="font-bold text-slate-800 flex items-center gap-2"><ListChecks className="w-4 h-4 text-[#7ed957]"/> Son 5 İşlem</h3>
             </div>
             <div className="overflow-auto flex-1 relative">
-              <table className="w-full h-full absolute inset-0 text-left text-sm whitespace-nowrap">
+              <table className="w-full text-left text-sm whitespace-nowrap">
+                <thead className="bg-slate-50/80 sticky top-0 z-10 backdrop-blur-sm">
+                  <tr>
+                    <th className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100">Hareket Türü</th>
+                    <th className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100">Hareket Açıklaması</th>
+                    <th className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100">Müşteri / Kasa</th>
+                    <th className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100">Saat</th>
+                    <th className="px-4 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100 text-right">Meblağ</th>
+                  </tr>
+                </thead>
                 <tbody className="divide-y divide-slate-100">
                   {!isTxReady ? (
                     [...Array(5)].map((_, i) => <TxRowSkeleton key={`skeleton-${i}`} />)
@@ -616,6 +625,7 @@ export const Dashboard = () => {
                     let pillClass = '';
                     let typeLabel = '';
                     let IconComponent = isOut ? ArrowDownLeft : ArrowUpRight;
+                    if (tx.transaction_type === 'sale_in') IconComponent = ShoppingCart;
                     
                     if (tx.transaction_type === 'sale_in' || tx.transaction_type === 'customer_payment_in' || tx.transaction_type === 'deposit_in') {
                       pillClass = 'bg-[#82e05a]/15 text-[#5da83f] border border-[#82e05a]/30 backdrop-blur-md shadow-[inset_0_1px_2px_rgba(255,255,255,0.4)]';
@@ -682,18 +692,18 @@ export const Dashboard = () => {
                           <div className="font-bold text-slate-700 max-w-[200px] truncate">{desc}</div>
                         </td>
                         <td className="px-4 py-2 text-xs">
-                          {tx.entityName ? (
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">{tx.entityName}</span>
-                              {tx.paymentMethodLabel && (
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-white border border-slate-200 px-1.5 py-0.5 rounded">
-                                  {tx.paymentMethodLabel}
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-slate-300">—</span>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {tx.entityName ? (
+                              <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/60">{tx.entityName}</span>
+                            ) : (
+                              <span className="font-medium text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">—</span>
+                            )}
+                            {tx.paymentMethodLabel && (
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-white border border-slate-200 px-1.5 py-0.5 rounded">
+                                {tx.paymentMethodLabel}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-2 text-xs font-medium text-slate-500">
                            {safeFormat(tx.created_at, 'HH:mm')}
@@ -733,7 +743,15 @@ export const Dashboard = () => {
                 </button>
               </form>
               <ul className="flex-1 flex flex-col gap-2">
-                {!isNotesReady ? <NotesSkeleton /> : [...quickNotes, ...Array(Math.max(0, 5 - quickNotes.length)).fill({ isEmpty: true })].map((n, idx) => {
+                {!isNotesReady ? <NotesSkeleton /> : quickNotes.length === 0 ? (
+                  <div className="flex-1 flex flex-col items-center justify-center text-[#a16207]/50 min-h-[160px]">
+                    <div className="w-12 h-12 bg-[#fde047]/30 rounded-2xl flex items-center justify-center mb-3">
+                      <Edit2 className="w-6 h-6 text-[#ca8a04]" />
+                    </div>
+                    <p className="text-sm font-semibold text-[#854d0e]">Henüz not eklenmemiş</p>
+                    <p className="text-xs text-[#a16207]/70 mt-0.5">Gündelik notlarınızı buradan takip edin</p>
+                  </div>
+                ) : [...quickNotes, ...Array(Math.max(0, 5 - quickNotes.length)).fill({ isEmpty: true })].map((n, idx) => {
                   if (n.isEmpty) {
                     return <li key={`empty_${idx}`} className="flex-1 bg-transparent p-3 rounded-lg border border-transparent min-h-[46px]"></li>;
                   }
