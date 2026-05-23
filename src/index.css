@@ -33,13 +33,13 @@
 
   html {
     height: 100%;
-    overscroll-behavior: none; /* Stop iOS rubber-band at root level */
+    overscroll-behavior: none;
   }
 
   body {
     height: 100%;
     font-family: var(--font-sans);
-    overscroll-behavior: none; /* Belt-and-suspenders: also lock body */
+    overscroll-behavior: none;
     @apply bg-slate-50 text-slate-900 antialiased;
   }
 
@@ -53,10 +53,15 @@
     -webkit-appearance: none;
     margin: 0;
   }
+
+  input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
 }
 
 @layer utilities {
-  /* Comprehensive Dark Mode Overrides */
+  /* Dark Mode Overrides */
   .dark .bg-white { background-color: #1e293b !important; }
   .dark .bg-slate-50 { background-color: #0f172a !important; }
   .dark .bg-slate-100 { background-color: #1e293b !important; }
@@ -64,19 +69,13 @@
   .dark .text-slate-700 { color: #e2e8f0 !important; }
   .dark .text-slate-600, .dark .text-slate-500 { color: #94a3b8 !important; }
   .dark .border-slate-100, .dark .border-slate-200 { border-color: #334155 !important; }
-  
+
   .hide-scrollbar {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
   .hide-scrollbar::-webkit-scrollbar {
-    display: none; /* Chrome, Safari and Opera */
-  }
-}
-
-  input[type=number] {
-    -moz-appearance: textfield;
-    appearance: textfield;
+    display: none;
   }
 }
 
@@ -100,15 +99,15 @@
 
 @keyframes light-pulse {
   0%, 100% {
-    text-shadow: 0 0 4px rgba(255,255,255,0.5), 
+    text-shadow: 0 0 4px rgba(255,255,255,0.5),
                  0 0 10px rgba(126,217,87,0.3);
     color: rgba(255, 255, 255, 0.9);
   }
   50% {
-    text-shadow: 0 0 10px #ffffff, 
-                 0 0 20px #ffffff, 
-                 0 0 30px #7ed957, 
-                 0 0 50px #7ed957, 
+    text-shadow: 0 0 10px #ffffff,
+                 0 0 20px #ffffff,
+                 0 0 30px #7ed957,
+                 0 0 50px #7ed957,
                  0 0 70px #7ed957;
     color: #ffffff;
   }
@@ -120,7 +119,7 @@
 
 /* ─── THERMAL PRINTER (50mm/58mm) OPTIMIZATIONS ─── */
 #receipt-print-area {
-  display: none; /* Ekranda her zaman gizli */
+  display: none;
 }
 
 @media print {
@@ -128,7 +127,6 @@
     margin: 0;
   }
 
-  /* Sayfa boyutlandırma sorunlarını çöz (Boş sayfa çıkartmayı önler) */
   body, html {
     height: auto !important;
     min-height: 0 !important;
@@ -138,19 +136,17 @@
     padding: 0 !important;
   }
 
-  /* Ana uygulamayı TAMAMEN gizle. Bu sayede sayfa yüksekliği 0'a iner */
   #root {
     display: none !important;
   }
 
-  /* Portal ile body'e eklenen sadece bu fiş alanı render edilecek */
   #receipt-print-area {
     display: block !important;
     position: static !important;
-    width: 48mm !important; /* 50mm kağıt için güvenli baskı alanı genelde 48mm'dir */
+    width: 48mm !important;
     margin: 0 !important;
     padding: 1mm !important;
-    font-size: 10px !important; /* Termal yazıcılar için küçük font */
+    font-size: 10px !important;
     line-height: 1.2 !important;
     color: black !important;
     background: white !important;
