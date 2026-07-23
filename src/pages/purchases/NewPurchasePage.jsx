@@ -399,8 +399,20 @@ export const NewPurchasePage = () => {
   const onSubmit = async (data) => {
     const items = data.items || [];
 
-    // Validation
+    // ── Zorunlu alan validasyonları ─────────────────────────────────────
+    if (!supplier) {
+      toast.error('Tedarikçi seçimi zorunludur. Lütfen bir tedarikçi seçin.');
+      document.getElementById('supplier-search-input')?.focus();
+      return;
+    }
+
     if (items.length === 0) { toast.error('En az 1 kalem eklemelisiniz.'); return; }
+
+    const hasSelectedProduct = items.some(i => i.product_id || (i.isNewProduct && i.name?.trim()));
+    if (!hasSelectedProduct) {
+      toast.error('En az bir ürün veya hizmet seçilmesi zorunludur.');
+      return;
+    }
 
     const invalid = items.find(i => (i.quantity || 0) <= 0);
     if (invalid) { toast.error('Miktar 0\'dan büyük olmalıdır.'); return; }
@@ -579,16 +591,24 @@ export const NewPurchasePage = () => {
                   <label className={labelCls}>
                     <span className="flex items-center gap-1">
                       <Building2 className="w-3 h-3" /> Tedarikçi Arama
+                      <span className="text-red-500 ml-0.5">*</span>
                     </span>
                   </label>
-                  <SupplierCombobox
-                    value={supplier}
-                    onChange={(s) => {
-                      setSupplier(s);
-                      methods.setValue('supplier_id', s?.id || null);
-                    }}
-                    onCreateNew={() => setShowQuickCreateSupplier(true)}
-                  />
+                  <div className={!supplier ? 'ring-1 ring-red-200 rounded-lg' : ''}>
+                    <SupplierCombobox
+                      value={supplier}
+                      onChange={(s) => {
+                        setSupplier(s);
+                        methods.setValue('supplier_id', s?.id || null);
+                      }}
+                      onCreateNew={() => setShowQuickCreateSupplier(true)}
+                    />
+                  </div>
+                  {!supplier && (
+                    <p className="mt-1 text-[10px] text-red-400 font-medium flex items-center gap-1">
+                      <span>⚠</span> Tedarikçi seçimi zorunludur
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -842,7 +862,7 @@ export const NewPurchasePage = () => {
             >
               <div className="flex items-center gap-2 mb-4">
                 <ShoppingBag className="w-4 h-4 text-emerald-500" />
-                <span className="text-sm font-semibold text-gray-700">Fatura Kalemleri</span>
+                <span className="text-sm font-semibold text-gray-700">Fatura Kalemleri <span className="text-red-500">*</span></span>
                 <span className="ml-auto text-[10px] font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
                   {fields.length} kalem
                 </span>
