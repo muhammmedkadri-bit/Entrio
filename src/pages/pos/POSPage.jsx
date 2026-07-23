@@ -259,8 +259,8 @@ export const POSPage = () => {
     let savedIds = [];
     try { savedIds = JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { savedIds = []; }
     if (savedIds.length > 0) {
-      const idMap = new Map(cached.map(p => [p.id, p]));
-      const restored = savedIds.map(id => idMap.get(id)).filter(Boolean);
+      const idMap = new Map(cached.map(p => [String(p.id), p]));
+      const restored = savedIds.map(id => idMap.get(String(id))).filter(Boolean);
       return restored.length > 0 ? restored : cached.slice(0, 12);
     }
     return cached.slice(0, 12);
@@ -277,44 +277,66 @@ export const POSPage = () => {
   const isReadyToSaveRef = useRef(false);
   // Snapshot of current displayed IDs for comparison inside async callbacks
   const displayedIdsRef = useRef([]);
-  useEffect(() => { displayedIdsRef.current = displayedProducts.map(p => p.id); }, [displayedProducts]);
+  useEffect(() => { displayedIdsRef.current = displayedProducts.map(p => String(p.id)); }, [displayedProducts]);
 
   // Restore displayed products from DB/localStorage once allProducts is loaded
   useEffect(() => {
     let mounted = true;
     
-    if (!loading && !isInitializedRef.current) {
+    if (!loading && !isInitializedRef.current && allProducts) {
       isInitializedRef.current = true;
       isReadyToSaveRef.current = false; // reset before async fetch
       
       const syncQuickSales = async () => {
         try {
           let savedIds = [];
+          let hasSetting = false;
           if (isSupabase()) {
             try {
               const setting = await settingsService.get(LS_KEY);
               if (setting && setting.value && Array.isArray(setting.value)) {
                 savedIds = setting.value;
+                hasSetting = true;
                 localStorage.setItem(LS_KEY, JSON.stringify(savedIds));
               } else {
-                try { savedIds = JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { savedIds = []; }
+                try {
+                  const raw = localStorage.getItem(LS_KEY);
+                  if (raw !== null) { savedIds = JSON.parse(raw); hasSetting = true; }
+                } catch { savedIds = []; }
               }
             } catch {
-              try { savedIds = JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { savedIds = []; }
+              try {
+                const raw = localStorage.getItem(LS_KEY);
+                if (raw !== null) { savedIds = JSON.parse(raw); hasSetting = true; }
+              } catch { savedIds = []; }
             }
           } else {
-            try { savedIds = JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { savedIds = []; }
+            try {
+              const raw = localStorage.getItem(LS_KEY);
+              if (raw !== null) { savedIds = JSON.parse(raw); hasSetting = true; }
+            } catch { savedIds = []; }
           }
 
-          if (mounted && savedIds.length > 0) {
-            const currentIds = displayedIdsRef.current;
-            const isSame =
-              savedIds.length === currentIds.length &&
-              savedIds.every((id, i) => id === currentIds[i]);
-            if (!isSame) {
-              const idMap = new Map(allProducts.map(p => [p.id, p]));
-              const restored = savedIds.map(id => idMap.get(id)).filter(Boolean);
-              setDisplayedProducts(restored);
+          if (mounted && allProducts.length > 0) {
+            const idMap = new Map(allProducts.map(p => [String(p.id), p]));
+            let restored = [];
+
+            if (hasSetting && savedIds.length > 0) {
+              restored = savedIds.map(id => idMap.get(String(id))).filter(Boolean);
+            }
+
+            // If no valid quick products restored yet, fallback to first 12 products
+            if (restored.length === 0 && (!hasSetting || savedIds.length === 0)) {
+              restored = allProducts.slice(0, 12);
+            }
+
+            if (restored.length > 0) {
+              const currentIds = displayedIdsRef.current;
+              const newIds = restored.map(p => String(p.id));
+              const isSame = newIds.length === currentIds.length && newIds.every((id, i) => id === currentIds[i]);
+              if (!isSame) {
+                setDisplayedProducts(restored);
+              }
             }
           }
         } catch (e) {
@@ -328,6 +350,8 @@ export const POSPage = () => {
       };
 
       syncQuickSales();
+    } else if (!loading && (!allProducts || allProducts.length === 0)) {
+      setIsGridLoading(false);
     }
     
     return () => { mounted = false; };
@@ -341,7 +365,7 @@ export const POSPage = () => {
       .on(
         'postgres_changes',
         {
-          event: '*', // Listen for all changes (INSERT, UPDATE)
+          event: '*',
           schema: 'public',
           table: 'settings',
           filter: `key=eq.${LS_KEY}`
@@ -349,14 +373,17 @@ export const POSPage = () => {
         (payload) => {
           const newIds = payload.new?.value;
           if (newIds && Array.isArray(newIds)) {
-            // Check if it's actually different from what we are displaying
             const currentIds = displayedIdsRef.current;
-            const isSame = newIds.length === currentIds.length && newIds.every((id, i) => id === currentIds[i]);
+            const strNewIds = newIds.map(String);
+            const isSame = strNewIds.length === currentIds.length && strNewIds.every((id, i) => id === currentIds[i]);
             if (!isSame) {
-              const idMap = new Map(useCacheStore.getState().getCache('products')?.map(p => [p.id, p]) || []);
-              const restored = newIds.map(id => idMap.get(id)).filter(Boolean);
-              setDisplayedProducts(restored);
-              localStorage.setItem(LS_KEY, JSON.stringify(newIds)); // keep local sync
+              const cacheProducts = useCacheStore.getState().getCache('products') || [];
+              const idMap = new Map(cacheProducts.map(p => [String(p.id), p]));
+              const restored = newIds.map(id => idMap.get(String(id))).filter(Boolean);
+              if (restored.length > 0) {
+                setDisplayedProducts(restored);
+                localStorage.setItem(LS_KEY, JSON.stringify(newIds));
+              }
             }
           }
         }
@@ -373,9 +400,9 @@ export const POSPage = () => {
     if (!allProducts || allProducts.length === 0) return;
     setDisplayedProducts(prev => {
       let changed = false;
-      const idMap = new Map(allProducts.map(p => [p.id, p]));
+      const idMap = new Map(allProducts.map(p => [String(p.id), p]));
       const next = prev.map(p => {
-        const fresh = idMap.get(p.id);
+        const fresh = idMap.get(String(p.id));
         if (fresh && fresh.stock_quantity !== p.stock_quantity) {
           changed = true;
           return { ...p, stock_quantity: fresh.stock_quantity };
@@ -888,10 +915,10 @@ export const POSPage = () => {
     <div className="hidden lg:flex gap-2 h-full overflow-hidden print:hidden">
 
       {/* ── LEFT PANEL ─────────────────────────────────────────────────────── */}
-      <div className="flex-[3] flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="flex-[3] flex flex-col bg-white dark:bg-slate-800/90 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700/60 overflow-hidden">
 
         {/* Search Header */}
-        <div className="p-2 border-b border-slate-200 bg-slate-50 relative z-40" ref={barcodeWrapperRef}>
+        <div className="p-2 border-b border-slate-200 dark:border-slate-700/60 bg-slate-50 dark:bg-slate-800/50 relative z-40" ref={barcodeWrapperRef}>
           <div className="flex items-center gap-2">
             {/* Smart search input */}
             <div className="relative flex-1">
@@ -918,16 +945,7 @@ export const POSPage = () => {
             {/* Hızlı Barkodlar Button */}
             <button
               onClick={() => setQuickBarcodesOpen(true)}
-              style={{
-                background: 'rgba(126,217,87,0.1)',
-                border: '1px solid rgba(126,217,87,0.2)',
-                boxShadow: '0 2px 8px rgba(126,217,87,0.08), inset 0 1px 0 rgba(255,255,255,0.6)',
-                color: 'rgb(58,128,36)', fontSize: '12px', fontWeight: '600',
-                padding: '0 12px', height: '42px', borderRadius: '8px', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap',
-                transition: 'all 0.15s ease',
-              }}
-              className="hover:bg-brand-50 hover:scale-[1.02]"
+              className="flex items-center gap-1.5 px-3 h-[42px] rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer bg-brand-50/50 dark:bg-brand-500/10 hover:bg-brand-100/50 dark:hover:bg-brand-500/20 border border-brand-200/50 dark:border-brand-500/20 text-brand-700 dark:text-brand-400 shadow-sm dark:shadow-none hover:scale-[1.02]"
             >
               <ScanBarcode style={{ width: 14, height: 14 }} />
               Hızlı Barkodlar
@@ -936,16 +954,7 @@ export const POSPage = () => {
             {/* Add/Swap Quick Product Manager Button */}
             <button
               onClick={() => setQpmOpen(true)}
-              style={{
-                background: 'rgba(126,217,87,0.1)',
-                border: '1px solid rgba(126,217,87,0.2)',
-                boxShadow: '0 2px 8px rgba(126,217,87,0.08), inset 0 1px 0 rgba(255,255,255,0.6)',
-                color: 'rgb(58,128,36)', fontSize: '12px', fontWeight: '600',
-                padding: '0 12px', height: '42px', borderRadius: '8px', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap',
-                transition: 'all 0.15s ease',
-              }}
-              className="hover:bg-brand-50 hover:scale-[1.02]"
+              className="flex items-center gap-1.5 px-3 h-[42px] rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer bg-brand-50/50 dark:bg-brand-500/10 hover:bg-brand-100/50 dark:hover:bg-brand-500/20 border border-brand-200/50 dark:border-brand-500/20 text-brand-700 dark:text-brand-400 shadow-sm dark:shadow-none hover:scale-[1.02]"
             >
               <ArrowLeftRight style={{ width: 14, height: 14 }} />
               Hızlı Ürün Ekle / Değiştir
@@ -955,25 +964,14 @@ export const POSPage = () => {
 
         {/* Swap mode banner */}
         {swapMode && (
-          <div
-            style={{
-              background: 'rgba(126,217,87,0.08)', backdropFilter: 'blur(12px)',
-              borderBottom: '1px solid rgba(126,217,87,0.2)',
-              padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '8px',
-              color: '#3a8024', fontSize: '13px', fontWeight: '500',
-            }}
-          >
-            <ArrowLeftRight style={{ width: 15, height: 15 }} />
+          <div className="flex items-center gap-2 px-3 py-2 text-[13px] font-medium bg-brand-50/50 dark:bg-brand-500/10 border-b border-brand-200/50 dark:border-brand-500/20 text-brand-700 dark:text-brand-400 backdrop-blur-md">
+            <ArrowLeftRight className="w-4 h-4" />
             <span className="flex-1">Hangi ürünle değiştirilsin? Bir karta tıklayın.</span>
             <button
               onClick={cancelSwap}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 4, fontSize: 12,
-                background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
-                color: '#b91c1c', padding: '3px 10px', borderRadius: 6, cursor: 'pointer',
-              }}
+              className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-md cursor-pointer transition-all bg-rose-50/50 dark:bg-rose-500/10 border border-rose-200/50 dark:border-rose-500/20 text-rose-700 dark:text-rose-400 hover:bg-rose-100/50 dark:hover:bg-rose-500/20"
             >
-              <X style={{ width: 13, height: 13 }} /> İptal
+              <X className="w-3.5 h-3.5" /> İptal
             </button>
           </div>
         )}
