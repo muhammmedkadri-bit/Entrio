@@ -156,7 +156,7 @@ export const CashReportTab = ({ startDate, endDate }) => {
       startTransition(() => setData(summary));
       
       // Register dummy valid cache so Realtime invalidations can trigger updates
-      setCache('cash_transactions', { dummy: true });
+      useCacheStore.getState().invalidate('cash_transactions');
     } catch(e) {
       console.error('[CashReport] Yükleme Hatası:', e);
       toast.error('Kasa raporu yüklenirken bir hata oluştu.');

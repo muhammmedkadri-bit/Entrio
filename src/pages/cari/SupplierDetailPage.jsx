@@ -65,7 +65,7 @@ export const SupplierDetailPage = () => {
       const txs = await supplierService.getTransactions(supplierId);
       setSupplier(s);
       setTransactions(txs);
-      setCache('supplier_transactions', { dummy: true });
+      useCacheStore.getState().invalidate('supplier_transactions');
     } catch (err) {
       console.error('[SupplierDetail] Veri Yükleme Hatası:', err);
       toast.error(err?.message || 'Tedarikçi detayları alınamadı.');

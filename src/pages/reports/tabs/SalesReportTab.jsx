@@ -130,7 +130,7 @@ export const SalesReportTab = ({ startDate, endDate }) => {
       startTransition(() => setData(summary));
       
       // Register dummy valid cache so Realtime invalidations can trigger updates
-      setCache('sales', { dummy: true });
+      useCacheStore.getState().invalidate('sales');
     } catch(e) {
       console.error('[SalesReport] Yükleme Hatası:', e);
       toast.error('Satış raporu yüklenirken bir hata oluştu.');

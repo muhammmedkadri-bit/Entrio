@@ -33,7 +33,7 @@ export const CashMovementsTab = ({ registersArr }) => {
       setTransactions(txs);
 
       // Register dummy valid cache so Realtime invalidations can trigger updates
-      setCache('cash_transactions', { dummy: true });
+      useCacheStore.getState().invalidate('cash_transactions');
     } catch(e) {
       console.error(e);
     } finally {

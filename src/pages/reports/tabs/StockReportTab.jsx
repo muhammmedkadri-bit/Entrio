@@ -133,7 +133,7 @@ export const StockReportTab = () => {
       startTransition(() => setData(summary));
       
       // Register dummy valid cache so Realtime invalidations can trigger updates
-      setCache('products', { dummy: true });
+      useCacheStore.getState().invalidate('products');
     } catch(e) {
       console.error('[StockReport] Yükleme Hatası:', e);
       toast.error('Stok raporu yüklenirken bir hata oluştu.');

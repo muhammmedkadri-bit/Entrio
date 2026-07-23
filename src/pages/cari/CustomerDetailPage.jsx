@@ -66,7 +66,7 @@ export const CustomerDetailPage = () => {
       const txs = await customerService.getTransactions(customerId);
       setCustomer(s);
       setTransactions(txs);
-      setCache('customer_transactions', { dummy: true });
+      useCacheStore.getState().invalidate('customer_transactions');
     } catch (err) {
       console.error('[CustomerDetail] Veri Yükleme Hatası:', err);
       toast.error(err?.message || 'Müşteri detayları alınamadı.');

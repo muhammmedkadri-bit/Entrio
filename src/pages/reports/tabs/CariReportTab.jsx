@@ -120,9 +120,8 @@ export const CariReportTab = () => {
       
       // Register dummy valid cache so Realtime invalidations can trigger updates
       if (mode === 'customer') {
-        setCache('customers', { dummy: true });
-      } else {
-        setCache('suppliers', { dummy: true });
+        useCacheStore.getState().invalidate('customers');
+        useCacheStore.getState().invalidate('suppliers');
       }
     } catch(e) {
       console.error('[CariReport] Yükleme Hatası:', e);

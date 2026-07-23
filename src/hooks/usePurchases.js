@@ -20,8 +20,14 @@ export const usePurchases = () => {
   const isCacheValid      = useCacheStore(s => s._cache[CACHE_KEY]?.valid ?? false);
   const isSuppliersValid  = useCacheStore(s => s._cache['suppliers']?.valid ?? false);
 
-  const [purchases,        setPurchases]        = useState(() => getCache(CACHE_KEY) || []);
-  const [loading,          setLoading]          = useState(() => !getCache(CACHE_KEY));
+  const [purchases, setPurchases] = useState(() => {
+    const cached = getCache(CACHE_KEY);
+    return Array.isArray(cached) ? cached : [];
+  });
+  const [loading, setLoading] = useState(() => {
+    const cached = getCache(CACHE_KEY);
+    return !Array.isArray(cached);
+  });
   const [summary,          setSummary]          = useState({ count: 0, totalAmount: 0, paidAmount: 0, pendingDebt: 0 });
   const [highestDebtInfo,  setHighestDebtInfo]  = useState({ name: 'Yok', amount: 0 });
 
@@ -40,12 +46,15 @@ export const usePurchases = () => {
         purchaseService.getMonthSummary(),
         supplierService.getAll(),
       ]);
-      setCache(CACHE_KEY, data);
-      setPurchases(data);
-      setSummary(sum);
+      const validData = Array.isArray(data) ? data : [];
+      setCache(CACHE_KEY, validData);
+      setPurchases(validData);
+      setSummary(sum || { count: 0, totalAmount: 0, paidAmount: 0, pendingDebt: 0 });
 
       let maxDebt = 0, maxName = 'Yok';
-      sups.forEach(s => { if (s.balance > maxDebt) { maxDebt = s.balance; maxName = s.name; } });
+      if (Array.isArray(sups)) {
+        sups.forEach(s => { if (s.balance > maxDebt) { maxDebt = s.balance; maxName = s.name; } });
+      }
       setHighestDebtInfo({ name: maxName, amount: maxDebt });
     } catch (err) {
       console.error('[usePurchases] Fetch hatası:', err);
@@ -57,18 +66,18 @@ export const usePurchases = () => {
 
   useEffect(() => {
     const cached = getCache(CACHE_KEY);
-    if (cached) {
+    if (Array.isArray(cached)) {
       setPurchases(cached);
       setLoading(false);
     } else {
       fetchAll(true);
     }
-  }, [isCacheValid]); // Re-runs when purchases table changes
+  }, [isCacheValid, fetchAll, getCache]);
 
   // Also re-fetch when suppliers change (highest-debt info may be outdated)
   useEffect(() => {
     if (isSuppliersValid === false) fetchAll(true);
-  }, [isSuppliersValid]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isSuppliersValid, fetchAll]);
 
   return { purchases, loading, summary, highestDebtInfo, refetch: () => fetchAll(true) };
 };

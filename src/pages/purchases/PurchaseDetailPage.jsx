@@ -103,8 +103,8 @@ export const PurchaseDetailPage = () => {
       setCategories(cats);
       setCashRegisters(regs || []);
       
-      // Register dummy valid cache so Realtime invalidations can trigger updates
-      setCache('purchases', { dummy: true });
+      // Invalidate purchases cache so returning to PurchasesPage triggers a fresh array fetch if needed
+      useCacheStore.getState().invalidate('purchases');
     } catch (e) {
       toast.error('Fatura detayı yüklenemedi: ' + e.message);
       navigate('/purchases');

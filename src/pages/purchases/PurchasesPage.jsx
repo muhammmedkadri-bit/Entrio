@@ -153,13 +153,13 @@ export const PurchasesPage = () => {
 
   // ── Filter ──────────────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
-    let res = [...purchases];
+    let res = Array.isArray(purchases) ? [...purchases] : [];
 
     if (search) {
       const q = search.toLowerCase();
       res = res.filter(p => 
-        (p.invoice_number && p.invoice_number.toLowerCase().includes(q)) ||
-        (p.supplier_name && p.supplier_name.toLowerCase().includes(q))
+        (p.invoice_number && String(p.invoice_number).toLowerCase().includes(q)) ||
+        (p.supplier_name && String(p.supplier_name).toLowerCase().includes(q))
       );
     }
 

@@ -116,22 +116,7 @@ export const BarcodeInput = ({
     };
   }, [isControlled, onChange, onScan, inputRef]);
 
-  const glassButtonStyle = {
-    background: 'rgba(126,217,87,0.1)',
-    border: '1px solid rgba(126,217,87,0.2)',
-    boxShadow: '0 2px 8px rgba(126,217,87,0.08), inset 0 1px 0 rgba(255,255,255,0.6)',
-    color: 'rgb(58,128,36)',
-    fontSize: '12px',
-    fontWeight: '500',
-    padding: '5px 12px',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    whiteSpace: 'nowrap',
-    transition: 'all 0.15s ease',
-  };
+  const btnClass = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer bg-brand-50/50 dark:bg-brand-500/10 hover:bg-brand-100/50 dark:hover:bg-brand-500/20 border border-brand-200/50 dark:border-brand-500/20 text-brand-700 dark:text-brand-400 shadow-sm dark:shadow-none";
 
   return (
     <div className={`flex flex-col ${className}`}>
@@ -164,12 +149,12 @@ export const BarcodeInput = ({
       ) : (
         <div className="relative flex-1 group">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-slate-400 group-focus-within:text-brand-500 transition-colors" />
+            <Search className="h-5 w-5 text-slate-400 dark:text-slate-500 group-focus-within:text-brand-500 transition-colors" />
           </div>
           <input
             ref={inputRef}
             type="text"
-            className="block w-full pl-10 pr-24 py-3 border border-slate-300 rounded-lg leading-5 bg-white placeholder-slate-500 focus:outline-none focus:placeholder-slate-400 focus:ring-1 focus:ring-brand-500 focus:border-brand-500 sm:text-sm shadow-sm transition-all"
+            className="block w-full pl-10 pr-24 py-3 border border-slate-200 dark:border-slate-700/60 rounded-lg leading-5 bg-white dark:bg-slate-800/90 text-gray-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:placeholder-slate-400 dark:focus:placeholder-slate-500 focus:ring-1 focus:ring-brand-500 focus:border-brand-500 sm:text-sm shadow-sm transition-all"
             placeholder={placeholder}
             value={currentVal}
             onChange={handleChange}
@@ -182,8 +167,7 @@ export const BarcodeInput = ({
             <button
               type="button"
               onClick={() => setUseCamera(true)}
-              style={glassButtonStyle}
-              className="hover:bg-brand-100/50"
+              className={btnClass}
             >
               <Camera className="w-4 h-4" />
               Tara
