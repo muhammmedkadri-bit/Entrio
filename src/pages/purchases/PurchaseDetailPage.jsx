@@ -152,8 +152,11 @@ export const PurchaseDetailPage = () => {
     setActionLoading(true);
     try {
       await purchaseService.cancel(purchaseId);
+      // Cache'i temizle → listeye dönünce usePurchases taze veri çeker
+      useCacheStore.getState().invalidate('purchases');
       toast.success('Fatura iptal edildi.');
-      navigate('/purchases');
+      startNavigation();
+      setTimeout(() => navigate('/purchases'), 150);
     } catch (err) {
       toast.error(err.message);
     } finally { setActionLoading(false); }

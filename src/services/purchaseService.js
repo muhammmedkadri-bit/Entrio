@@ -136,13 +136,17 @@ export const purchaseService = {
     try {
       let purchases, suppliers;
       if (isSupabase()) {
-        let q = supabase.from('purchases').select('*').order('created_at', { ascending: false });
+        let q = supabase.from('purchases').select('*')
+          .neq('status', 'cancelled')
+          .order('created_at', { ascending: false });
         if (filters.supplier_id) q = q.eq('supplier_id', filters.supplier_id);
         const [{ data: p, error: pErr }, { data: s, error: sErr }] = await Promise.all([q, supabase.from('suppliers').select('id,name,phone,balance')]);
         if (pErr) throw pErr; if (sErr) throw sErr;
         purchases = p; suppliers = s;
       } else {
-        purchases = (await db.purchases.toArray()).sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+        purchases = (await db.purchases.toArray())
+          .filter(p => p.status !== 'cancelled')
+          .sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
         suppliers = await db.suppliers.toArray();
         if (filters.supplier_id) purchases = purchases.filter(p => p.supplier_id === filters.supplier_id);
       }
