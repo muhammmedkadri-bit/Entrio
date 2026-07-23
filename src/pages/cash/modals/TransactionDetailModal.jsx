@@ -289,146 +289,25 @@ export const TransactionDetailModal = ({ isOpen, onClose, transaction, onSaved, 
           </div>
         )}
 
-        {/* ── Görünüm Modu ── */}
-        {!isEditing && (
-          <div>
-            <label className={labelCls}>
-              <AlignLeft className="w-4 h-4 text-slate-400" /> Açıklama / Not
-            </label>
-            <div className={`${inputCls} cursor-default`}>
-              {transaction.notes || <span className="text-slate-400 italic">Açıklama girilmemiş.</span>}
-            </div>
+        {/* ── Açıklama / Not ── */}
+        <div>
+          <label className={labelCls}>
+            <AlignLeft className="w-4 h-4 text-slate-400" /> Açıklama / Not
+          </label>
+          <div className={`${inputCls} cursor-default`}>
+            {transaction.notes || <span className="text-slate-400 italic">Açıklama girilmemiş.</span>}
           </div>
-        )}
-
-        {/* ── Düzenleme Modu ── */}
-        {isEditing && (
-          <div className="space-y-3">
-
-            {/* Transfer düzenleme */}
-            {isTransfer ? (
-              <>
-                <div className="bg-amber-50 border border-amber-200/60 text-amber-700 p-3 rounded-xl flex gap-2 items-start text-xs">
-                  <ArrowRightLeft className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                  <p>Transfer düzenlendiğinde mevcut hareket iptal edilir ve yeniden oluşturulur. Her iki kasanın bakiyesi otomatik güncellenir.</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className={labelCls}><Wallet className="w-4 h-4 text-slate-400" /> Çıkış Kasası</label>
-                    <RegisterDropdown
-                      options={allRegisters}
-                      value={Number(editData.source_register_id) || undefined}
-                      onChange={(val) => setEditData({ ...editData, source_register_id: val })}
-                      placeholder="Çıkış Kasası..."
-                    />
-                  </div>
-                  <div>
-                    <label className={labelCls}><Wallet className="w-4 h-4 text-slate-400" /> Giriş Kasası</label>
-                    <RegisterDropdown
-                      options={allRegisters}
-                      value={Number(editData.target_register_id) || undefined}
-                      onChange={(val) => setEditData({ ...editData, target_register_id: val })}
-                      placeholder="Giriş Kasası..."
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className={labelCls}><CreditCard className="w-4 h-4 text-slate-400" /> Tutar (₺)</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm select-none">₺</span>
-                    <input type="number" step="0.01" value={editData.amount}
-                      onChange={e => setEditData({ ...editData, amount: e.target.value })}
-                      className={`${inputCls} pl-7 font-bold tabular-nums`} placeholder="0.00" />
-                  </div>
-                </div>
-              </>
-            ) : (
-              <>
-                {/* Normal düzenleme */}
-                <div>
-                  <label className={labelCls}><AlignLeft className="w-4 h-4 text-slate-400" /> Açıklama / Not</label>
-                  <input type="text" value={editData.notes}
-                    onChange={e => setEditData({ ...editData, notes: e.target.value })}
-                    className={inputCls} placeholder="İşlem açıklaması girin..." />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className={labelCls}><Wallet className="w-4 h-4 text-slate-400" /> Kasa</label>
-                    <RegisterDropdown
-                      options={allRegisters}
-                      value={Number(editData.register_id) || undefined}
-                      onChange={(val) => setEditData({ ...editData, register_id: val })}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelCls}><CalendarDays className="w-4 h-4 text-slate-400" /> Tarih</label>
-                    <button type="button" onClick={() => setShowCal(v => !v)}
-                      className={`${inputCls} flex items-center gap-2 cursor-pointer text-left w-full`}>
-                      <CalendarDays className={`w-4 h-4 flex-shrink-0 ${showCal ? 'text-[#5da83f]' : 'text-slate-400'}`} />
-                      <span className="truncate text-sm">
-                        {editData.date ? format(editData.date, 'd MMM yyyy', { locale: tr }) : 'Tarih Seç'}
-                      </span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Kompakt inline takvim */}
-                {showCal && (
-                  <CompactCalendar
-                    date={editData.date}
-                    onChange={(d) => { setEditData({ ...editData, date: d }); setShowCal(false); }}
-                  />
-                )}
-
-                <div>
-                  <label className={labelCls}><CreditCard className="w-4 h-4 text-slate-400" /> Tutar (₺)</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm select-none">₺</span>
-                    <input type="number" step="0.01" value={editData.amount}
-                      onChange={e => setEditData({ ...editData, amount: e.target.value })}
-                      className={`${inputCls} pl-7 font-bold tabular-nums`} placeholder="0.00" />
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        )}
+        </div>
 
         {/* ── Butonlar ── */}
         {!isReadOnly && (
           <div className="flex gap-3 pt-3 border-t border-slate-100">
-            {isEditing ? (
-              <>
-                {/* İptal */}
-                <button type="button" onClick={() => { setIsEditing(false); setShowCal(false); }}
-                  disabled={loading}
-                  className={`${glassBase} bg-white/60 text-slate-700 border-slate-200/80`}>
-                  <X className="w-4 h-4" /> İptal
-                </button>
-                {/* Kaydet (transfer'da "Uygula") */}
-                <button type="button" onClick={handleUpdate} disabled={loading}
-                  className={`${glassBase} bg-[#5da83f]/12 text-[#3d7a28] border-[#5da83f]/25`}>
-                  {loading ? 'Uygulanıyor...' : isTransfer ? '✓ Uygula' : '✓ Kaydet'}
-                </button>
-              </>
-            ) : (
-              <>
-                {/* Sil — rose glass */}
-                <button type="button" onClick={handleDeleteClick} disabled={loading}
-                  className={`${glassBase} bg-rose-500/10 text-rose-700 border-rose-400/25`}>
-                  <Trash2 className="w-4 h-4" />
-                  Sil
-                </button>
-                {/* Düzenle — yeşil glass */}
-                <button type="button" onClick={() => setIsEditing(true)}
-                  className={`${glassBase} bg-[#5da83f]/10 text-[#3d7a28] border-[#5da83f]/25`}>
-                  <Edit2 className="w-4 h-4" /> Düzenle
-                </button>
-              </>
-            )}
+            {/* Sil — rose glass */}
+            <button type="button" onClick={handleDeleteClick} disabled={loading}
+              className={`${glassBase} bg-rose-500/10 text-rose-700 border-rose-400/25`}>
+              <Trash2 className="w-4 h-4" />
+              Sil
+            </button>
           </div>
         )}
       </div>
