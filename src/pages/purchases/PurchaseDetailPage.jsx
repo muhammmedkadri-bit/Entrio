@@ -255,7 +255,7 @@ export const PurchaseDetailPage = () => {
                         <Pencil className="w-4 h-4 text-slate-500" /> Düzenle
                       </button>
                       <div className="my-1 border-t border-gray-100" />
-                      <button onClick={() => { setShowDelete(true); setShowOtherMenu(false); }} className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-red-500 rounded-lg hover:bg-red-50 transition-colors" disabled={purchase.status === 'cancelled'}>
+                      <button onClick={() => { setDeleteConfirm(true); setShowOtherMenu(false); }} className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-red-500 rounded-lg hover:bg-red-50 transition-colors" disabled={purchase.status === 'cancelled'}>
                         <Trash2 className="w-4 h-4" /> İptal Et
                       </button>
                     </div>
