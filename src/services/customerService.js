@@ -71,7 +71,8 @@ export const customerService = {
   async create(data) {
     try {
       const openingBalance = parseFloat(data.opening_balance) || 0;
-      const { city, district, address, opening_balance, ...validData } = data;
+      // opening_balance sadece açılış bakiyesi için kullanılır, tabloya sütun olarak eklenmez
+      const { opening_balance, ...validData } = data;
       const dataToSave = { ...validData, balance: openingBalance, is_active: true };
 
       if (isSupabase()) {
@@ -108,7 +109,8 @@ export const customerService = {
 
   async update(id, data) {
     try {
-      const { city, district, address, opening_balance, ...validData } = data;
+      // opening_balance güncelleme sırasında görmezden gelinir
+      const { opening_balance, ...validData } = data;
       const dataToSave = { ...validData };
       if (isSupabase()) {
         const { data: updated, error } = await supabase.from('customers').update(dataToSave).eq('id', id).select().single();

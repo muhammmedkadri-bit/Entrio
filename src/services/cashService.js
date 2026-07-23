@@ -327,6 +327,90 @@ export const cashService = {
 
   // deleteTransaction ve updateTransaction
   async deleteTransaction(id) {
+    // ── Supabase ──────────────────────────────────────────────────────────────
+    if (isSupabase()) {
+      // 1. Hareketi getir
+      const { data: tx, error: txErr } = await supabase
+        .from('cash_transactions')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (txErr || !tx) throw new Error('Hareket bulunamadı.');
+
+      // 2. Kasayı getir
+      const { data: reg, error: regErr } = await supabase
+        .from('cash_registers')
+        .select('*')
+        .eq('id', tx.register_id)
+        .single();
+      if (regErr || !reg) throw new Error('İlgili kasa bulunamadı.');
+
+      const ins = ['sale_in', 'customer_payment_in', 'deposit_in', 'return_in', 'transfer_in', 'credit_payment_in'];
+      const outs = ['purchase_out', 'supplier_payment_out', 'expense_out', 'withdrawal_out', 'transfer_out'];
+
+      // 3. Kasa bakiyesini geri al
+      let newRegBalance = Number(reg.current_balance) || 0;
+      let newGenBalance = Number(reg.general_balance ?? reg.current_balance ?? 0);
+      if (ins.includes(tx.transaction_type)) {
+        newRegBalance -= Number(tx.amount);
+        if (tx.transaction_type === 'transfer_in') newGenBalance -= Number(tx.gen_bal_impact ?? tx.amount);
+      } else if (outs.includes(tx.transaction_type)) {
+        newRegBalance += Number(tx.amount);
+        if (tx.transaction_type === 'transfer_out') newGenBalance -= Number(tx.gen_bal_impact ?? 0);
+      }
+
+      await supabase.from('cash_registers').update({
+        current_balance: Math.round(newRegBalance * 100) / 100,
+        general_balance: Math.round(newGenBalance * 100) / 100,
+      }).eq('id', reg.id);
+
+      // 4. Transfer ise eşleşen kaydı da sil ve karşı kasayı güncelle
+      if (tx.transaction_type === 'transfer_out' || tx.transaction_type === 'transfer_in') {
+        const pairedType = tx.transaction_type === 'transfer_out' ? 'transfer_in' : 'transfer_out';
+        const { data: pairedList } = await supabase
+          .from('cash_transactions')
+          .select('*')
+          .eq('transaction_type', pairedType)
+          .eq('amount', tx.amount)
+          .neq('id', id);
+
+        // Zaman damgasına göre en yakın eşleşen kaydı bul (±2 ms)
+        const paired = (pairedList || []).find(
+          (t) => Math.abs(Number(t.created_at) - Number(tx.created_at)) <= 2
+        );
+
+        if (paired) {
+          const { data: pairedReg } = await supabase
+            .from('cash_registers')
+            .select('*')
+            .eq('id', paired.register_id)
+            .single();
+
+          if (pairedReg) {
+            let pBal = Number(pairedReg.current_balance) || 0;
+            let pGen = Number(pairedReg.general_balance ?? pairedReg.current_balance ?? 0);
+            if (paired.transaction_type === 'transfer_in') {
+              pBal -= Number(paired.amount);
+              pGen -= Number(paired.gen_bal_impact ?? paired.amount);
+            } else {
+              pBal += Number(paired.amount);
+              pGen -= Number(paired.gen_bal_impact ?? 0);
+            }
+            await supabase.from('cash_registers').update({
+              current_balance: Math.round(pBal * 100) / 100,
+              general_balance: Math.round(pGen * 100) / 100,
+            }).eq('id', pairedReg.id);
+          }
+          await supabase.from('cash_transactions').delete().eq('id', paired.id);
+        }
+      }
+
+      // 5. Asıl hareketi sil
+      await supabase.from('cash_transactions').delete().eq('id', id);
+      return true;
+    }
+
+    // ── Dexie fallback ────────────────────────────────────────────────────────
     return await db.transaction('rw', [db.cash_transactions, db.cash_registers, db.suppliers, db.supplier_transactions, db.customers, db.customer_transactions, db.purchases, db.sales], async () => {
       const tx = await db.cash_transactions.get(id);
       if (!tx) throw new Error('Hareket bulunamadı.');
@@ -366,6 +450,66 @@ export const cashService = {
   },
 
   async updateTransaction(id, data) {
+    // ── Supabase ──────────────────────────────────────────────────────────────
+    if (isSupabase()) {
+      // 1. Eski hareketi getir
+      const { data: tx, error: txErr } = await supabase
+        .from('cash_transactions')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (txErr || !tx) throw new Error('Hareket bulunamadı.');
+
+      const { data: oldReg, error: regErr } = await supabase
+        .from('cash_registers')
+        .select('*')
+        .eq('id', tx.register_id)
+        .single();
+      if (regErr || !oldReg) throw new Error('İlgili kasa bulunamadı.');
+
+      const newAmount = parseFloat(data.amount);
+      const newRegisterId = data.register_id ? Number(data.register_id) : tx.register_id;
+      const registerChanged = newRegisterId !== Number(tx.register_id);
+      const ins = ['sale_in', 'customer_payment_in', 'deposit_in', 'return_in'];
+      const outs = ['purchase_out', 'supplier_payment_out', 'expense_out', 'withdrawal_out', 'transfer_out'];
+
+      // 2. Kasa bakiyelerini güncelle
+      if (registerChanged) {
+        // Eski kasadan eski tutarı geri al
+        let oldBal = Number(oldReg.current_balance) || 0;
+        if (ins.includes(tx.transaction_type)) oldBal -= Number(tx.amount);
+        else if (outs.includes(tx.transaction_type)) oldBal += Number(tx.amount);
+        await supabase.from('cash_registers').update({ current_balance: Math.round(oldBal * 100) / 100 }).eq('id', oldReg.id);
+
+        // Yeni kasaya yeni tutarı ekle
+        const { data: newReg, error: newRegErr } = await supabase
+          .from('cash_registers').select('*').eq('id', newRegisterId).single();
+        if (newRegErr || !newReg) throw new Error('Seçilen kasa bulunamadı.');
+        let newBal = Number(newReg.current_balance) || 0;
+        if (ins.includes(tx.transaction_type)) newBal += newAmount;
+        else if (outs.includes(tx.transaction_type)) newBal -= newAmount;
+        await supabase.from('cash_registers').update({ current_balance: Math.round(newBal * 100) / 100 }).eq('id', newReg.id);
+      } else {
+        const diff = newAmount - Number(tx.amount);
+        if (diff !== 0) {
+          let newBal = Number(oldReg.current_balance) || 0;
+          if (ins.includes(tx.transaction_type)) newBal += diff;
+          else if (outs.includes(tx.transaction_type)) newBal -= diff;
+          await supabase.from('cash_registers').update({ current_balance: Math.round(newBal * 100) / 100 }).eq('id', oldReg.id);
+        }
+      }
+
+      // 3. Hareketi güncelle
+      const updatePayload = { amount: newAmount, notes: data.notes };
+      if (registerChanged) updatePayload.register_id = newRegisterId;
+      if (data.created_at) updatePayload.created_at = data.created_at;
+
+      const { error: updErr } = await supabase.from('cash_transactions').update(updatePayload).eq('id', id);
+      if (updErr) throw updErr;
+      return true;
+    }
+
+    // ── Dexie fallback ────────────────────────────────────────────────────────
     return await db.transaction('rw', [db.cash_transactions, db.cash_registers, db.suppliers, db.supplier_transactions, db.customers, db.customer_transactions, db.purchases, db.sales], async () => {
       const tx = await db.cash_transactions.get(id);
       if (!tx) throw new Error('Hareket bulunamadı.');
@@ -410,3 +554,4 @@ export const cashService = {
     });
   }
 };
+
